@@ -139,7 +139,7 @@ const App: React.FC = () => {
           <div className="relative w-full max-w-md">
             <button
               onClick={() => setShowAuthForm(false)}
-              className="absolute top-4 right-4 text-gray-500 hover:text-gray-700 z-10 will-change-transform"
+              className="absolute top-4 right-4 text-gray-500 hover:text-gray-700 z-10 will-change-transform md:top-3 md:right-10 "
             >
               <X className="h-6 w-6" />
             </button>

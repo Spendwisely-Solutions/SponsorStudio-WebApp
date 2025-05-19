@@ -21,6 +21,7 @@ createRoot(document.getElementById('root')!).render(
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/profile/:userId" element={<ProfilePage />} />
           <Route path="/admin" element={<AdminLogin />} />
+          {/* <Route path="/update-password" element={<AdminLogin />} /> */}
           <Route 
             path="/admin/*" 
             element={
