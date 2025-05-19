@@ -11,6 +11,7 @@ import ProtectedAdminRoute from './components/ProtectedAdminRoute';
 import SuccessStoryPage from './components/SuccessStoryPage';
 import ProfilePage from './components/ProfilePage';
 import './index.css';
+import ResetPassword from './components/ResetPassword';
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
@@ -21,7 +22,7 @@ createRoot(document.getElementById('root')!).render(
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/profile/:userId" element={<ProfilePage />} />
           <Route path="/admin" element={<AdminLogin />} />
-          {/* <Route path="/update-password" element={<AdminLogin />} /> */}
+          <Route path="/reset-password" element={<ResetPassword />} />
           <Route 
             path="/admin/*" 
             element={
