@@ -16,6 +16,7 @@ interface AuthFormProps {
 
 export default function AuthForm({ onSuccess, onSignUpSuccess }: AuthFormProps) {
   const [isSignUp, setIsSignUp] = useState(false);
+  const [isForgotPassword, setIsForgotPassword] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -26,6 +27,7 @@ export default function AuthForm({ onSuccess, onSignUpSuccess }: AuthFormProps) 
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [resetEmailSent, setResetEmailSent] = useState(false);
 
   async function handleSignInSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -106,6 +108,50 @@ export default function AuthForm({ onSuccess, onSignUpSuccess }: AuthFormProps) 
     }
   }
 
+  async function handleForgotPasswordSubmit(e: React.FormEvent) {
+    e.preventDefault();
+    setError('');
+    setLoading(true);
+
+    try {
+      if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        setError('Please enter a valid email address');
+        toast.error('Please enter a valid email address');
+        return;
+      }
+
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/reset-password`,
+      });
+
+      if (error) {
+        setError(error.message);
+        toast.error(error.message);
+        return;
+      }
+
+      setResetEmailSent(true);
+      toast.success('Password reset email sent! Please check your inbox.');
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'An error occurred during password reset';
+      setError(errorMessage);
+      toast.error(errorMessage);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  const resetForm = () => {
+    setIsForgotPassword(false);
+    setResetEmailSent(false);
+    setEmail('');
+    setPassword('');
+    setConfirmPassword('');
+    setPhoneNumber('');
+    setName('');
+    setError('');
+  };
+
   return (
     <div className="w-full max-w-sm mx-auto bg-white rounded-lg shadow-md p-6 max-h-[90vh] overflow-y-auto">
       <style jsx>{`
@@ -169,180 +215,255 @@ export default function AuthForm({ onSuccess, onSignUpSuccess }: AuthFormProps) 
         }
       `}</style>
       <h2 className="text-xl font-bold text-center text-[#2B4B9B] mb-4">
-        {isSignUp ? 'Create an Account' : 'Welcome Back'}
+        {isForgotPassword ? 'Reset Password' : isSignUp ? 'Create an Account' : 'Welcome Back'}
       </h2>
 
-      <form
-        onSubmit={isSignUp ? handleSignUpSubmit : handleSignInSubmit}
-        className="space-y-4"
-      >
-        <div>
-          <label htmlFor="email" className="block text-xs font-medium text-gray-700">
-            Email
-          </label>
-          <input
-            id="email"
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            className="mt-1 block w-full px-3 py-1.5 shadow-sm custom-input disabled:opacity-50"
-            required
-            disabled={loading}
-          />
-        </div>
-
-        {isSignUp && (
-          <>
-            <div>
-              <label htmlFor="name" className="block text-xs font-medium text-gray-700">
-                Name
-              </label>
-              <input
-                id="name"
-                type="text"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                className="mt-1 block w-full px-3 py-1.5 shadow-sm custom-input disabled:opacity-50"
-                required
+      {isForgotPassword ? (
+        <form onSubmit={handleForgotPasswordSubmit} className="space-y-4">
+          {resetEmailSent ? (
+            <div className="text-center">
+              <p className="text-sm text-gray-600">
+                A password reset link has been sent to {email}. Please check your inbox (and spam folder).
+              </p>
+              <button
+                type="button"
+                onClick={resetForm}
+                className="mt-4 text-xs text-[#2B4B9B] hover:text-[#1a2f61]"
                 disabled={loading}
-              />
+              >
+                Back to Sign In
+              </button>
             </div>
+          ) : (
+            <>
+              <div>
+                <label htmlFor="email" className="block text-xs font-medium text-gray-700">
+                  Email
+                </label>
+                <input
+                  id="email"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  className="mt-1 block w-full px-3 py-1.5 shadow-sm custom-input disabled:opacity-50"
+                  required
+                  disabled={loading}
+                />
+              </div>
 
-            <div>
-              <label htmlFor="phoneNumber" className="block text-xs font-medium text-gray-700">
-                Phone Number
-              </label>
-              <PhoneInput
-                id="phoneNumber"
-                international
-                countryCallingCodeEditable={false}
-                defaultCountry="IN"
-                value={phoneNumber}
-                onChange={setPhoneNumber}
-                className="mt-1 block w-full shadow-sm disabled:opacity-50"
-                required
+              {error && <div className="text-red-600 text-xs">{error}</div>}
+
+              <button
+                type="submit"
                 disabled={loading}
-                placeholder="+12025550123"
-              />
-            </div>
-          </>
-        )}
+                className="w-full py-2 px-3 rounded-md bg-[#2B4B9B] text-white text-sm font-medium hover:bg-[#1a2f61] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#2B4B9B] disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {loading ? 'Please wait...' : 'Send Reset Link'}
+              </button>
 
-        <div>
-          <label htmlFor="password" className="block text-xs font-medium text-gray-700">
-            Password
-          </label>
-          <div className="relative mt-1">
+              <div className="text-center">
+                <button
+                  type="button"
+                  onClick={resetForm}
+                  className="text-xs text-[#2B4B9B] hover:text-[#1a2f61]"
+                  disabled={loading}
+                >
+                  Back to Sign In
+                </button>
+              </div>
+            </>
+          )}
+        </form>
+      ) : (
+        <form
+          onSubmit={isSignUp ? handleSignUpSubmit : handleSignInSubmit}
+          className="space-y-4"
+        >
+          <div>
+            <label htmlFor="email" className="block text-xs font-medium text-gray-700">
+              Email
+            </label>
             <input
-              id="password"
-              type={showPassword ? 'text' : 'password'}
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="block w-full px-3 py-1.5 shadow-sm custom-input pr-8 disabled:opacity-50"
+              id="email"
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="mt-1 block w-full px-3 py-1.5 shadow-sm custom-input disabled:opacity-50"
               required
               disabled={loading}
             />
-            <button
-              type="button"
-              onClick={() => setShowPassword(!showPassword)}
-              className="absolute inset-y-0 right-0 pr-2 flex items-center text-gray-500 hover:text-gray-700"
-              disabled={loading}
-            >
-              {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-            </button>
           </div>
-        </div>
 
-        {isSignUp && (
+          {isSignUp && (
+            <>
+              <div>
+                <label htmlFor="name" className="block text-xs font-medium text-gray-700">
+                  Name
+                </label>
+                <input
+                  id="name"
+                  type="text"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  className="mt-1 block w-full px-3 py-1.5 shadow-sm custom-input disabled:opacity-50"
+                  required
+                  disabled={loading}
+                />
+              </div>
+
+              <div>
+                <label htmlFor="phoneNumber" className="block text-xs font-medium text-gray-700">
+                  Phone Number
+                </label>
+                <PhoneInput
+                  id="phoneNumber"
+                  international
+                  countryCallingCodeEditable={false}
+                  defaultCountry="IN"
+                  value={phoneNumber}
+                  onChange={setPhoneNumber}
+                  className="mt-1 block w-full shadow-sm disabled:opacity-50"
+                  required
+                  disabled={loading}
+                  placeholder="+12025550123"
+                />
+              </div>
+            </>
+          )}
+
           <div>
-            <label htmlFor="confirmPassword" className="block text-xs font-medium text-gray-700">
-              Confirm Password
+            <label htmlFor="password" className="block text-xs font-medium text-gray-700">
+              Password
             </label>
             <div className="relative mt-1">
               <input
-                id="confirmPassword"
-                type={showConfirmPassword ? 'text' : 'password'}
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
+                id="password"
+                type={showPassword ? 'text' : 'password'}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
                 className="block w-full px-3 py-1.5 shadow-sm custom-input pr-8 disabled:opacity-50"
                 required
                 disabled={loading}
               />
               <button
                 type="button"
-                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                onClick={() => setShowPassword(!showPassword)}
                 className="absolute inset-y-0 right-0 pr-2 flex items-center text-gray-500 hover:text-gray-700"
                 disabled={loading}
               >
-                {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
               </button>
             </div>
           </div>
-        )}
 
-        {isSignUp && (
-          <div>
-            <label htmlFor="userType" className="block text-xs font-medium text-gray-700">
-              I am a
-            </label>
-            <select
-              id="userType"
-              value={userType}
-              onChange={(e) => setUserType(e.target.value as UserType)}
-              className="mt-1 block w-full px-3 py-1.5 shadow-sm custom-select disabled:opacity-50"
-              required
-              disabled={loading}
-            >
-              <option value="brand">Brand</option>
-              <option value="agency">Marketing Agency</option>
-              <option value="influencer">Influencer</option>
-              <option value="event_organizer">Event Organizer</option>
-            </select>
-          </div>
-        )}
+          {isSignUp && (
+            <div>
+              <label htmlFor="confirmPassword" className="block text-xs font-medium text-gray-700">
+                Confirm Password
+              </label>
+              <div className="relative mt-1">
+                <input
+                  id="confirmPassword"
+                  type={showConfirmPassword ? 'text' : 'password'}
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  className="block w-full px-3 py-1.5 shadow-sm custom-input pr-8 disabled:opacity-50"
+                  required
+                  disabled={loading}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  className="absolute inset-y-0 right-0 pr-2 flex items-center text-gray-500 hover:text-gray-700"
+                  disabled={loading}
+                >
+                  {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                </button>
+              </div>
+            </div>
+          )}
 
-        {error && <div className="text-red-600 text-xs">{error}</div>}
+          {isSignUp && (
+            <div>
+              <label htmlFor="userType" className="block text-xs font-medium text-gray-700">
+                I am a
+              </label>
+              <select
+                id="userType"
+                value={userType}
+                onChange={(e) => setUserType(e.target.value as UserType)}
+                className="mt-1 block w-full px-3 py-1.5 shadow-sm custom-select disabled:opacity-50"
+                required
+                disabled={loading}
+              >
+                <option value="brand">Brand</option>
+                <option value="agency">Marketing Agency</option>
+                <option value="influencer">Influencer</option>
+                <option value="event_organizer">Event Organizer</option>
+              </select>
+            </div>
+          )}
 
-        <button
-          type="submit"
-          disabled={loading}
-          className="w-full py-2 px-3 rounded-md bg-[#2B4B9B] text-white text-sm font-medium hover:bg-[#1a2f61] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#2B4B9B] disabled:opacity-50 disabled:cursor-not-allowed"
-        >
-          {loading
-            ? 'Please wait...'
-            : isSignUp
-              ? 'Create Account'
-              : 'Sign In'}
-        </button>
+          {error && <div className="text-red-600 text-xs">{error}</div>}
 
-        <div className="text-center">
           <button
-            type="button"
-            onClick={() => {
-              setIsSignUp(!isSignUp);
-              setError('');
-              setEmail('');
-              setPassword('');
-              setConfirmPassword('');
-              setPhoneNumber('');
-              setName('');
-            }}
-            className="text-xs text-[#2B4B9B] hover:text-[#1a2f61]"
+            type="submit"
             disabled={loading}
+            className="w-full py-2 px-3 rounded-md bg-[#2B4B9B] text-white text-sm font-medium hover:bg-[#1a2f61] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#2B4B9B] disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {isSignUp ? 'Already have an account? Sign in' : "Don't have an account? Sign up"}
+            {loading
+              ? 'Please wait...'
+              : isSignUp
+                ? 'Create Account'
+                : 'Sign In'}
           </button>
-        </div>
 
-        {error && (
-          <div className="text-center text-xs text-gray-600 mt-2">
-            Having trouble?{' '}
-            <a href="mailto:support@sponsorstudio.in" className="text-[#2B4B9B] hover:text-[#1a2f61]">
-              Contact support
-            </a>
+          <div className="text-center space-y-2">
+            {!isSignUp && (
+              <button
+                type="button"
+                onClick={() => {
+                  setIsForgotPassword(true);
+                  setError('');
+                  setEmail('');
+                  setPassword('');
+                }}
+                className="text-xs text-[#2B4B9B] hover:text-[#1a2f61]"
+                disabled={loading}
+              >
+                Forgot Password?
+              </button>
+            )}
+            <div>
+              <button
+                type="button"
+                onClick={() => {
+                  setIsSignUp(!isSignUp);
+                  setError('');
+                  setEmail('');
+                  setPassword('');
+                  setConfirmPassword('');
+                  setPhoneNumber('');
+                  setName('');
+                }}
+                className="text-xs text-[#2B4B9B] hover:text-[#1a2f61]"
+                disabled={loading}
+              >
+                {isSignUp ? 'Already have an account? Sign in' : "Don't have an account? Sign up"}
+              </button>
+            </div>
           </div>
-        )}
-      </form>
+
+          {error && (
+            <div className="text-center text-xs text-gray-600 mt-2">
+              Having trouble?{' '}
+              <a href="mailto:support@sponsorstudio.in" className="text-[#2B4B9B] hover:text-[#1a2f61]">
+                Contact support
+              </a>
+            </div>
+          )}
+        </form>
+      )}
     </div>
   );
 }
