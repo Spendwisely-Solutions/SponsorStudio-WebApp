@@ -679,7 +679,7 @@ const App: React.FC = () => {
 
       <HeroSection user={user} setShowAuthForm={setShowAuthForm} />
 
-      <section className="py-20 bg-white relative z-10">
+      <section className="py-20 bg-white relative z-10" id="about">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center">
             <h2 className="text-4xl sm:text-3xl md:text-4xl font-extrabold text-gray-900">How We Work</h2>
@@ -711,7 +711,7 @@ const App: React.FC = () => {
         </div>
       </section>
 
-      <section className="py-20 bg-gray-50 relative z-10">
+      <section className="py-20 bg-gray-50 relative z-10" id='clients'>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center">
             <h2 className="text-4xl sm:text-3xl md:text-4xl font-extrabold text-gray-900">People Who Trust Us</h2>
@@ -735,7 +735,7 @@ const App: React.FC = () => {
         </div>
       </section>
 
-      <section className="py-20 bg-white relative z-10">
+      <section className="py-20 bg-white relative z-10" id='success'>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center">
             <h2 className="text-4xl sm:text-3xl md:text-4xl font-extrabold text-gray-900">Success Stories</h2>
@@ -772,7 +772,7 @@ const App: React.FC = () => {
         </div>
       </section>
 
-      <section className="py-20 bg-gray-50 relative z-10">
+      <section className="py-20 bg-gray-50 relative z-10" id='contact'>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center">
             <h2 className="text-4xl sm:text-3xl md:text-4xl font-extrabold text-gray-900">Contact Us</h2>
