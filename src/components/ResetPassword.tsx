@@ -275,7 +275,7 @@ const ResetPassword: React.FC = () => {
 
       <div className="text-center text-xs text-gray-600 mt-2">
         Having trouble?{' '}
-        <a href="mailto:support@sponsorstudio.in" className="text-[#2B4B9B] hover:text-[#1a2f61]">
+        <a href="mailto:connect@sponsorstudio.in" className="text-[#2B4B9B] hover:text-[#1a2f61]">
           Contact support
         </a>
       </div>
