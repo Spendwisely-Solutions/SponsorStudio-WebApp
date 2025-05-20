@@ -46,6 +46,7 @@ export default function BrandDashboard({ onUpdateProfile }: BrandDashboardProps)
   const [locationSearch, setLocationSearch] = useState<string>('');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [swipeActions, setSwipeActions] = useState<{ [key: string]: 'like' | 'dislike' | null }>({});
+  const [showFullDetails, setShowFullDetails] = useState(false);
 
   const isInitialLoad = useRef(true);
   const hasRefreshed = useRef(false);
@@ -73,6 +74,16 @@ export default function BrandDashboard({ onUpdateProfile }: BrandDashboardProps)
       };
     }
   }, [user, profile]);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      const scrollY = window.scrollY;
+      setShowFullDetails(scrollY > 50);
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
 
   const fetchCategories = async () => {
     const { data, error } = await supabase.from('categories').select('*');
@@ -114,7 +125,11 @@ export default function BrandDashboard({ onUpdateProfile }: BrandDashboardProps)
   const fetchOpportunities = async (resetIndex: boolean = false) => {
     let query = supabase
       .from('opportunities')
-      .select('*, categories(*)')
+      .select(`
+        *,
+        categories:category_id (name),
+        profiles:creator_id (company_name)
+      `)
       .eq('status', 'active')
       .eq('verification_status', 'approved');
 
@@ -141,15 +156,21 @@ export default function BrandDashboard({ onUpdateProfile }: BrandDashboardProps)
       return;
     }
 
-    const filteredOpportunities = data.filter(
-      (opp) =>
-        !userMatches.some(
-          (match) =>
-            match.opportunity_id === opp.id &&
-            (match.status === 'pending' || match.status === 'accepted')
-        ) &&
-        !rejections.includes(opp.id)
-    );
+    const filteredOpportunities = data
+      .map((opp: any) => ({
+        ...opp,
+        category_name: opp.categories?.name || 'N/A',
+        creator_name: opp.profiles?.company_name || 'Unknown Creator',
+      }))
+      .filter(
+        (opp: any) =>
+          !userMatches.some(
+            (match) =>
+              match.opportunity_id === opp.id &&
+              (match.status === 'pending' || match.status === 'accepted')
+          ) &&
+          !rejections.includes(opp.id)
+      );
     setOpportunities(filteredOpportunities);
     setLoading(false);
   };
@@ -473,9 +494,9 @@ export default function BrandDashboard({ onUpdateProfile }: BrandDashboardProps)
           {opportunities.length === 0 ? (
             <NoResultsCard type="events" resetFilters={resetFilters} />
           ) : (
-            <div className="h-[calc(100vh-150px)] sm:h-[calc(100vh-100px)] overflow-y-auto snap-y snap-mandatory">
+            <div className="min-h-[calc(100vh-150px)] sm:min-h-[calc(100vh-100px)]">
               <AnimatePresence>
-                {opportunities.map((opportunity) => (
+                {opportunities.slice(0, 1).map((opportunity) => (
                   <OpportunityCard
                     key={opportunity.id}
                     opportunity={opportunity}
@@ -489,26 +510,30 @@ export default function BrandDashboard({ onUpdateProfile }: BrandDashboardProps)
                     }}
                     swipeAction={swipeActions[opportunity.id] || null}
                     onAnimationComplete={handleAnimationComplete}
+                    showFullDetails={showFullDetails}
+                    setShowFullDetails={setShowFullDetails}
                   />
                 ))}
               </AnimatePresence>
-              <div className="snap-center flex-shrink-0 w-full h-[calc(100vh-150px)] sm:h-[calc(100vh-100px)] flex items-center justify-center">
-                <div className="text-center p-6">
-                  <Search className="w-10 h-10 sm:w-12 sm:h-12 text-gray-400 mx-auto mb-3 sm:mb-4" />
-                  <h3 className="text-base sm:text-xl font-medium text-gray-700 mb-2">
-                    No more events available
-                  </h3>
-                  <p className="text-xs sm:text-sm text-gray-500 mb-3 sm:mb-4">
-                    You've gone through all available events matching your criteria.
-                  </p>
-                  <button
-                    onClick={resetFilters}
-                    className="px-3 sm:px-4 py-1.5 sm:py-2 bg-[#2B4B9B] text-white rounded-lg hover:bg-[#1a2f61] text-xs sm:text-sm"
-                  >
-                    Reset Filters
-                  </button>
+              {opportunities.length === 1 && (
+                <div className="w-full min-h-[calc(100vh-150px)] sm:min-h-[calc(100vh-100px)] flex items-center justify-center">
+                  <div className="text-center p-6">
+                    <Search className="w-10 h-10 sm:w-12 sm:h-12 text-gray-400 mx-auto mb-3 sm:mb-4" />
+                    <h3 className="text-base sm:text-xl font-medium text-gray-700 mb-2">
+                      No more events available
+                    </h3>
+                    <p className="text-xs sm:text-sm text-gray-500 mb-3 sm:mb-4">
+                      You've gone through all available events matching your criteria.
+                    </p>
+                    <button
+                      onClick={resetFilters}
+                      className="px-3 sm:px-4 py-1.5 sm:py-2 bg-[#2B4B9B] text-white rounded-lg hover:bg-[#1a2f61] text-xs sm:text-sm"
+                    >
+                      Reset Filters
+                    </button>
+                  </div>
                 </div>
-              </div>
+              )}
             </div>
           )}
         </>

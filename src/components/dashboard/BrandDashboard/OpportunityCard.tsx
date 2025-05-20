@@ -1,5 +1,5 @@
 import React, { memo, useState, useEffect, useMemo, useRef } from 'react';
-import { Calendar, DollarSign, MapPin, FileText, Heart, X, Volume2, VolumeX } from 'lucide-react';
+import { Calendar, DollarSign, MapPin, FileText, Heart, X, Volume2, VolumeX, Link as LinkIcon, Tag, User, Users } from 'lucide-react';
 import { motion, useMotionValue, useTransform } from 'framer-motion';
 
 interface Opportunity {
@@ -14,8 +14,15 @@ interface Opportunity {
   };
   description: string;
   media_urls?: string[];
-  calendly_link?: string;
   sponsorship_brochure_url?: string;
+  category_id?: string;
+  category_name?: string;
+  ad_type?: string;
+  creator_id?: string;
+  creator_name?: string;
+  requirements?: string;
+  benefits?: string;
+  reach?: string;
 }
 
 interface OpportunityCardProps {
@@ -24,6 +31,8 @@ interface OpportunityCardProps {
   onReject: (id: string) => void;
   swipeAction: 'like' | 'dislike' | null;
   onAnimationComplete: (id: string) => void;
+  showFullDetails: boolean;
+  setShowFullDetails: (value: boolean) => void;
 }
 
 const useSwipeAnimation = (
@@ -71,9 +80,9 @@ const OpportunityCard: React.FC<OpportunityCardProps> = memo(
       () => onReject(opportunity.id)
     );
 
-    const [showFullDescription, setShowFullDescription] = useState(false);
     const [isMuted, setIsMuted] = useState(false);
     const [showMuteIndicator, setShowMuteIndicator] = useState(false);
+    const [selectedMedia, setSelectedMedia] = useState(opportunity.media_urls?.[0] || '');
     const videoRef = useRef<HTMLVideoElement>(null);
 
     useEffect(() => {
@@ -112,7 +121,7 @@ const OpportunityCard: React.FC<OpportunityCardProps> = memo(
             videoRef.current.pause();
           }
         },
-        { threshold: 0.5 } // Play when at least 50% of the video is visible
+        { threshold: 0.5 }
       );
 
       observer.observe(videoRef.current);
@@ -120,7 +129,7 @@ const OpportunityCard: React.FC<OpportunityCardProps> = memo(
       return () => {
         observer.disconnect();
       };
-    }, [opportunity.id, isMuted]);
+    }, [opportunity.id, isMuted, selectedMedia]);
 
     const handleButtonAction = async (action: 'like' | 'dislike') => {
       try {
@@ -143,233 +152,337 @@ const OpportunityCard: React.FC<OpportunityCardProps> = memo(
       }
     };
 
+    const handleMediaSelect = (mediaUrl: string) => {
+      setSelectedMedia(mediaUrl);
+      if (videoRef.current && /\.(mp4|webm|ogg|mov|avi|flv|wmv)$/i.test(mediaUrl)) {
+        videoRef.current.load();
+        videoRef.current.muted = isMuted;
+        videoRef.current.play().catch(error => {
+          console.error('Video playback failed:', error);
+          setIsMuted(true);
+          videoRef.current.muted = true;
+          videoRef.current.play().catch(err => {
+            console.error('Video playback failed even when muted:', err);
+          });
+        });
+      }
+    };
+
     const mediaContent = useMemo(() => {
       if (!opportunity.media_urls?.length) {
         return (
-          <div className="w-full h-full bg-gray-200 flex items-center justify-center">
+          <motion.div
+            className="w-full h-64 sm:h-80 bg-gray-100 flex items-center justify-center"
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.3, ease: 'easeInOut' }}
+          >
             <p className="text-gray-500 text-sm">No media available</p>
-          </div>
+          </motion.div>
         );
       }
 
-      const firstMediaUrl = opportunity.media_urls[0];
-      const isVideo = /\.(mp4|webm|ogg|mov|avi|flv|wmv)$/i.test(firstMediaUrl);
+      const isVideo = /\.(mp4|webm|ogg|mov|avi|flv|wmv)$/i.test(selectedMedia);
 
-      if (isVideo) {
-        return (
-          <div className="relative w-full h-full">
-            <video 
-              ref={videoRef}
-              loop 
-              muted={isMuted}
-              playsInline 
-              className="w-full h-full object-cover"
-              onClick={handleVideoClick}
-            >
-              <source src={firstMediaUrl} type="video/mp4" />
-              Your browser does not support the video tag.
-            </video>
-            <motion.div
-              className="absolute top-4 right-4"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: showMuteIndicator ? 1 : 0 }}
-              transition={{ duration: 0.3 }}
-            >
-              <button
+      return (
+        <motion.div
+          key={selectedMedia}
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.3, ease: 'easeInOut' }}
+          className="relative w-full h-full"
+        >
+          {isVideo ? (
+            <div className="relative w-full h-full">
+              <video 
+                ref={videoRef}
+                loop 
+                muted={isMuted}
+                playsInline 
+                className="w-full h-full object-cover"
                 onClick={handleVideoClick}
-                className="p-2 bg-black/70 rounded-full hover:bg-black/90 transition-colors duration-200"
-                aria-label={isMuted ? 'Unmute' : 'Mute'}
               >
-                {isMuted ? (
-                  <VolumeX className="w-5 h-5 text-white" />
+                <source src={selectedMedia} type="video/mp4" />
+                Your browser does not support the video tag.
+              </video>
+              <motion.div
+                className="absolute top-4 right-4"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: showMuteIndicator ? 1 : 0 }}
+                transition={{ duration: 0.3 }}
+              >
+                <button
+                  onClick={handleVideoClick}
+                  className="p-2 bg-gray-200/70 rounded-full hover:bg-gray-300/90 transition-colors duration-200"
+                  aria-label={isMuted ? 'Unmute' : 'Mute'}
+                >
+                  {isMuted ? (
+                    <VolumeX className="w-5 h-5 text-gray-900" />
+                  ) : (
+                    <Volume2 className="w-5 h-5 text-gray-900" />
+                  )}
+                </button>
+              </motion.div>
+            </div>
+          ) : (
+            <img
+              src={selectedMedia}
+              alt={opportunity.title}
+              className="w-full h-full object-cover"
+              loading="eager"
+              decoding="async"
+            />
+          )}
+        </motion.div>
+      );
+    }, [opportunity.media_urls, opportunity.title, selectedMedia, isMuted, showMuteIndicator]);
+
+    const thumbnailGallery = useMemo(() => {
+      if (!opportunity.media_urls || opportunity.media_urls.length <= 1) return null;
+
+      return (
+        <div className="flex justify-center gap-2 p-2 bg-gray-100">
+          {opportunity.media_urls.map((url, index) => {
+            const isThumbnailVideo = /\.(mp4|webm|ogg|mov|avi|flv|wmv)$/i.test(url);
+            return (
+              <button
+                key={index}
+                onClick={() => handleMediaSelect(url)}
+                className={`flex-shrink-0 w-16 h-16 rounded-md overflow-hidden border-2 ${
+                  selectedMedia === url ? 'border-blue-600' : 'border-gray-300'
+                } hover:border-blue-400 transition-colors duration-200`}
+              >
+                {isThumbnailVideo ? (
+                  <video
+                    src={url}
+                    className="w-full h-full object-cover"
+                    muted
+                    loop
+                    onMouseOver={e => e.currentTarget.play()}
+                    onMouseOut={e => e.currentTarget.pause()}
+                  >
+                    <source src={url} type="video/mp4" />
+                  </video>
                 ) : (
-                  <Volume2 className="w-5 h-5 text-white" />
+                  <img
+                    src={url}
+                    alt={`Thumbnail ${index + 1}`}
+                    className="w-full h-full object-cover"
+                  />
                 )}
               </button>
-            </motion.div>
-          </div>
-        );
-      } else {
-        return (
-          <img
-            src={firstMediaUrl}
-            alt={opportunity.title}
-            className="w-full h-full object-cover"
-            loading="eager"
-            decoding="async"
-          />
-        );
-      }
-    }, [opportunity.media_urls, opportunity.title, isMuted, showMuteIndicator]);
+            );
+          })}
+        </div>
+      );
+    }, [opportunity.media_urls, selectedMedia]);
+
+    const detailCards = [
+      {
+        icon: <DollarSign className="w-5 h-5 sm:w-6 sm:h-6 text-gray-700" />,
+        label: 'Budget',
+        value: opportunity.price_range
+          ? `₹${opportunity.price_range.min} - ₹${opportunity.price_range.max}`
+          : 'N/A',
+      },
+      {
+        icon: <FileText className="w-5 h-5 sm:w-6 sm:h-6 text-gray-700" />,
+        label: 'Brochure',
+        value: opportunity.sponsorship_brochure_url ? (
+          <a
+            href={opportunity.sponsorship_brochure_url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-blue-600 hover:text-blue-800 flex items-center"
+          >
+            <LinkIcon className="w-4 h-4 mr-1" />
+            View
+          </a>
+        ) : 'Not Available',
+      },
+      {
+        icon: <Tag className="w-5 h-5 sm:w-6 sm:h-6 text-gray-700" />,
+        label: 'Category',
+        value: opportunity.category_name || 'N/A',
+      },
+      {
+        icon: <Tag className="w-5 h-5 sm:w-6 sm:h-6 text-gray-700" />,
+        label: 'Ad Type',
+        value: opportunity.ad_type || 'N/A',
+      },
+      {
+        icon: <User className="w-5 h-5 sm:w-6 sm:h-6 text-gray-700" />,
+        label: 'Creator',
+        value: opportunity.creator_name || 'N/A',
+      },
+    ].filter(card => card.value !== 'N/A' || card.label === 'Brochure');
+
+    const formattedDate = opportunity.start_date
+      ? opportunity.end_date &&
+        new Date(opportunity.start_date).toDateString() ===
+        new Date(opportunity.end_date).toDateString()
+        ? new Date(opportunity.start_date).toLocaleDateString()
+        : `${new Date(opportunity.start_date).toLocaleDateString()}${
+            opportunity.end_date
+              ? ` - ${new Date(opportunity.end_date).toLocaleDateString()}`
+              : ''
+          }`
+      : 'N/A';
 
     return (
-      <motion.div
-        key={opportunity.id}
-        className="snap-center flex-shrink-0 w-full h-[calc(100vh-150px)] sm:h-[calc(100vh-100px)] flex flex-col bg-black rounded-lg overflow-hidden"
-        drag="x"
-        dragConstraints={{ left: -300, right: 300 }}
-        dragElastic={0.2}
-        dragMomentum={false}
-        onDragEnd={handleDragEnd}
-        initial={{ 
-          scale: 0.95,
-          opacity: 0
-        }}
-        animate={{ 
-          scale: 1,
-          opacity: 1,
-          transition: { 
-            type: 'spring',
-            stiffness: 200,
+      <div className="flex flex-col pb-6">
+        <motion.div
+          key={opportunity.id}
+          className="snap-center flex-shrink-0 w-full h-[calc(100vh-150px)] sm:h-[calc(100vh-100px)] flex flex-col bg-white rounded-lg overflow-hidden relative"
+          drag="x"
+          dragConstraints={{ left: -300, right: 300 }}
+          dragElastic={0.2}
+          dragMomentum={false}
+          onDragEnd={handleDragEnd}
+          initial={{ 
+            scale: 0.95,
+            opacity: 0
+          }}
+          animate={{ 
+            scale: 1,
+            opacity: 1,
+            transition: { 
+              type: 'spring',
+              stiffness: 200,
+              damping: 25,
+              mass: 0.8
+            }
+          }}
+          exit={{
+            x: swipeAction === 'like' ? '100%' : swipeAction === 'dislike' ? '-100%' : 0,
+            opacity: 0,
+            transition: { 
+              duration: 0.3, 
+              ease: 'easeOut'
+            }
+          }}
+          style={{ 
+            x, 
+            rotate,
+            willChange: 'transform',
+            touchAction: 'pan-y'
+          }}
+          transition={{ 
+            type: 'spring', 
+            stiffness: 200, 
             damping: 25,
             mass: 0.8
-          }
-        }}
-        exit={{
-          x: swipeAction === 'like' ? '100%' : swipeAction === 'dislike' ? '-100%' : 0,
-          opacity: 0,
-          transition: { 
-            duration: 0.3, 
-            ease: 'easeOut'
-          }
-        }}
-        style={{ 
-          x, 
-          rotate,
-          willChange: 'transform',
-          touchAction: 'pan-y'
-        }}
-        transition={{ 
-          type: 'spring', 
-          stiffness: 200, 
-          damping: 25,
-          mass: 0.8
-        }}
-        onAnimationComplete={() => {
-          if (swipeAction) {
-            onAnimationComplete(opportunity.id);
-          }
-        }}
-      >
-        {mediaContent}
-        <motion.div
-          style={{ 
-            opacity: likeOpacity,
-            pointerEvents: 'none'
           }}
-          className="absolute inset-0 flex items-center justify-center bg-green-600/90"
+          onAnimationComplete={() => {
+            if (swipeAction) {
+              onAnimationComplete(opportunity.id);
+            }
+          }}
         >
-          <div className="text-4xl sm:text-6xl font-bold text-white border-4 border-white rounded-full px-6 py-3 shadow-lg transform rotate-12">
-            LIKE
+          {mediaContent}
+          <motion.div
+            style={{ 
+              opacity: likeOpacity,
+              pointerEvents: 'none'
+            }}
+            className="absolute inset-0 flex items-center justify-center bg-green-600/90"
+          >
+            <div className="text-4xl sm:text-6xl font-bold text-white border-4 border-gray-200 rounded-full px-6 py-3 shadow-lg transform rotate-12">
+              LIKE
+            </div>
+          </motion.div>
+          <motion.div
+            style={{ 
+              opacity: dislikeOpacity,
+              pointerEvents: 'none'
+            }}
+            className="absolute inset-0 flex items-center justify-center bg-red-600/90"
+          >
+            <div className="text-4xl sm:text-6xl font-bold text-white border-4 border-gray-200 rounded-full px-6 py-3 shadow-lg -rotate-12">
+              DISLIKE
+            </div>
+          </motion.div>
+          <div className="absolute inset-0 bg-gradient-to-t from-gray-900/70 via-gray-800/30 to-transparent pointer-events-none" />
+          <div className="absolute bottom-0 left-0 right-0 p-4 sm:p-6 text-white flex justify-between items-start gap-4">
+            <div className="flex-1 flex flex-col space-y-1">
+              <h2 className="text-xl sm:text-2xl font-bold">{opportunity.title}</h2>
+              <div className="flex items-center text-sm sm:text-base">
+                <MapPin className="w-4 h-4 sm:w-5 sm:h-5 mr-1 text-white" />
+                {opportunity.location || 'N/A'}
+              </div>
+            </div>
+            <div className="flex-1 flex flex-col space-y-1 items-end">
+              <div className="flex items-center text-sm sm:text-base">
+                <Users className="w-4 h-4 sm:w-5 sm:h-5 mr-1 text-white" />
+                {opportunity.reach || 'N/A'}
+              </div>
+              <div className="flex items-center text-sm sm:text-base">
+                <Calendar className="w-4 h-4 sm:w-5 sm:h-5 mr-1 text-white" />
+                {formattedDate}
+              </div>
+            </div>
+          </div>
+          <div className="absolute top-1/2 right-4 sm:right-6 transform -translate-y-1/2 flex flex-col gap-2">
+            <button
+              onClick={() => handleButtonAction('like')}
+              className="p-2 bg-green-600/80 rounded-full hover:bg-green-700/90 transition-colors duration-200"
+              aria-label="Like"
+            >
+              <Heart className="w-5 h-5 sm:w-6 sm:h-6 text-white" fill="currentColor" />
+            </button>
+            <button
+              onClick={() => handleButtonAction('dislike')}
+              className="p-2 bg-red-600/80 rounded-full hover:bg-red-700/90 transition-colors duration-200"
+              aria-label="Reject"
+            >
+              <X className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
+            </button>
           </div>
         </motion.div>
-        <motion.div
-          style={{ 
-            opacity: dislikeOpacity,
-            pointerEvents: 'none'
-          }}
-          className="absolute inset-0 flex items-center justify-center bg-red-600/90"
-        >
-          <div className="text-4xl sm:text-6xl font-bold text-white border-4 border-white rounded-full px-6 py-3 shadow-lg -rotate-12">
-            DISLIKE
-          </div>
-        </motion.div>
-        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent pointer-events-none" />
-        <div className="absolute bottom-0 left-0 right-0 p-4 sm:p-6 text-white">
-          <h2 className="text-xl sm:text-2xl font-bold mb-2">{opportunity.title}</h2>
-          <div className="flex items-center mb-3 text-sm sm:text-base">
-            <MapPin className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
-            <span>{opportunity.location}</span>
-          </div>
-          <div className="grid grid-cols-2 gap-3 sm:gap-4 mb-4">
-            {opportunity.start_date && (
-              <div className="flex items-center">
-                <Calendar className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
-                <div>
-                  <p className="text-xs sm:text-sm opacity-80">Date</p>
-                  <p className="text-sm sm:text-base">
-                    {opportunity.end_date &&
-                    new Date(opportunity.start_date).toDateString() ===
-                    new Date(opportunity.end_date).toDateString()
-                      ? new Date(opportunity.start_date).toLocaleDateString()
-                      : `${new Date(opportunity.start_date).toLocaleDateString()}${
-                          opportunity.end_date
-                            ? ` - ${new Date(opportunity.end_date).toLocaleDateString()}`
-                            : ''
-                        }`}
-                  </p>
-                </div>
-              </div>
-            )}
-            {opportunity.price_range && (
-              <div className="flex items-center">
-                <DollarSign className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
-                <div>
-                  <p className="text-xs sm:text-sm opacity-80">Budget</p>
-                  <p className="text-sm sm:text-base">
-                    ₹{opportunity.price_range.min} - ₹{opportunity.price_range.max}
-                  </p>
-                </div>
-              </div>
-            )}
-          </div>
-          <div className="flex flex-wrap gap-2 mb-4">
-            {opportunity.calendly_link && (
-              <div className="flex items-center text-sm sm:text-base bg-blue-600/50 px-2 py-1 rounded-lg">
-                <Calendar className="w-4 h-4 sm:w-5 sm:h-5 mr-1" />
-                <span>Calendly Available</span>
-              </div>
-            )}
-            {opportunity.sponsorship_brochure_url && (
-              <div className="flex items-center text-sm sm:text-base bg-blue-600/50 px-2 py-1 rounded-lg">
-                <FileText className="w-4 h-4 sm:w-5 sm:h-5 mr-1" />
-                <span>Brochure Available</span>
-              </div>
-            )}
-          </div>
-          <div className="text-sm sm:text-base mb-4">
-            {opportunity.description && opportunity.description.length > 100 && !showFullDescription ? (
-              <>
-                {opportunity.description.slice(0, 100)}...
-                <button
-                  onClick={() => setShowFullDescription(true)}
-                  className="text-blue-300 hover:text-blue-100 font-medium ml-1"
-                >
-                  Read more
-                </button>
-              </>
-            ) : (
-              <>
-                {opportunity.description}
-                {opportunity.description && opportunity.description.length > 100 && (
-                  <button
-                    onClick={() => setShowFullDescription(false)}
-                    className="text-blue-300 hover:text-blue-100 font-medium ml-1"
-                  >
-                    Read less
-                  </button>
-                )}
-              </>
-            )}
+        {thumbnailGallery}
+        <div className="bg-gray-100 py-4 sm:py-6">
+          <div className="grid grid-cols-1">
+            <div className="bg-white rounded-lg p-4 shadow-md">
+              <p className="text-sm sm:text-base text-gray-600">Description</p>
+              <p className="text-base sm:text-lg text-gray-900 text-justify">
+                {opportunity.description || 'Not specified'}
+              </p>
+            </div>
           </div>
         </div>
-        <div className="absolute top-1/2 right-4 sm:right-6 transform -translate-y-1/2 flex flex-col gap-2">
-          <button
-            onClick={() => handleButtonAction('like')}
-            className="p-2 bg-green-500/80 rounded-full hover:bg-green-600/90 transition-colors duration-200"
-            aria-label="Like"
-          >
-            <Heart className="w-5 h-5 sm:w-6 sm:h-6 text-white" fill="currentColor" />
-          </button>
-          <button
-            onClick={() => handleButtonAction('dislike')}
-            className="p-2 bg-red-500/80 rounded-full hover:bg-red-500/90 transition-colors duration-200"
-            aria-label="Reject"
-          >
-            <X className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
-          </button>
+        <div className="bg-gray-100">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="bg-white rounded-lg p-3 shadow-md">
+              <p className="text-xs sm:text-sm text-gray-600">Requirements</p>
+              <p className="text-base sm:text-lg text-gray-900 text-justify">
+                {opportunity.requirements || 'Not specified'}
+              </p>
+            </div>
+            <div className="bg-white rounded-lg p-3 shadow-md">
+              <p className="text-xs sm:text-sm text-gray-600">Benefits</p>
+              <p className="text-base sm:text-lg text-gray-900 text-justify">
+                {opportunity.benefits || 'Not specified'}
+              </p>
+            </div>
+          </div>
         </div>
-      </motion.div>
+        <div className="bg-gray-100 py-4 sm:py-6">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+            {detailCards.map((card, index) => (
+              <div
+                key={index}
+                className="bg-white rounded-lg p-3 flex items-center space-x-3 shadow-md"
+              >
+                {card.icon}
+                <div>
+                  <p className="text-xs sm:text-sm text-gray-600">{card.label}</p>
+                  <p className="text-sm sm:text-base text-gray-900">{card.value}</p>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
     );
   }
 );
