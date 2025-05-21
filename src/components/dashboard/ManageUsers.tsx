@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from '../../lib/supabase';
 import toast from 'react-hot-toast';
 import { UserCog, Trash2, Edit, Search } from 'lucide-react';
@@ -46,8 +46,12 @@ export default function ManageUsers({ searchTerm: externalSearchTerm, setSearchT
   const [searchTerm, setSearchTerm] = useState(externalSearchTerm || '');
   const [error, setError] = useState<string | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [userToDelete, setUserToDelete] = useState<string | null>(null);
+  const [usersToDelete, setUsersToDelete] = useState<string[]>([]);
   const [userTypeCounts, setUserTypeCounts] = useState<UserTypeCount[]>([]);
+  const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [isSelectionMode, setIsSelectionMode] = useState(false);
+  const longPressTimer = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     if (externalSearchTerm !== undefined) {
@@ -68,32 +72,6 @@ export default function ManageUsers({ searchTerm: externalSearchTerm, setSearchT
     fetchUserTypeCounts();
   }, []);
 
-  const fetchUserEmail = async (userId: string): Promise<string | null> => {
-    try {
-      const response = await fetch('https://urablfvmqregyvfyaovi.supabase.co/functions/v1/get-user-email', {
-        method: 'POST',
-        headers: {
-          'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVyYWJsZnZtcXJlZ3l2Znlhb3ZpIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mzg3MjYzNzIsImV4cCI6MjA1NDMwMjM3Mn0.QUBLQ_GxMWBCBiYEc3hCr1CwzFiQzudHpAfvR9OKME4',
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ userId }),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        console.error(`Failed to fetch email for user ${userId}:`, errorData);
-        throw new Error(`Failed to fetch email for user ${userId}: ${errorData.error || response.statusText}`);
-      }
-
-      const data = await response.json();
-      console.log(`Email response for user ${userId}:`, data);
-      return data.email || null;
-    } catch (error) {
-      console.error(`Error fetching email for user ${userId}:`, error);
-      return null;
-    }
-  };
-
   const fetchUsers = async () => {
     try {
       setLoading(true);
@@ -103,14 +81,14 @@ export default function ManageUsers({ searchTerm: externalSearchTerm, setSearchT
       const { data: profilesData, error: profilesError } = await supabase
         .from('profiles')
         .select('*')
-        .neq('user_type', 'admin'); // Exclude users with user_type='admin'
+        .neq('user_type', 'admin');
 
       if (profilesError) {
         console.error('Supabase fetch error (profiles):', profilesError);
         throw new Error(`Failed to fetch profiles: ${profilesError.message}`);
       }
 
-      console.log('Raw profiles data from Supabase:', profilesData);
+      console.log('Profiles data from Supabase:', profilesData);
 
       if (!profilesData || profilesData.length === 0) {
         console.warn('No profiles data returned from Supabase');
@@ -118,14 +96,7 @@ export default function ManageUsers({ searchTerm: externalSearchTerm, setSearchT
         return;
       }
 
-      const enrichedProfiles: Profile[] = [];
-      for (const profile of profilesData) {
-        const email = await fetchUserEmail(profile.id);
-        enrichedProfiles.push({ ...profile, email });
-      }
-
-      console.log('Enriched profiles with emails:', enrichedProfiles);
-      setUsers(enrichedProfiles);
+      setUsers(profilesData as Profile[]);
     } catch (error) {
       console.error('Error in fetchUsers:', error);
       setError(error instanceof Error ? error.message : 'Failed to fetch users');
@@ -140,14 +111,13 @@ export default function ManageUsers({ searchTerm: externalSearchTerm, setSearchT
       const { data, error } = await supabase
         .from('profiles')
         .select('user_type')
-        .neq('user_type', 'admin'); // Exclude user_type='admin'
+        .neq('user_type', 'admin');
 
       if (error) {
         console.error('Supabase fetch error (user type counts):', error);
         throw new Error(`Failed to fetch user type counts: ${error.message}`);
       }
 
-      // Aggregate counts by user_type
       const userTypeMap = new Map<string | null, number>();
       data.forEach(item => {
         const userType = item.user_type || 'Unknown';
@@ -156,7 +126,7 @@ export default function ManageUsers({ searchTerm: externalSearchTerm, setSearchT
 
       const counts: UserTypeCount[] = Array.from(userTypeMap.entries()).map(([user_type, count]) => ({
         user_type,
-        count
+        count,
       }));
 
       console.log('User type counts from Supabase:', counts);
@@ -167,39 +137,95 @@ export default function ManageUsers({ searchTerm: externalSearchTerm, setSearchT
     }
   };
 
-  const handleDeleteUser = async (userId: string) => {
+  const handleDeleteUsers = async (userIds: string[]) => {
     try {
-      const { error } = await supabase
-        .from('profiles')
-        .delete()
-        .eq('id', userId);
+      setIsDeleting(true);
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        throw new Error('No user session found. Please log in.');
+      }
 
-      if (error) throw error;
+      const response = await fetch('https://urablfvmqregyvfyaovi.supabase.co/functions/v1/delete-users', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${session.access_token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ userIds }),
+      });
 
-      setUsers(users.filter(user => user.id !== userId));
-      toast.success('User deleted successfully');
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to delete users');
+      }
+
+      setUsers(users.filter(user => !userIds.includes(user.id)));
+      setSelectedUsers([]);
+      setIsSelectionMode(false);
+      toast.success(`${userIds.length} user${userIds.length > 1 ? 's' : ''} deleted successfully`);
       fetchUserTypeCounts();
     } catch (error) {
-      console.error('Error deleting user:', error);
-      toast.error('Failed to delete user');
+      console.error('Error deleting users:', error);
+      toast.error(error instanceof Error ? error.message : 'Failed to delete users');
+    } finally {
+      setIsDeleting(false);
     }
   };
 
-  const openModal = (userId: string) => {
-    setUserToDelete(userId);
+  const openModal = (userIds: string | string[]) => {
+    setUsersToDelete(Array.isArray(userIds) ? userIds : [userIds]);
     setIsModalOpen(true);
   };
 
   const closeModal = () => {
     setIsModalOpen(false);
-    setUserToDelete(null);
+    setUsersToDelete([]);
   };
 
   const confirmDelete = () => {
-    if (userToDelete) {
-      handleDeleteUser(userToDelete);
+    if (usersToDelete.length > 0) {
+      closeModal();
+      handleDeleteUsers(usersToDelete);
     }
-    closeModal();
+  };
+
+  const handleSelectUser = (userId: string) => {
+    if (!isSelectionMode) return;
+    setSelectedUsers(prev => {
+      const newSelection = prev.includes(userId) ? prev.filter(id => id !== userId) : [...prev, userId];
+      if (newSelection.length === 0) {
+        setIsSelectionMode(false);
+      }
+      return newSelection;
+    });
+  };
+
+  const handleSelectAll = () => {
+    if (selectedUsers.length === filteredUsers.length) {
+      setSelectedUsers([]);
+      setIsSelectionMode(false);
+    } else {
+      setSelectedUsers(filteredUsers.map(user => user.id));
+    }
+  };
+
+  const startLongPress = (userId: string) => {
+    longPressTimer.current = setTimeout(() => {
+      setIsSelectionMode(true);
+      setSelectedUsers(prev => prev.includes(userId) ? prev : [...prev, userId]);
+    }, 500);
+  };
+
+  const cancelLongPress = () => {
+    if (longPressTimer.current) {
+      clearTimeout(longPressTimer.current);
+      longPressTimer.current = null;
+    }
+  };
+
+  const handleDoubleClick = (userId: string) => {
+    setIsSelectionMode(true);
+    setSelectedUsers(prev => prev.includes(userId) ? prev : [...prev, userId]);
   };
 
   const filteredUsers = users.filter(user => {
@@ -208,12 +234,12 @@ export default function ManageUsers({ searchTerm: externalSearchTerm, setSearchT
       (user.contact_person_name?.toLowerCase().includes(searchTerm.toLowerCase()) || false) ||
       (user.company_name?.toLowerCase().includes(searchTerm.toLowerCase()) || false) ||
       (user.email?.toLowerCase().includes(searchTerm.toLowerCase()) || false);
-    
+
     console.log(`Filtering user ID ${user.id}:`, {
       contact_person_name: user.contact_person_name,
       company_name: user.company_name,
       email: user.email,
-      matchesSearchTerm
+      matchesSearchTerm,
     });
 
     return matchesSearchTerm;
@@ -222,23 +248,47 @@ export default function ManageUsers({ searchTerm: externalSearchTerm, setSearchT
   console.log('Filtered users:', filteredUsers);
 
   return (
-    <div>
+    <div className="relative">
+      {/* Progress Bar Overlay */}
+      {isDeleting && (
+        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
+          <div className="bg-white p-6 rounded-lg shadow-lg w-full max-w-md">
+            <p className="text-center text-gray-700 mb-4">Deleting users...</p>
+            <div className="w-full bg-gray-200 rounded-full h-4 overflow-hidden">
+              <div
+                className="bg-gradient-to-r from-blue-500 to-blue-700 h-4 rounded-full animate-progress"
+                style={{ width: '100%' }}
+              ></div>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold text-gray-900">Manage Users</h1>
+        {selectedUsers.length > 0 && (
+          <button
+            onClick={() => openModal(selectedUsers)}
+            className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
+          >
+            Delete Selected ({selectedUsers.length})
+          </button>
+        )}
       </div>
 
-      {/* Tiles for user type counts */}
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-4 mb-6">
         <div className="bg-blue-100 p-4 rounded-lg text-center">
           <h3 className="text-lg font-semibold text-blue-800">Total Users</h3>
           <p className="text-2xl font-bold text-blue-600">{users.length}</p>
         </div>
         {userTypeCounts.map((count, index) => {
-          const userTypeLabel = count.user_type === 'brand' ? 'Brands' :
-                             count.user_type === 'event_organizer' ? 'Event Organizers' :
-                             count.user_type === 'agency' ? 'Agencies' :
-                             count.user_type === 'creator' ? 'Creators' :
-                             'Unknown';
+          const userTypeLabel =
+            count.user_type === 'brand' ? 'Brands' :
+            count.user_type === 'event_organizer' ? 'Event Organizers' :
+            count.user_type === 'agency' ? 'Agencies' :
+            count.user_type === 'creator' ? 'Creators' :
+            count.user_type === 'influencer' ? 'Influencers' :
+            'Unknown';
           return (
             <div
               key={count.user_type || 'unknown'}
@@ -288,16 +338,50 @@ export default function ManageUsers({ searchTerm: externalSearchTerm, setSearchT
           <table className="w-full text-left">
             <thead className="bg-blue-100">
               <tr>
+                {selectedUsers.length > 0 && (
+                  <th className="px-6 py-3 text-xs font-semibold text-gray-600 uppercase border-r border-blue-200">
+                    <input
+                      type="checkbox"
+                      checked={selectedUsers.length === filteredUsers.length && filteredUsers.length > 0}
+                      onChange={handleSelectAll}
+                      className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                    />
+                  </th>
+                )}
                 <th className="px-6 py-3 text-xs font-semibold text-gray-600 uppercase border-r border-blue-200">Name</th>
+                <th className="px-6 py-3 text-xs font-semibold text-gray-600 uppercase border-r border-blue-200">Contact Person</th>
                 <th className="px-6 py-3 text-xs font-semibold text-gray-600 uppercase border-r border-blue-200">Email</th>
-                <th className="px-6 py-3 text-xs font-semibold text-gray-600 uppercase border-r border-blue-200">Company</th>
                 <th className="px-6 py-3 text-xs font-semibold text-gray-600 uppercase border-r border-blue-200">Role</th>
                 <th className="px-6 py-3 text-xs font-semibold text-gray-600 uppercase">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
               {filteredUsers.map((user) => (
-                <tr key={user.id}>
+                <tr
+                  key={user.id}
+                  onMouseDown={() => startLongPress(user.id)}
+                  onMouseUp={cancelLongPress}
+                  onMouseLeave={cancelLongPress}
+                  onDoubleClick={() => handleDoubleClick(user.id)}
+                  onClick={() => handleSelectUser(user.id)}
+                  className={`cursor-pointer ${
+                    selectedUsers.includes(user.id) ? 'bg-blue-50' : 'hover:bg-gray-50'
+                  }`}
+                >
+                  {selectedUsers.length > 0 && (
+                    <td className="px-6 py-4 whitespace-nowrap border-r border-gray-200">
+                      <input
+                        type="checkbox"
+                        checked={selectedUsers.includes(user.id)}
+                        onChange={() => handleSelectUser(user.id)}
+                        onClick={(e) => e.stopPropagation()}
+                        className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                      />
+                    </td>
+                  )}
+                  <td className="px-6 py-4 whitespace-nowrap border-r border-gray-200">
+                    {user.company_name || 'Not set'}
+                  </td>
                   <td className="px-6 py-4 whitespace-nowrap border-r border-gray-200">
                     {user.contact_person_name || 'Not set'}
                   </td>
@@ -305,21 +389,24 @@ export default function ManageUsers({ searchTerm: externalSearchTerm, setSearchT
                     {user.email || 'Not set'}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap border-r border-gray-200">
-                    {user.company_name || 'Not set'}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap border-r border-gray-200">
                     {user.user_type || 'Not set'}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex space-x-2">
                       <button
-                        onClick={() => alert(`Edit user ${user.contact_person_name} (ID: ${user.id})`)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          alert(`Edit user ${user.contact_person_name} (ID: ${user.id})`);
+                        }}
                         className="px-2 py-1 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
                       >
                         <Edit size={16} />
                       </button>
                       <button
-                        onClick={() => openModal(user.id)}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          openModal(user.id);
+                        }}
                         className="px-2 py-1 bg-red-500 text-white rounded-lg hover:bg-red-600"
                       >
                         <Trash2 size={16} />
@@ -337,7 +424,7 @@ export default function ManageUsers({ searchTerm: externalSearchTerm, setSearchT
         onClose={closeModal}
         onConfirm={confirmDelete}
         title="Confirm Delete"
-        message="Are you sure you want to delete this user? This action cannot be undone."
+        message={`Are you sure you want to delete ${usersToDelete.length} user${usersToDelete.length > 1 ? 's' : ''}? This action cannot be undone and will also remove the user${usersToDelete.length > 1 ? 's' : ''} from authentication.`}
         confirmText="Delete"
         confirmButtonClass="bg-red-600 text-white hover:bg-red-700"
         cancelButtonClass="border-gray-300 text-gray-700 hover:bg-gray-50"
@@ -348,10 +435,25 @@ export default function ManageUsers({ searchTerm: externalSearchTerm, setSearchT
 
 const getTileColor = (index: number) => {
   const colors = [
-    'bg-green-200',  // Brands
-    'bg-red-300',   // Creators
+    'bg-green-200', // Brands
+    'bg-red-300', // Creators
     'bg-yellow-200', // Event Organizers
     'bg-purple-200', // Agencies
+    'bg-pink-200', // Influencers
   ];
-  return colors[index % colors.length] || 'bg-blue-100'; // Fallback to bg-blue-100
+  return colors[index % colors.length] || 'bg-blue-100';
 };
+
+// Add custom CSS for the progress bar animation
+const style = document.createElement('style');
+style.textContent = `
+  @keyframes progress {
+    0% { transform: translateX(-100%); }
+    50% { transform: translateX(100%); }
+    100% { transform: translateX(-100%); }
+  }
+  .animate-progress {
+    animation: progress 2s linear infinite;
+  }
+`;
+document.head.appendChild(style);
