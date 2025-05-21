@@ -12,6 +12,7 @@ import SuccessStoryPage from './components/SuccessStoryPage';
 import ProfilePage from './components/ProfilePage';
 import './index.css';
 import ResetPassword from './components/ResetPassword';
+import Logout from './components/Logout';
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
@@ -23,6 +24,7 @@ createRoot(document.getElementById('root')!).render(
           <Route path="/profile/:userId" element={<ProfilePage />} />
           <Route path="/admin" element={<AdminLogin />} />
           <Route path="/reset-password" element={<ResetPassword />} />
+          <Route path="/logout" element={<Logout />} />
           <Route 
             path="/admin/*" 
             element={
