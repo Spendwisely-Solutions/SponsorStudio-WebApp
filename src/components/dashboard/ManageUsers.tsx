@@ -233,12 +233,22 @@ export default function ManageUsers({ searchTerm: externalSearchTerm, setSearchT
       !searchTerm ||
       (user.contact_person_name?.toLowerCase().includes(searchTerm.toLowerCase()) || false) ||
       (user.company_name?.toLowerCase().includes(searchTerm.toLowerCase()) || false) ||
-      (user.email?.toLowerCase().includes(searchTerm.toLowerCase()) || false);
+      (user.email?.toLowerCase().includes(searchTerm.toLowerCase()) || false) ||
+      (user.website?.toLowerCase().includes(searchTerm.toLowerCase()) || false) ||
+      (user.industry?.toLowerCase().includes(searchTerm.toLowerCase()) || false) ||
+      (user.company_size?.toLowerCase().includes(searchTerm.toLowerCase()) || false) ||
+      (user.location?.toLowerCase().includes(searchTerm.toLowerCase()) || false) ||
+      (user.phone_number?.toLowerCase().includes(searchTerm.toLowerCase()) || false);
 
     console.log(`Filtering user ID ${user.id}:`, {
       contact_person_name: user.contact_person_name,
       company_name: user.company_name,
       email: user.email,
+      website: user.website,
+      industry: user.industry,
+      company_size: user.company_size,
+      location: user.location,
+      phone_number: user.phone_number,
       matchesSearchTerm,
     });
 
@@ -248,7 +258,7 @@ export default function ManageUsers({ searchTerm: externalSearchTerm, setSearchT
   console.log('Filtered users:', filteredUsers);
 
   return (
-    <div className="relative">
+    <div className="relative w-full">
       {/* Progress Bar Overlay */}
       {isDeleting && (
         <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
@@ -306,7 +316,7 @@ export default function ManageUsers({ searchTerm: externalSearchTerm, setSearchT
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
           <input
             type="text"
-            placeholder="Search users by name, email, or company..."
+            placeholder="Search users by name, email, company, website, industry, company size, location, or phone..."
             className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
             value={searchTerm}
             onChange={handleSearchChange}
@@ -334,12 +344,12 @@ export default function ManageUsers({ searchTerm: externalSearchTerm, setSearchT
           <p className="text-gray-600">No users found</p>
         </div>
       ) : (
-        <div className="bg-white rounded-lg shadow overflow-x-auto">
-          <table className="w-full text-left">
+        <div className="w-full bg-white rounded-lg shadow">
+          <table className="w-full table-auto text-left">
             <thead className="bg-blue-100">
               <tr>
                 {selectedUsers.length > 0 && (
-                  <th className="px-6 py-3 text-xs font-semibold text-gray-600 uppercase border-r border-blue-200">
+                  <th className="px-2 py-2 text-xs font-semibold text-gray-600 uppercase border-r border-blue-200 min-w-[40px]">
                     <input
                       type="checkbox"
                       checked={selectedUsers.length === filteredUsers.length && filteredUsers.length > 0}
@@ -348,11 +358,17 @@ export default function ManageUsers({ searchTerm: externalSearchTerm, setSearchT
                     />
                   </th>
                 )}
-                <th className="px-6 py-3 text-xs font-semibold text-gray-600 uppercase border-r border-blue-200">Name</th>
-                <th className="px-6 py-3 text-xs font-semibold text-gray-600 uppercase border-r border-blue-200">Contact Person</th>
-                <th className="px-6 py-3 text-xs font-semibold text-gray-600 uppercase border-r border-blue-200">Email</th>
-                <th className="px-6 py-3 text-xs font-semibold text-gray-600 uppercase border-r border-blue-200">Role</th>
-                <th className="px-6 py-3 text-xs font-semibold text-gray-600 uppercase">Actions</th>
+                <th className="px-2 py-2 text-xs font-semibold text-gray-600 uppercase border-r border-blue-200 min-w-[100px]">Name</th>
+                <th className="px-2 py-2 text-xs font-semibold text-gray-600 uppercase border-r border-blue-200 min-w-[100px]">Contact Person</th>
+                <th className="px-2 py-2 text-xs font-semibold text-gray-600 uppercase border-r border-blue-200 min-w-[120px] hidden sm:table-cell">Email</th>
+                <th className="px-2 py-2 text-xs font-semibold text-gray-600 uppercase border-r border-blue-200 min-w-[80px] hidden md:table-cell">Role</th>
+                <th className="px-2 py-2 text-xs font-semibold text-gray-600 uppercase border-r border-blue-200 min-w-[100px] hidden lg:table-cell">Website</th>
+                <th className="px-2 py-2 text-xs font-semibold text-gray-600 uppercase border-r border-blue-200 min-w-[80px] hidden lg:table-cell">Industry</th>
+                <th className="px-2 py-2 text-xs font-semibold text-gray-600 uppercase border-r border-blue-200 min-w-[80px] hidden xl:table-cell">Company Size</th>
+                <th className="px-2 py-2 text-xs font-semibold text-gray-600 uppercase border-r border-blue-200 min-w-[80px] hidden xl:table-cell">Location</th>
+                <th className="px-2 py-2 text-xs font-semibold text-gray-600 uppercase border-r border-blue-200 min-w-[80px] hidden 2xl:table-cell">Created At</th>
+                <th className="px-2 py-2 text-xs font-semibold text-gray-600 uppercase border-r border-blue-200 min-w-[80px] hidden lg:table-cell">Phone Number</th>
+                <th className="px-2 py-2 text-xs font-semibold text-gray-600 uppercase min-w-[80px]">Actions</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
@@ -369,7 +385,7 @@ export default function ManageUsers({ searchTerm: externalSearchTerm, setSearchT
                   }`}
                 >
                   {selectedUsers.length > 0 && (
-                    <td className="px-6 py-4 whitespace-nowrap border-r border-gray-200">
+                    <td className="px-2 py-2 border-r border-gray-200">
                       <input
                         type="checkbox"
                         checked={selectedUsers.includes(user.id)}
@@ -379,37 +395,66 @@ export default function ManageUsers({ searchTerm: externalSearchTerm, setSearchT
                       />
                     </td>
                   )}
-                  <td className="px-6 py-4 whitespace-nowrap border-r border-gray-200">
-                    {user.company_name || 'Not set'}
+                  <td className="px-2 py-2 border-r border-gray-200 truncate max-w-[100px]" title={user.company_name || ' - '}>
+                    {user.company_name || ' - '}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap border-r border-gray-200">
-                    {user.contact_person_name || 'Not set'}
+                  <td className="px-2 py-2 border-r border-gray-200 truncate max-w-[100px]" title={user.contact_person_name || ' - '}>
+                    {user.contact_person_name || ' - '}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap border-r border-gray-200">
-                    {user.email || 'Not set'}
+                  <td className="px-2 py-2 border-r border-gray-200 truncate max-w-[120px] hidden sm:table-cell" title={user.email || ' - '}>
+                    {user.email || ' - '}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap border-r border-gray-200">
-                    {user.user_type || 'Not set'}
+                  <td className="px-2 py-2 border-r border-gray-200 truncate max-w-[80px] hidden md:table-cell" title={user.user_type || ' - '}>
+                    {user.user_type || ' - '}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex space-x-2">
+                  <td className="px-2 py-2 border-r border-gray-200 truncate max-w-[100px] hidden lg:table-cell" title={user.website || ' - '}>
+                    {user.website ? (
+                      <a
+                        href={user.website}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-blue-600 hover:underline"
+                      >
+                        {user.website}
+                      </a>
+                    ) : (
+                      ' - '
+                    )}
+                  </td>
+                  <td className="px-2 py-2 border-r border-gray-200 truncate max-w-[80px] hidden lg:table-cell" title={user.industry || ' - '}>
+                    {user.industry || ' - '}
+                  </td>
+                  <td className="px-2 py-2 border-r border-gray-200 truncate max-w-[80px] hidden xl:table-cell" title={user.company_size || ' - '}>
+                    {user.company_size || ' - '}
+                  </td>
+                  <td className="px-2 py-2 border-r border-blue-200 truncate max-w-[80px] hidden xl:table-cell" title={user.location || ' - '}>
+                    {user.location || ' - '}
+                  </td>
+                  <td className="px-2 py-2 border-r border-blue-200 truncate max-w-[80px] hidden 2xl:table-cell" title={user.created_at ? new Date(user.created_at).toLocaleDateString() : ' - '}>
+                    {user.created_at ? new Date(user.created_at).toLocaleDateString() : ' - '}
+                  </td>
+                  <td className="px-2 py-2 border-r border-blue-200 truncate max-w-[80px] hidden lg:table-cell" title={user.phone_number || ' - '}>
+                    {user.contact_person_phone || ' - '}
+                  </td>
+                  <td className="px-2 py-2">
+                    <div className="flex space-x-1">
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
                           alert(`Edit user ${user.contact_person_name} (ID: ${user.id})`);
                         }}
-                        className="px-2 py-1 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
+                        className="px-1 py-1 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
                       >
-                        <Edit size={16} />
+                        <Edit size={14} />
                       </button>
                       <button
                         onClick={(e) => {
                           e.stopPropagation();
                           openModal(user.id);
                         }}
-                        className="px-2 py-1 bg-red-500 text-white rounded-lg hover:bg-red-600"
+                        className="px-1 py-1 bg-red-500 text-white rounded-lg hover:bg-red-600"
                       >
-                        <Trash2 size={16} />
+                        <Trash2 size={14} />
                       </button>
                     </div>
                   </td>
@@ -444,16 +489,21 @@ const getTileColor = (index: number) => {
   return colors[index % colors.length] || 'bg-blue-100';
 };
 
-// Add custom CSS for the progress bar animation
+// Add custom CSS for the progress bar animation and truncation
 const style = document.createElement('style');
 style.textContent = `
   @keyframes progress {
-    0% { transform: translateX(-100%); }
+    0% {  transform: translateX(-100%); }
     50% { transform: translateX(100%); }
     100% { transform: translateX(-100%); }
   }
   .animate-progress {
     animation: progress 2s linear infinite;
+  }
+  .truncate {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 `;
 document.head.appendChild(style);
