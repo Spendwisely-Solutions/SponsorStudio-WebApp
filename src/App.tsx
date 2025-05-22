@@ -60,7 +60,7 @@ interface Profile {
 }
 
 const App: React.FC = () => {
-  const { user, profile, isProfileComplete, showProfileDialog, setShowProfileDialog } = useAuth();
+  const { user, profile, isProfileComplete, setShowProfileDialog } = useAuth();
   const [clientLogos, setClientLogos] = useState<ClientLogo[]>([]);
   const [successStories, setSuccessStories] = useState<SuccessStory[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
@@ -76,10 +76,24 @@ const App: React.FC = () => {
     organization_type: '',
   });
   const [showThankYou, setShowThankYou] = useState<boolean>(false);
+  const [shouldShowProfileDialog, setShouldShowProfileDialog] = useState<boolean>(false);
 
+  // Initialize and update dialog visibility
   useEffect(() => {
-    console.log('App mounted', { user, profile, isProfileComplete, showProfileDialog });
-    
+    const hasShownDialog = sessionStorage.getItem('profileDialogShown');
+    console.log('Dialog visibility check:', { user, isProfileComplete, hasShownDialog, shouldShowProfileDialog });
+
+    if (!isProfileComplete && user && !hasShownDialog && !shouldShowProfileDialog) {
+      setShouldShowProfileDialog(true);
+      setShowProfileDialog(true);
+    } else if (shouldShowProfileDialog && (isProfileComplete || hasShownDialog)) {
+      setShouldShowProfileDialog(false);
+      setShowProfileDialog(false);
+    }
+  }, [user, isProfileComplete, shouldShowProfileDialog, setShowProfileDialog]);
+
+  // Fetch data (client logos and success stories)
+  useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
       setError(null);
@@ -93,7 +107,7 @@ const App: React.FC = () => {
       }
     };
     fetchData();
-  }, []);
+  }, []); // Run only once on mount
 
   const fetchClientLogos = async () => {
     const { data, error } = await supabase.from('client_logos').select('*');
@@ -139,7 +153,7 @@ const App: React.FC = () => {
           <div className="relative w-full max-w-md">
             <button
               onClick={() => setShowAuthForm(false)}
-              className="absolute top-4 right-4 text-gray-500 hover:text-gray-700 z-10 will-change-transform md:top-3 md:right-10 "
+              className="absolute top-4 right-4 text-gray-500 hover:text-gray-700 z-10 will-change-transform md:top-3 md:right-10"
             >
               <X className="h-6 w-6" />
             </button>
@@ -148,8 +162,15 @@ const App: React.FC = () => {
         </div>
       )}
 
-      {showProfileDialog && !isProfileComplete && (
-        <ProfileCompletionDialog onClose={() => setShowProfileDialog(false)} />
+      {shouldShowProfileDialog && !isProfileComplete && (
+        <ProfileCompletionDialog
+          onClose={() => {
+            console.log('Dialog closed explicitly');
+            setShouldShowProfileDialog(false);
+            setShowProfileDialog(false);
+            sessionStorage.setItem('profileDialogShown', 'true');
+          }}
+        />
       )}
 
       <NavBar
