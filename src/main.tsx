@@ -13,6 +13,7 @@ import ProfilePage from './components/ProfilePage';
 import './index.css';
 import ResetPassword from './components/ResetPassword';
 import Logout from './components/Logout';
+import SuccessPage from './components/dashboard/CreatorDashboard/Success';
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
@@ -25,6 +26,7 @@ createRoot(document.getElementById('root')!).render(
           <Route path="/admin" element={<AdminLogin />} />
           <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/logout" element={<Logout />} />
+          <Route path='/success' element={<SuccessPage />} />
           <Route 
             path="/admin/*" 
             element={
