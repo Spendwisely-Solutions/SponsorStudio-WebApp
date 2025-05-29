@@ -102,5 +102,6 @@ export default function SuccessPage({ onSubmit }: SuccessPageProps) {
         </div>
       )}
     </div>
+    
   );
 }

@@ -593,7 +593,6 @@ export default function CreatorDashboard({ onUpdateProfile }: BrandDashboardProp
 
   return (
     <div className="pb-14 sm:pb-0">
-      <Toaster />
       <Modal
         isOpen={showDeleteModal}
         onClose={() => {
