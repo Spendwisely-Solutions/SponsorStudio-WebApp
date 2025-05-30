@@ -1,11 +1,9 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   MapPin,
   Calendar,
   Users,
   DollarSign,
-  ChevronUp,
-  ChevronDown,
   BarChart3,
   Eye,
   EyeOff,
@@ -13,7 +11,10 @@ import {
   Trash2,
   AlertCircle,
   Link as LinkIcon,
+  ChevronDown,
+  ChevronUp,
 } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import type { Database } from '../../../lib/database.types';
 
 type Opportunity = Database['public']['Tables']['opportunities']['Row'];
@@ -26,32 +27,32 @@ type Match = Database['public']['Tables']['matches']['Row'] & {
 interface EventCardProps {
   opportunity: Opportunity;
   matches: Match[];
-  isExpanded: boolean;
   categories: Category[];
   onEdit: () => void;
   onDelete: () => void;
   onToggleStatus: () => void;
-  onToggleExpand: () => void;
   onViewAnalytics: () => void;
-  onUpdateMatchStatus: (matchId: string, status: 'accepted' | 'rejected') => void;
-  processingMatches: Record<string, { accept: boolean; decline: boolean }>;
 }
 
 function getVerificationStatusBadge(status: string) {
   switch (status) {
     case 'pending':
       return (
-        <span className="px-2 py-0.5 text-xs rounded-full bg-yellow-100 text-yellow-800">
-          Pending Verification
+        <span className="px-3 py-1 text-xs font-semibold rounded-full bg-gradient-to-r from-yellow-400 to-yellow-600 text-white shadow-sm">
+          Pending
         </span>
       );
     case 'approved':
       return (
-        <span className="px-2 py-0.5 text-xs rounded-full bg-green-100 text-green-800">Verified</span>
+        <span className="px-3 py-1 text-xs font-semibold rounded-full bg-gradient-to-r from-green-400 to-green-600 text-white shadow-sm">
+          Verified
+        </span>
       );
     case 'rejected':
       return (
-        <span className="px-2 py-0.5 text-xs rounded-full bg-red-100 text-red-800">Rejected</span>
+        <span className="px-3 py-1 text-xs font-semibold rounded-full bg-gradient-to-r from-red-400 to-red-600 text-white shadow-sm">
+          Rejected
+        </span>
       );
     default:
       return null;
@@ -61,16 +62,14 @@ function getVerificationStatusBadge(status: string) {
 export default function EventCard({
   opportunity,
   matches,
-  isExpanded,
   categories,
   onEdit,
   onDelete,
   onToggleStatus,
-  onToggleExpand,
   onViewAnalytics,
-  onUpdateMatchStatus,
-  processingMatches,
 }: EventCardProps) {
+  const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false);
+
   const getCategoryName = (categoryId: string) => {
     const category = categories.find((cat) => cat.id === categoryId);
     return category ? category.name : 'Unknown Category';
@@ -81,103 +80,263 @@ export default function EventCard({
     return videoExtensions.some((ext) => url.toLowerCase().endsWith(ext));
   };
 
+  // Background logic
+  const firstImageUrl = opportunity.media_urls?.find((url) => !isVideoUrl(url));
+  const hasImageBackground = !!firstImageUrl;
+  const backgroundStyle = hasImageBackground
+    ? {
+        backgroundImage: `linear-gradient(to bottom, rgba(0,0,0,0.3), rgba(0,0,0,0.6)), url(${firstImageUrl})`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+      }
+    : {
+        background: 'linear-gradient(135deg, #ffffff 0%, #f3f4f6 100%)',
+      };
+
+  // Framer Motion variants
+  const cardVariants = {
+    hidden: { opacity: 0, y: 30, rotateX: 10 },
+    visible: { opacity: 1, y: 0, rotateX: 0, transition: { duration: 0.5, ease: 'easeOut' } },
+    hover: { scale: 1.02, transition: { duration: 0.3 } },
+  };
+
+  const buttonVariants = {
+    hover: { scale: 1.15, rotate: 5, transition: { duration: 0.2 } },
+    tap: { scale: 0.9 },
+  };
+
+  const toggleVariants = {
+    hover: { scale: 1.1, transition: { duration: 0.2 } },
+    tap: { scale: 0.9 },
+  };
+
+  const tooltipVariants = {
+    hidden: { opacity: 0, y: -10 },
+    visible: { opacity: 1, y: 0, transition: { duration: 0.2 } },
+  };
+
   return (
-    <div className="bg-white rounded-lg shadow-sm overflow-hidden">
-      <div className="p-4 sm:p-6">
-        <div className="flex flex-col sm:flex-row justify-between items-start mb-4">
-          <div className="mb-4 sm:mb-0">
-            <div className="flex flex-wrap items-center mb-1">
-              <h3 className="text-lg sm:text-xl font-bold text-gray-800 mr-2">
-                {opportunity.title}
-              </h3>
-              <span
-                className={`px-2 py-0.5 text-xs rounded-full ${
-                  opportunity.status === 'active'
-                    ? 'bg-green-100 text-green-800'
-                    : 'bg-gray-100 text-gray-800'
+    <motion.div
+      className="rounded-2xl shadow-lg overflow-hidden border border-gray-200/50 w-full"
+      style={backgroundStyle}
+      variants={cardVariants}
+      initial="hidden"
+      animate="visible"
+      whileHover="hover"
+    >
+      <div
+        className={`p-6 sm:p-8 ${hasImageBackground ? 'bg-gradient-to-t from-black/60 to-transparent backdrop-blur-sm' : 'bg-transparent'}`}
+      >
+        {/* Header */}
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
+          <div className="flex-1">
+            <div className="flex flex-wrap items-center gap-2 mb-2">
+              <h3
+                className={`text-xl sm:text-2xl font-extrabold truncate ${
+                  hasImageBackground ? 'text-white' : 'text-gray-900'
                 }`}
               >
-                {opportunity.status === 'active' ? 'Active' : 'Paused'}
-              </span>
-              <span className="ml-2">
-                {getVerificationStatusBadge(opportunity.verification_status)}
-              </span>
+                {opportunity.title}
+              </h3>
+              <div className="flex gap-2">
+                <span
+                  className={`px-3 py-1 text-xs font-semibold rounded-full ${
+                    opportunity.status === 'active'
+                      ? 'bg-gradient-to-r from-indigo-400 to-indigo-600 text-white'
+                      : 'bg-gray-200 text-gray-800'
+                  } shadow-sm`}
+                >
+                  {opportunity.status === 'active' ? 'Active' : 'Paused'}
+                </span>
+                <span>{getVerificationStatusBadge(opportunity.verification_status)}</span>
+              </div>
             </div>
-            <p className="text-sm text-gray-600">
+            <p
+              className={`text-sm font-medium ${
+                hasImageBackground ? 'text-gray-300' : 'text-gray-600'
+              }`}
+            >
               {getCategoryName(opportunity.category_id)}
             </p>
           </div>
-          <div className="flex space-x-2">
-            <button
-              onClick={onViewAnalytics}
-              className="p-2 text-gray-500 hover:text-gray-700 rounded-full hover:bg-gray-100"
-              title="View Analytics"
+          <motion.div
+            className="group relative"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.2 }}
+          >
+            <span
+              className={`text-sm font-semibold ${
+                hasImageBackground ? 'text-indigo-300' : 'text-indigo-600'
+              }`}
             >
-              <BarChart3 className="w-5 h-5" />
-            </button>
-            <button
-              onClick={onToggleStatus}
-              className="p-2 text-gray-500 hover:text-gray-700 rounded-full hover:bg-gray-100"
-              title={opportunity.status === 'active' ? 'Pause Opportunity' : 'Activate Opportunity'}
-              disabled={opportunity.verification_status !== 'approved'}
+              {matches.length} {matches.length === 1 ? 'match' : 'matches'}
+            </span>
+            <motion.div
+              className="absolute hidden group-hover:block bg-indigo-900 text-white text-xs rounded-lg py-1 px-2 -top-8 left-1/2 transform -translate-x-1/2 shadow-lg z-10"
+              variants={tooltipVariants}
+              initial="hidden"
+              animate="visible"
             >
-              {opportunity.status === 'active' ? (
-                <EyeOff className="w-5 h-5" />
-              ) : (
-                <Eye className="w-5 h-5" />
-              )}
-            </button>
-            <button
-              onClick={onEdit}
-              className="p-2 text-gray-500 hover:text-gray-700 rounded-full hover:bg-gray-100"
-              title="Edit Opportunity"
-            >
-              <Edit className="w-5 h-5" />
-            </button>
-            <button
-              onClick={onDelete}
-              className="p-2 text-gray-500 hover:text-red-500 rounded-full hover:bg-gray-100"
-              title="Delete Opportunity"
-            >
-              <Trash2 className="w-5 h-5" />
-            </button>
-          </div>
+              View details in Matches section
+            </motion.div>
+          </motion.div>
         </div>
+
+        {/* Action Buttons */}
+        <motion.div
+          className="flex justify-end space-x-2 mb-6"
+          initial={{ opacity: 0, x: 20 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ delay: 0.3 }}
+        >
+          <motion.button
+            onClick={onViewAnalytics}
+            className={`p-2 rounded-full transition-all duration-300 ${
+              hasImageBackground
+                ? 'text-gray-200 hover:text-white hover:bg-indigo-500/50'
+                : 'text-gray-600 hover:text-white hover:bg-indigo-600'
+            }`}
+            title="View Analytics"
+            variants={buttonVariants}
+            whileHover="hover"
+            whileTap="tap"
+          >
+            <BarChart3 className="w-5 h-5" />
+          </motion.button>
+          <motion.button
+            onClick={onToggleStatus}
+            className={`p-2 rounded-full transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed ${
+              hasImageBackground
+                ? 'text-gray-200 hover:text-white hover:bg-indigo-500/50'
+                : 'text-gray-600 hover:text-white hover:bg-indigo-600'
+            }`}
+            title={opportunity.status === 'active' ? 'Pause Opportunity' : 'Activate Opportunity'}
+            disabled={opportunity.verification_status !== 'approved'}
+            variants={buttonVariants}
+            whileHover="hover"
+            whileTap="tap"
+          >
+            {opportunity.status === 'active' ? (
+              <EyeOff className="w-5 h-5" />
+            ) : (
+              <Eye className="w-5 h-5" />
+            )}
+          </motion.button>
+          <motion.button
+            onClick={onEdit}
+            className={`p-2 rounded-full transition-all duration-300 ${
+              hasImageBackground
+                ? 'text-gray-200 hover:text-white hover:bg-indigo-500/50'
+                : 'text-gray-600 hover:text-white hover:bg-indigo-600'
+            }`}
+            title="Edit Opportunity"
+            variants={buttonVariants}
+            whileHover="hover"
+            whileTap="tap"
+          >
+            <Edit className="w-5 h-5" />
+          </motion.button>
+          <motion.button
+            onClick={onDelete}
+            className={`p-2 rounded-full transition-all duration-300 ${
+              hasImageBackground
+                ? 'text-gray-200 hover:text-white hover:bg-red-500/50'
+                : 'text-gray-600 hover:text-white hover:bg-red-600'
+            }`}
+            title="Delete Opportunity"
+            variants={buttonVariants}
+            whileHover="hover"
+            whileTap="tap"
+          >
+            <Trash2 className="w-5 h-5" />
+          </motion.button>
+        </motion.div>
+
+        {/* Verification Alerts */}
         {opportunity.verification_status === 'pending' && (
-          <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg flex items-center">
-            <AlertCircle className="w-5 h-5 text-yellow-500 mr-2 flex-shrink-0" />
-            <p className="text-sm text-yellow-700">
-              This Opportunity is pending verification by our team. It will be visible to
-              brands once approved.
-            </p>
-          </div>
+          <motion.div
+            className="mb-6 p-4 bg-yellow-100/80 border-l-4 border-yellow-500 rounded-r-lg backdrop-blur-sm"
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.4 }}
+          >
+            <div className="flex items-center">
+              <AlertCircle className="w-5 h-5 text-yellow-600 mr-3 flex-shrink-0" />
+              <p className="text-sm text-yellow-800 font-medium">
+                Pending verification. Visible to brands once approved.
+              </p>
+            </div>
+          </motion.div>
         )}
         {opportunity.verification_status === 'rejected' && (
-          <div className="mb-4 p-3 bg-red-50 border border-red-200 rounded-lg flex items-center">
-            <AlertCircle className="w-5 h-5 text-red-500 mr-2 flex-shrink-0" />
-            <div>
-              <p className="text-sm text-red-700 font-medium">
-                This Opportunity was rejected during verification.
-              </p>
-              {opportunity.rejection_reason && (
-                <p className="text-sm text-red-700 mt-1">
-                  Reason: {opportunity.rejection_reason}
+          <motion.div
+            className="mb-6 p-4 bg-red-100/80 border-l-4 border-red-500 rounded-r-lg backdrop-blur-sm"
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.4 }}
+          >
+            <div className="flex items-center">
+              <AlertCircle className="w-5 h-5 text-red-600 mr-3 flex-shrink-0" />
+              <div>
+                <p className="text-sm text-red-800 font-medium">
+                  Rejected during verification.
                 </p>
-              )}
+                {opportunity.rejection_reason && (
+                  <p className="text-sm text-red-800 mt-1">
+                    Reason: {opportunity.rejection_reason}
+                  </p>
+                )}
+              </div>
             </div>
-          </div>
+          </motion.div>
         )}
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 mb-4">
-          <div className="flex items-center">
-            <MapPin className="w-4 h-4 text-gray-500 mr-2 flex-shrink-0" />
-            <span className="text-sm text-gray-600 truncate">
+
+        {/* Details Grid */}
+        <motion.div
+          className={`grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4 mb-6 p-4 rounded-xl ${
+            hasImageBackground ? 'bg-white/10 backdrop-blur-md' : 'bg-gray-100'
+          }`}
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.4 }}
+        >
+          <motion.div
+            className="flex items-center group"
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.5 }}
+          >
+            <MapPin
+              className={`w-4 h-4 mr-2 flex-shrink-0 ${
+                hasImageBackground ? 'text-gray-300' : 'text-gray-500'
+              } group-hover:text-indigo-500 transition-colors`}
+            />
+            <span
+              className={`text-sm truncate ${
+                hasImageBackground ? 'text-gray-200' : 'text-gray-700'
+              }`}
+            >
               {opportunity.location}
             </span>
-          </div>
+          </motion.div>
           {opportunity.start_date && (
-            <div className="flex items-center">
-              <Calendar className="w-4 h-4 text-gray-500 mr-2 flex-shrink-0" />
-              <span className="text-sm text-gray-600 truncate">
+            <motion.div
+              className="flex items-center group"
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.6 }}
+            >
+              <Calendar
+                className={`w-4 h-4 mr-2 flex-shrink-0 ${
+                  hasImageBackground ? 'text-gray-300' : 'text-gray-500'
+                } group-hover:text-indigo-500 transition-colors`}
+              />
+              <span
+                className={`text-sm truncate ${
+                  hasImageBackground ? 'text-gray-200' : 'text-gray-700'
+                }`}
+              >
                 {opportunity.end_date &&
                 new Date(opportunity.start_date).toDateString() ===
                   new Date(opportunity.end_date).toDateString()
@@ -188,179 +347,207 @@ export default function EventCard({
                         : ''
                     }`}
               </span>
-            </div>
+            </motion.div>
           )}
           {opportunity.reach && (
-            <div className="flex items-center">
-              <Users className="w-4 h-4 text-gray-500 mr-2 flex-shrink-0" />
-              <span className="text-sm text-gray-600">
+            <motion.div
+              className="flex items-center group"
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.7 }}
+            >
+              <Users
+                className={`w-4 h-4 mr-2 flex-shrink-0 ${
+                  hasImageBackground ? 'text-gray-300' : 'text-gray-500'
+                } group-hover:text-indigo-500 transition-colors`}
+              />
+              <span
+                className={`text-sm ${
+                  hasImageBackground ? 'text-gray-200' : 'text-gray-700'
+                }`}
+              >
                 {opportunity.reach.toLocaleString()} reach
               </span>
-            </div>
+            </motion.div>
           )}
           {opportunity.price_range && (
-            <div className="flex items-center">
-              <DollarSign className="w-4 h-4 text-gray-500 mr-2 flex-shrink-0" />
-              <span className="text-sm text-gray-600 truncate">
+            <motion.div
+              className="flex items-center group"
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.8 }}
+            >
+              <DollarSign
+                className={`w-4 h-4 mr-2 flex-shrink-0 ${
+                  hasImageBackground ? 'text-gray-300' : 'text-gray-500'
+                } group-hover:text-indigo-500 transition-colors`}
+              />
+              <span
+                className={`text-sm truncate ${
+                  hasImageBackground ? 'text-gray-200' : 'text-gray-700'
+                }`}
+              >
                 {typeof opportunity.price_range === 'object'
                   ? `₹${opportunity.price_range.min} - ₹${opportunity.price_range.max}`
                   : 'Contact for pricing'}
               </span>
-            </div>
+            </motion.div>
           )}
-        </div>
-        <div className="flex flex-wrap gap-2 mb-4">
+        </motion.div>
+
+        {/* Links */}
+        <motion.div
+          className="flex flex-wrap gap-4 mb-6"
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.9 }}
+        >
           {opportunity.calendly_link && (
-            <div className="flex items-center text-sm text-[#2B4B9B]">
+            <motion.a
+              href={opportunity.calendly_link}
+              target="_blank"
+              rel="noopener noreferrer"
+              className={`flex items-center text-sm font-medium ${
+                hasImageBackground
+                  ? 'text-indigo-300 hover:text-indigo-100'
+                  : 'text-indigo-600 hover:text-indigo-800'
+              } transition-colors`}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 1.0 }}
+            >
               <Calendar className="w-4 h-4 mr-1" />
-              <span>Calendly Link Available</span>
-            </div>
+              Schedule a Call
+            </motion.a>
           )}
           {opportunity.sponsorship_brochure_url && (
-            <div className="flex items-center text-sm text-[#2B4B9B]">
+            <motion.a
+              href={opportunity.sponsorship_brochure_url}
+              target="_blank"
+              rel="noopener noreferrer"
+              className={`flex items-center text-sm font-medium ${
+                hasImageBackground
+                  ? 'text-indigo-300 hover:text-indigo-100'
+                  : 'text-indigo-600 hover:text-indigo-800'
+              } transition-colors`}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 1.1 }}
+            >
               <LinkIcon className="w-4 h-4 mr-1" />
-              <a
-                href={opportunity.sponsorship_brochure_url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="underline"
-              >
-                Sponsorship Brochure Available
-              </a>
-            </div>
+              View Sponsorship Brochure
+            </motion.a>
           )}
-        </div>
+        </motion.div>
+
+        {/* Media */}
         {opportunity.media_urls && opportunity.media_urls.length > 0 && (
-          <div className="mt-4">
-            <h4 className="text-sm font-medium text-gray-700">Media:</h4>
-            <div className="flex flex-wrap gap-2 mt-2">
+          <motion.div
+            className="mb-6"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 1.2 }}
+          >
+            <h4
+              className={`text-sm font-semibold mb-3 ${
+                hasImageBackground ? 'text-gray-200' : 'text-gray-800'
+              }`}
+            >
+              Media
+            </h4>
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
               {opportunity.media_urls.map((url, index) => (
-                <div key={index} className="relative">
+                <motion.div
+                  key={index}
+                  className="relative overflow-hidden rounded-lg"
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ delay: 1.3 + index * 0.1 }}
+                  whileHover={{ scale: 1.05, boxShadow: '0 8px 16px rgba(0,0,0,0.2)' }}
+                >
                   {isVideoUrl(url) ? (
                     <video
                       src={url}
                       controls
-                      className="w-20 h-20 sm:w-24 sm:h-24 object-cover rounded"
+                      className="w-full h-20 sm:h-24 md:h-28 object-cover"
                     />
                   ) : (
                     <img
                       src={url}
                       alt={`Media ${index + 1}`}
-                      className="w-20 h-20 sm:w-24 sm:h-24 object-cover rounded"
+                      className="w-full h-20 sm:h-24 md:h-28 object-cover"
                     />
                   )}
-                </div>
+                </motion.div>
               ))}
             </div>
-          </div>
+          </motion.div>
         )}
-        <p className="text-gray-600 mb-4">{opportunity.description}</p>
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center">
-          <div className="flex items-center mb-2 sm:mb-0">
-            <span className="text-sm font-medium text-gray-700 mr-2">
-              {matches.length} {matches.length === 1 ? 'match' : 'matches'}
-            </span>
-            {matches.length > 0 && (
-              <button
-                onClick={onToggleExpand}
-                className="text-[#2B4B9B] hover:text-[#1a2f61] text-sm flex items-center"
-              >
-                {isExpanded ? 'Hide' : 'View'}{' '}
-                {isExpanded ? (
-                  <ChevronUp className="w-4 h-4 ml-1" />
-                ) : (
-                  <ChevronDown className="w-4 h-4 ml-1" />
+
+        {/* Description */}
+        {opportunity.description && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 1.4 }}
+          >
+            <h4
+              className={`text-sm font-semibold mb-2 ${
+                hasImageBackground ? 'text-gray-200' : 'text-gray-800'
+              }`}
+            >
+              Description
+            </h4>
+            <div className="relative">
+              <AnimatePresence>
+                {!isDescriptionExpanded && (
+                  <motion.p
+                    className={`text-sm ${
+                      hasImageBackground ? 'text-gray-300' : 'text-gray-600'
+                    } line-clamp-3`}
+                    initial={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                  >
+                    {opportunity.description}
+                  </motion.p>
                 )}
-              </button>
-            )}
-          </div>
-        </div>
-      </div>
-      {isExpanded && matches.length > 0 && (
-        <div className="border-t border-gray-200 p-4 bg-gray-50">
-          <h4 className="font-medium text-gray-800 mb-2">Matches</h4>
-          <div className="space-y-3">
-            {matches.map((match) => (
-              <div
-                key={match.id}
-                className="bg-white p-3 rounded border border-gray-200"
-              >
-                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center">
-                  <div className="mb-2 sm:mb-0">
-                    <p className="font-medium">
-                      {match.profiles?.company_name || 'Unknown Company'}
-                    </p>
-                    <p className="text-sm text-gray-600">
-                      Status:{' '}
-                      <span
-                        className={`font-medium ${
-                          match.status === 'pending'
-                            ? 'text-yellow-600'
-                            : match.status === 'accepted'
-                            ? 'text-green-600'
-                            : match.status === 'rejected'
-                            ? 'text-red-600'
-                            : 'text-gray-600'
-                        }`}
-                      >
-                        {match.status.charAt(0).toUpperCase() + match.status.slice(1)}
-                      </span>
-                    </p>
-                    {match.profiles?.contact_person_name && (
-                      <p className="text-sm text-gray-600 truncate">
-                        Contact: {match.profiles.contact_person_name}
-                        {match.profiles.contact_person_phone &&
-                          ` (${match.profiles.contact_person_phone})`}
-                      </p>
-                    )}
-                    {match.profiles?.email && (
-                      <p className="text-sm text-gray-600 truncate">
-                        Email: {match.profiles.email}
-                      </p>
-                    )}
-                  </div>
-                  {match.status === 'pending' && (
-                    <div className="flex space-x-2">
-                      <button
-                        onClick={() => onUpdateMatchStatus(match.id, 'accepted')}
-                        disabled={processingMatches[match.id]?.accept}
-                        className={`p-1.5 bg-green-100 text-green-600 rounded-full hover:bg-green-200 ${
-                          processingMatches[match.id]?.accept
-                            ? 'opacity-50 cursor-not-allowed'
-                            : ''
-                        }`}
-                        title="Accept Match"
-                      >
-                        {processingMatches[match.id]?.accept ? (
-                          <RefreshCw className="w-4 h-4 animate-spin" />
-                        ) : (
-                          <Check className="w-4 h-4" />
-                        )}
-                      </button>
-                      <button
-                        onClick={() => onUpdateMatchStatus(match.id, 'rejected')}
-                        disabled={processingMatches[match.id]?.decline}
-                        className={`p-1.5 bg-red-100 text-red-600 rounded-full hover:bg-red-200 ${
-                          processingMatches[match.id]?.decline
-                            ? 'opacity-50 cursor-not-allowed'
-                            : ''
-                        }`}
-                        title="Reject Match"
-                      >
-                        {processingMatches[match.id]?.decline ? (
-                          <RefreshCw className="w-4 h-4 animate-spin" />
-                        ) : (
-                          <X className="w-4 h-4" />
-                        )}
-                      </button>
-                    </div>
+                {isDescriptionExpanded && (
+                  <motion.p
+                    className={`text-sm ${
+                      hasImageBackground ? 'text-gray-300' : 'text-gray-600'
+                    }`}
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                  >
+                    {opportunity.description}
+                  </motion.p>
+                )}
+              </AnimatePresence>
+              {opportunity.description.length > 150 && (
+                <motion.button
+                  onClick={() => setIsDescriptionExpanded(!isDescriptionExpanded)}
+                  className={`mt-2 text-sm font-medium ${
+                    hasImageBackground
+                      ? 'text-indigo-300 hover:text-indigo-100'
+                      : 'text-indigo-600 hover:text-indigo-800'
+                  } flex items-center`}
+                  variants={toggleVariants}
+                  whileHover="hover"
+                  whileTap="tap"
+                >
+                  {isDescriptionExpanded ? 'Read Less' : 'Read More'}
+                  {isDescriptionExpanded ? (
+                    <ChevronUp className="w-4 h-4 ml-1" />
+                  ) : (
+                    <ChevronDown className="w-4 h-4 ml-1" />
                   )}
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
-    </div>
+                </motion.button>
+              )}
+            </div>
+          </motion.div>
+        )}
+      </div>
+    </motion.div>
   );
 }
