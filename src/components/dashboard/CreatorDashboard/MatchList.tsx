@@ -125,7 +125,7 @@ export default function MatchList({
     }
   }, [matches]);
 
-  const initiatePayment = async (opportunityId: string, amount: number = 3000) => {
+  const initiatePayment = async (opportunityId: string, amount: number = 2500) => {
     try {
       const { data: existingPayment, error: checkError } = await supabase
         .from('payments')
@@ -506,7 +506,7 @@ export default function MatchList({
           const opportunity = oppMatches[0].opportunities;
           const isMissingOpportunity = oppId === 'missing_opportunity';
           const isPaid = paymentStatus[oppId] ?? false;
-          const paymentAmount = opportunity?.payment_amount ?? 3000;
+          const paymentAmount = opportunity?.payment_amount ?? 2500;
           const matchCount = oppMatches.length;
 
           return (
@@ -561,7 +561,7 @@ export default function MatchList({
               const opportunity = oppMatches[0].opportunities;
               const isMissingOpportunity = selectedOpportunityId === 'missing_opportunity';
               const isPaid = paymentStatus[selectedOpportunityId] ?? false;
-              const paymentAmount = opportunity?.payment_amount ?? 3000;
+              const paymentAmount = opportunity?.payment_amount ?? 2500;
 
               return (
                 <div>

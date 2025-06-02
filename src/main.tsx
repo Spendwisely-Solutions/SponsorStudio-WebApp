@@ -14,6 +14,7 @@ import './index.css';
 import ResetPassword from './components/ResetPassword';
 import Logout from './components/Logout';
 import SuccessPage from './components/dashboard/CreatorDashboard/Success';
+import Pricing from './components/Pricing';
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
@@ -27,6 +28,7 @@ createRoot(document.getElementById('root')!).render(
           <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/logout" element={<Logout />} />
           <Route path="/success" element={<SuccessPage />} />
+          <Route path='/pricing' element={<Pricing />} />
           <Route 
             path="/admin/*" 
             element={
