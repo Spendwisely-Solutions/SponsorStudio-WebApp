@@ -125,6 +125,44 @@ const Pricing: React.FC = () => {
     fetchSubscriptions();
   }, []);
 
+  const checkSubscriptionStatus = async (subscriptionId: string, tierName: string, maxAttempts = 5, interval = 3000) => {
+    console.log(`Checking subscription status for ${subscriptionId}, tier: ${tierName}`);
+    let attempts = 0;
+
+    while (attempts < maxAttempts) {
+      attempts++;
+      console.log(`Attempt ${attempts}/${maxAttempts} for subscriptionId: ${subscriptionId}`);
+
+      try {
+        const response = await axios.post('https://payment-gateway-serverless-lac.vercel.app/api/check-subscription-status', {
+          subscriptionId,
+        });
+
+        console.log('Check subscription response:', response.data);
+
+        if (response.data.success && response.data.status === 'active') {
+          setPaymentStatus(prev => ({ ...prev, [tierName]: 'active' }));
+          setPaymentError(prev => ({ ...prev, [tierName]: null }));
+          console.log(`Payment confirmed for ${tierName}, subscriptionId: ${subscriptionId}`);
+          return true;
+        } else if (response.data.success) {
+          console.log(`Subscription status: ${response.data.status}, retrying...`);
+        } else {
+          console.error('Check subscription error:', response.data.error);
+        }
+
+        await new Promise(resolve => setTimeout(resolve, interval));
+      } catch (error) {
+        console.error(`Error checking subscription status on attempt ${attempts}:`, error.message);
+        await new Promise(resolve => setTimeout(resolve, interval));
+      }
+    }
+
+    console.error(`Failed to confirm subscription after ${maxAttempts} attempts for ${subscriptionId}`);
+    setPaymentError(prev => ({ ...prev, [tierName]: 'Payment not confirmed. Please check your account or contact support.' }));
+    return false;
+  };
+
   const initiateSubscription = async (tier: PricingTier) => {
     if (tier.name === 'Free') {
       setPaymentStatus(prev => ({ ...prev, [tier.name]: 'active' }));
@@ -194,7 +232,7 @@ const Pricing: React.FC = () => {
         .insert({
           user_id: user.id,
           plan_name: tier.name,
-          amount: planAmount * 100, // Store plan amount in paise
+          amount: planAmount * 100,
           currency: 'INR',
           status: 'pending',
           razorpay_subscription_id: subscriptionId,
@@ -210,7 +248,7 @@ const Pricing: React.FC = () => {
 
       const options = {
         key: import.meta.env.VITE_RAZORPAY_KEY_ID,
-        amount: amount * 100, // Full plan amount in paise (e.g., 50000 for ₹500)
+        amount: amount * 100,
         currency,
         name: 'Sponsor Studio',
         description: `${tier.name} Plan (${isAnnual ? 'Annual' : 'Monthly'})`,
@@ -219,67 +257,11 @@ const Pricing: React.FC = () => {
         handler: async (response: any) => {
           try {
             console.log('Razorpay payment response:', JSON.stringify(response, null, 2));
-            // Validate response fields
-            if (!response.razorpay_payment_id || !response.razorpay_signature) {
-              throw new Error('Missing razorpay_payment_id or razorpay_signature in response');
-            }
-
-            // Use response.razorpay_order_id if available, otherwise fallback to orderId
-            const verifyOrderId = response.razorpay_order_id || orderId;
-            if (verifyOrderId !== orderId) {
-              console.warn('Order ID mismatch:', { responseOrderId: response.razorpay_order_id, originalOrderId: orderId });
-            }
-
-            // Clean inputs
-            const cleanPaymentId = response.razorpay_payment_id.trim();
-            const cleanSignature = response.razorpay_signature.trim();
-            const cleanOrderId = verifyOrderId.trim();
-
-            const verifyPayload = {
-              razorpay_order_id: cleanOrderId,
-              razorpay_payment_id: cleanPaymentId,
-              razorpay_signature: cleanSignature,
-              subscription_id: subscriptionId,
-              amount: amount, // Full plan amount
-            };
-            console.log('Verification payload:', JSON.stringify(verifyPayload, null, 2));
-
-            const verifyResponse = await axios.post('https://payment-gateway-serverless-lac.vercel.app/api/verify-post-subscription', verifyPayload);
-
-            if (verifyResponse.data.success) {
-              const { error: updateError } = await supabase
-                .from('subscriptions')
-                .update({
-                  status: 'active',
-                  razorpay_payment_id: cleanPaymentId,
-                  razorpay_signature: cleanSignature,
-                  updated_at: new Date().toISOString(),
-                })
-                .eq('id', subscription.id);
-
-              if (updateError) {
-                console.error('Supabase update error:', updateError.message);
-                throw new Error('Failed to update subscription');
-              }
-
-              console.log(`Subscription ${subscriptionId} activated in Supabase`);
-              setPaymentStatus(prev => ({ ...prev, [tier.name]: 'active' }));
-              setPaymentError(prev => ({ ...prev, [tier.name]: null }));
-            } else {
-              console.error('Verification failed:', verifyResponse.data.error, verifyResponse.data.details);
-              await supabase
-                .from('subscriptions')
-                .update({ status: 'failed' })
-                .eq('id', subscription.id);
-              setPaymentError(prev => ({ ...prev, [tier.name]: verifyResponse.data.error || 'Payment verification failed' }));
-            }
+            setPaymentError(prev => ({ ...prev, [tier.name]: null }));
+            await checkSubscriptionStatus(subscriptionId, tier.name);
           } catch (error: any) {
-            console.error(`Verification error for ${tier.name}:`, error.message, error.stack);
-            await supabase
-              .from('subscriptions')
-              .update({ status: 'failed' })
-              .eq('id', subscription.id);
-            setPaymentError(prev => ({ ...prev, [tier.name]: error.message || 'Error verifying payment' }));
+            console.error(`Error for ${tier.name}:`, error.message);
+            setPaymentError(prev => ({ ...prev, [tier.name]: 'Failed to confirm payment. Please check your account or contact support.' }));
           } finally {
             setPaymentInitiated(prev => ({ ...prev, [tier.name]: false }));
             setLockedBillingCycle(null);
@@ -293,6 +275,9 @@ const Pricing: React.FC = () => {
         theme: {
           color: '#2B4B9B',
         },
+        notes: {
+          subscription_id: subscriptionId, // Ensure notes include subscription_id
+        },
       };
 
       console.log('Razorpay options:', JSON.stringify(options, null, 2));
@@ -304,7 +289,6 @@ const Pricing: React.FC = () => {
           expectedAmount: amount,
           plan: tier.name,
           billingCycle,
-          razorpayOptions: options,
         });
         await supabase
           .from('subscriptions')
@@ -353,7 +337,7 @@ const Pricing: React.FC = () => {
         animate={{ opacity: 1 }}
         transition={{ duration: 0.8 }}
       >
-        <div className="text-center mb-12">
+        <motion.div className="text-center mb-12">
           <motion.h1
             className="text-4xl sm:text-5xl font-extrabold text-gray-900 mb-4"
             initial={{ opacity: 0, y: -20 }}
@@ -370,7 +354,7 @@ const Pricing: React.FC = () => {
           >
             Choose the plan that fits your needs. No hidden fees, cancel anytime.
           </motion.p>
-        </div>
+        </motion.div>
 
         <motion.div
           className="flex justify-center mb-8"
@@ -417,14 +401,14 @@ const Pricing: React.FC = () => {
               whileHover={tier.disabled ? {} : 'hover'}
               transition={{ delay: 0.1 * index }}
             >
-              <div className="h-full flex flex-col bg-white/80 p-6 backdrop-blur-sm">
+              <div className="bg-white/80 backdrop-blur-sm p-6 h-full flex flex-col">
                 {tier.isPopular && (
-                  <div className="absolute right-0 top-0 rounded-bl-lg bg-gray-900 px-4 py-1 text-sm font-medium text-white">
+                  <div className="absolute top-0 right-0 bg-indigo-600 text-white text-xs font-semibold px-3 py-1 rounded-bl-lg">
                     Most Popular
                   </div>
                 )}
-                <h3 className="mb-2 text-xl font-bold text-gray-900">{tier.name}</h3>
-                <p className="mb-4 text-sm text-gray-600">{tier.description}</p>
+                <h3 className="text-xl font-bold text-gray-900 mb-2">{tier.name}</h3>
+                <p className="text-sm text-gray-600 mb-4">{tier.description}</p>
                 <div className="mb-6">
                   <span className="text-3xl font-extrabold text-gray-900">
                     ₹{isAnnual ? Math.round(tier.annualPrice / 12) : tier.monthlyPrice}
@@ -435,39 +419,25 @@ const Pricing: React.FC = () => {
                   )}
                 </div>
                 {paymentError[tier.name] && (
-                  <p className="mb-4 text-sm text-red-600">{paymentError[tier.name]}</p>
+                  <p className="text-sm text-red-600 mb-4">{paymentError[tier.name]}</p>
                 )}
                 <motion.button
-                  className={`w-full rounded-full py-3 text-sm font-semibold transition-all ${
-                    paymentInitiated[tier.name] || tier.disabled
-                      ? 'cursor-not-allowed bg-gray-300 text-gray-500'
-                      : 'bg-gradient-to-r from-indigo-400 to-indigo-600 text-white shadow-sm hover:brightness-110'
-                  }`}
-                  disabled={paymentInitiated[tier.name] || tier.disabled}
                   onClick={() => initiateSubscription(tier)}
+                  className={`w-full py-3 rounded-full text-sm font-semibold transition-all ${
+                    tier.disabled || paymentInitiated[tier.name]
+                      ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                      : 'bg-gradient-to-r from-indigo-400 to-indigo-600 text-white hover:brightness-110 shadow-sm'
+                  }`}
                   variants={buttonVariants}
-                  whileHover={paymentInitiated[tier.name] || tier.disabled ? {} : 'hover'}
-                  whileTap={paymentInitiated[tier.name] || tier.disabled ? {} : 'tap'}
+                  whileHover={tier.disabled || paymentInitiated[tier.name] ? {} : 'hover'}
+                  whileTap={tier.disabled || paymentInitiated[tier.name] ? {} : 'tap'}
+                  disabled={tier.disabled || paymentInitiated[tier.name]}
                 >
                   {paymentInitiated[tier.name] ? (
                     <span className="flex items-center justify-center">
-                      <svg
-                        className="mr-2 h-5 w-5 animate-spin text-white"
-                        viewBox="0 0 24 24"
-                      >
-                        <circle
-                          className="opacity-25"
-                          cx="12"
-                          cy="12"
-                          r="10"
-                          stroke="currentColor"
-                          strokeWidth="4"
-                        />
-                        <path
-                          className="opacity-75"
-                          d="M4 12a8 8 0 018-8v8H4z"
-                          fill="currentColor"
-                        />
+                      <svg className="animate-spin h-5 w-5 mr-2 text-white" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
                       </svg>
                       Initiating...
                     </span>
@@ -477,10 +447,10 @@ const Pricing: React.FC = () => {
                     tier.cta
                   )}
                 </motion.button>
-                <ul className="mt-6 flex-1 space-y-3">
+                <ul className="mt-6 space-y-3 flex-1">
                   {tier.features.map((feature, i) => (
-                    <li className="flex items-center text-sm text-gray-600" key={i}>
-                      <Check className="mr-2 h-4 w-4 flex-shrink-0 text-green-500" />
+                    <li key={i} className="flex items-center text-sm text-gray-600">
+                      <Check className="w-4 h-4 text-green-500 mr-2 flex-shrink-0" />
                       <span>{feature}</span>
                     </li>
                   ))}
@@ -491,25 +461,21 @@ const Pricing: React.FC = () => {
         </div>
 
         <motion.div
-          className="mt-16 rounded-2xl bg-white/80 p-6 shadow-lg backdrop-blur-sm"
+          className="mt-16 bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg p-6"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
         >
-          <h2 className="mb-6 text-center text-2xl font-bold text-gray-900">
-            Compare Plans
-          </h2>
+          <h2 className="text-2xl font-bold text-gray-900 mb-6 text-center">Compare Plans</h2>
           <div className="overflow-x-auto">
             <table className="w-full text-sm text-gray-600">
               <thead>
                 <tr>
-                  <th className="px-4 py-3 text-left font-semibold text-gray-900">
-                    Feature
-                  </th>
-                  {pricingTiers.map(tier => (
+                  <th className="py-3 px-4 text-left font-semibold text-gray-900">Feature</th>
+                  {pricingTiers.map((tier) => (
                     <th
-                      className="px-4 py-3 text-center font-semibold text-gray-900"
                       key={tier.name}
+                      className="py-3 px-4 text-center font-semibold text-gray-900"
                     >
                       {tier.name}
                     </th>
@@ -526,18 +492,18 @@ const Pricing: React.FC = () => {
                   'API Access',
                   'Account Manager',
                 ].map((feature, index) => (
-                  <tr className="border-t border-gray-200" key={index}>
-                    <td className="px-4 py-3">{feature}</td>
-                    {pricingTiers.map(tier => {
-                      const hasFeature = tier.features.some(f =>
-                        f.toLowerCase().includes(feature.toLowerCase()),
+                  <tr key={index} className="border-t border-gray-200">
+                    <td className="py-3 px-4">{feature}</td>
+                    {pricingTiers.map((tier) => {
+                      const hasFeature = tier.features.some((f) =>
+                        f.toLowerCase().includes(feature.toLowerCase())
                       );
                       return (
-                        <td className="px-4 py-3 text-center" key={tier.name}>
+                        <td key={tier.name} className="py-3 px-4 text-center">
                           {hasFeature ? (
-                            <Check className="mx-auto h-5 w-5 text-green-500" />
+                            <Check className="w-5 h-5 text-green-500 mx-auto" />
                           ) : (
-                            <X className="mx-auto h-5 w-5 text-red-500" />
+                            <X className="w-5 h-5 text-red-500 mx-auto" />
                           )}
                         </td>
                       );
@@ -550,47 +516,44 @@ const Pricing: React.FC = () => {
         </motion.div>
 
         <motion.div
-          className="mx-auto mt-16 max-w-3xl"
+          className="mt-16 max-w-3xl mx-auto"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
         >
-          <h2 className="mb-6 text-center text-2xl font-bold text-gray-900">
+          <h2 className="text-2xl font-bold text-gray-900 mb-6 text-center">
             Frequently Asked Questions
           </h2>
           <div className="space-y-4">
             {faqs.map((faq, index) => (
               <motion.div
-                className="rounded-lg bg-white shadow-sm"
-                initial="hidden"
                 key={index}
-                transition={{ duration: 0.3 + index * 0.1 }}
+                className="bg-white rounded-lg shadow-sm"
                 variants={cardVariants}
+                initial="hidden"
+                animate="visible"
+                transition={{ duration: 0.3 + index * 0.1 }}
               >
                 <button
-                  className="flex w-full items-center justify-between p-4 text-left"
-                  onClick={() =>
-                    setExpandedFAQ(expandedFAQ === index ? null : index)
-                  }
+                  className="w-full p-4 text-left flex justify-between items-center"
+                  onClick={() => setExpandedFAQ(expandedFAQ === index ? null : index)}
                 >
-                  <span className="text-sm font-semibold text-gray-900">
-                    {faq.question}
-                  </span>
+                  <span className="text-sm font-semibold text-gray-900">{faq.question}</span>
                   <motion.div
                     animate={{ rotate: expandedFAQ === index ? 180 : 0 }}
                     transition={{ duration: 0.3 }}
                   >
-                    <ChevronDown className="h-5 w-5 text-gray-600" />
+                    <ChevronDown className="w-5 h-5 text-gray-600" />
                   </motion.div>
                 </button>
                 <AnimatePresence>
                   {expandedFAQ === index && (
                     <motion.div
-                      className="px-4 pb-4 text-sm text-gray-600"
-                      exit={{ height: 0, opacity: 0 }}
                       initial={{ height: 0, opacity: 0 }}
                       animate={{ height: 'auto', opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
                       transition={{ duration: 0.3 }}
+                      className="px-4 pb-4 text-sm text-gray-600"
                     >
                       {faq.answer}
                     </motion.div>
