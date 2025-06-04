@@ -280,6 +280,7 @@ const Pricing: React.FC = () => {
         }
 
         console.log(`Initiating Free plan for user ${user.id}`);
+        setPaymentInitiated((prev) => ({ ...prev, [tier.name]: true }));
         const { data, error } = await supabase
           .from("subscriptions")
           .upsert(
@@ -481,12 +482,12 @@ const Pricing: React.FC = () => {
           }
         },
         prefill: {
-          name: user.user_metadata?.name || "User",
-          email: user.email || "Pending",
+          name: user.user_metadata?.full_name || "User",
+          email: user.email || "user@example.com",
           contact: user.user_metadata?.phone || "+919999999999",
         },
         theme: {
-          color: "#2B4B4",
+          color: "#2B4B9B",
         },
         notes: {
           subscription_id: subscriptionId,
@@ -552,7 +553,7 @@ const Pricing: React.FC = () => {
 
   const buttonVariants = {
     hover: { scale: 1.1, transition: { duration: 0.2 } },
-    tap: { scale: 0.9 },
+    tap: { scale: 0.95, opacity: 0.8, transition: { duration: 0.1 } }, // Added tap animation
   };
 
   if (loading) {
@@ -648,18 +649,24 @@ const Pricing: React.FC = () => {
                   )}
                   <motion.button
                     onClick={() => !isCurrentPlan && !isDisabled && handlePlanSelection(tier)}
-                    className={`w-full py-3 rounded-full text-sm font-semibold transition-all ${
-                      isDisabled
+                    className={`w-full py-3 rounded-full text-sm font-semibold transition-all duration-200 ${
+                      isDisabled || paymentInitiated[tier.name]
                         ? "bg-gray-300 text-gray-500 cursor-not-allowed"
                         : "bg-gradient-to-r from-indigo-400 to-indigo-600 text-white hover:brightness-110 shadow-sm"
                     }`}
                     variants={buttonVariants}
-                    whileHover={isDisabled ? {} : "hover"}
-                    whileTap={isDisabled ? {} : "tap"}
-                    disabled={isDisabled}
+                    whileHover={isDisabled || paymentInitiated[tier.name] ? {} : "hover"}
+                    whileTap={isDisabled || paymentInitiated[tier.name] ? {} : "tap"}
+                    disabled={isDisabled || paymentInitiated[tier.name]}
+                    aria-label={paymentInitiated[tier.name] ? "Processing subscription" : buttonText}
                   >
                     {paymentInitiated[tier.name] ? (
-                      <span className="flex items-center justify-center">
+                      <motion.span
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        transition={{ duration: 0.2 }}
+                        className="flex items-center justify-center"
+                      >
                         <svg className="animate-spin h-5 w-5 mr-2 text-white" viewBox="0 0 24 24">
                           <circle
                             className="opacity-25"
@@ -671,10 +678,16 @@ const Pricing: React.FC = () => {
                           />
                           <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
                         </svg>
-                        Initiating...
-                      </span>
+                        Processing...
+                      </motion.span>
                     ) : (
-                      buttonText
+                      <motion.span
+                        initial={{ opacity: 1 }}
+                        animate={{ opacity: 1 }}
+                        transition={{ duration: 0.2 }}
+                      >
+                        {buttonText}
+                      </motion.span>
                     )}
                   </motion.button>
                   <ul className="mt-6 space-y-3 flex-1">
