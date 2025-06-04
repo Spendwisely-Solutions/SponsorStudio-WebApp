@@ -665,7 +665,7 @@ export default function ProfileSettings({ profile }: ProfileSettingsProps) {
               className="relative group cursor-pointer block"
               aria-label="Change profile picture"
             >
-              <div className="w-32 h-32 rounded-full overflow-hidden bg-gray-200 flex items-center justify-center ring-2 ring-[#2B4B9B]">
+              <div className="w-32 h-32 rounded-full overflow-hidden bg-gray-200 flex items-center justify-center">
                 {previewImage ? (
                   <img
                     src={previewImage}
