@@ -1,4 +1,5 @@
 import React, { useState, useCallback, useRef } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { updateProfile } from '../../lib/auth';
 import { useAuth } from '../../contexts/AuthContext';
 import { supabase } from '../../lib/supabase';
@@ -566,44 +567,105 @@ export default function ProfileSettings({ profile }: ProfileSettingsProps) {
 
   const isBrand = profile?.user_type === 'brand' || profile?.user_type === 'agency';
 
+  // Animation variants for sections
+  const sectionVariants = {
+    hidden: { opacity: 0, y: 20 },
+    visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: 'easeOut' } }
+  };
+
+  // Animation variants for buttons
+  const buttonVariants = {
+    hover: { scale: 1.05, transition: { duration: 0.2 } },
+    tap: { scale: 0.95 }
+  };
+
+  // Animation variants for modals
+  const modalVariants = {
+    hidden: { opacity: 0, scale: 0.8 },
+    visible: { opacity: 1, scale: 1, transition: { duration: 0.3, ease: 'easeOut' } },
+    exit: { opacity: 0, scale: 0.8, transition: { duration: 0.2 } }
+  };
+
   return (
-    <div className="bg-white rounded-lg shadow p-6 pb-14 sm:pb-6 relative">
-      <button
+    <div className="bg-white rounded-lg shadow-lg p-6 pb-14 sm:pb-6 relative w-full">
+      <motion.button
         onClick={handleLogout}
         className="block sm:hidden absolute top-2 right-2 p-2 bg-[#2B4B9B] text-white rounded-lg hover:bg-[#1a2f61] flex items-center"
+        variants={buttonVariants}
+        whileHover="hover"
+        whileTap="tap"
       >
         <LogOut className="w-4 h-4 mr-1" />
         <span className="text-sm">Logout</span>
-      </button>
-      <h2 className="text-2xl font-bold text-gray-800 mb-6">Profile Settings</h2>
+      </motion.button>
+      <motion.h2
+        className="text-3xl font-bold text-gray-800 mb-8 border-b-2 border-[#2B4B9B] pb-2"
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+      >
+        Profile Settings
+      </motion.h2>
 
-      {success && (
-        <div className="mb-6 p-4 bg-green-100 text-green-700 rounded-lg flex items-center justify-between">
-          <span>Profile updated successfully!</span>
-          <button onClick={() => setSuccess(false)} className="text-green-700">
-            <X className="w-5 h-5" />
-          </button>
-        </div>
-      )}
+      <AnimatePresence>
+        {success && (
+          <motion.div
+            className="mb-6 p-4 bg-green-100 text-green-700 rounded-lg flex items-center justify-between"
+            initial={{ opacity: 0, x: -50 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: 50 }}
+            transition={{ duration: 0.3 }}
+          >
+            <span>Profile updated successfully!</span>
+            <motion.button
+              onClick={() => setSuccess(false)}
+              className="text-green-700"
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.9 }}
+            >
+              <X className="w-5 h-5" />
+            </motion.button>
+          </motion.div>
+        )}
 
-      {error && (
-        <div className="mb-6 p-4 bg-red-100 text-red-700 rounded-lg flex items-center justify-between">
-          <span>{error}</span>
-          <button onClick={() => setError('')} className="text-red-700">
-            <X className="w-5 h-5" />
-          </button>
-        </div>
-      )}
+        {error && (
+          <motion.div
+            className="mb-6 p-4 bg-red-100 text-red-700 rounded-lg flex items-center justify-between"
+            initial={{ opacity: 0, x: -50 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: 50 }}
+            transition={{ duration: 0.3 }}
+          >
+            <span>{error}</span>
+            <motion.button
+              onClick={() => setError('')}
+              className="text-red-700"
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.9 }}
+            >
+              <X className="w-5 h-5" />
+            </motion.button>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
-      <form onSubmit={handleSubmit} className="space-y-6">
-        <div className="flex justify-center items-center my-6">
-          <div className="text-center">
+      <form onSubmit={handleSubmit} className="space-y-8">
+        <motion.div
+          className="flex justify-center items-center my-8"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.5 }}
+        >
+          <motion.div
+            className="text-center relative"
+            whileHover={{ scale: 1.05 }}
+          >
             <label
               htmlFor="profile_picture"
               className="relative group cursor-pointer block"
               aria-label="Change profile picture"
             >
-              <div className="w-32 h-32 rounded-full overflow-hidden bg-gray-200 flex items-center justify-center">
+              <div className="w-32 h-32 rounded-full overflow-hidden bg-gray-200 flex items-center justify-center ring-2 ring-[#2B4B9B]">
                 {previewImage ? (
                   <img
                     src={previewImage}
@@ -628,9 +690,12 @@ export default function ProfileSettings({ profile }: ProfileSettingsProps) {
                 )}
               </div>
               {!uploading && (
-                <div className="absolute bottom-2 right-2 w-8 h-8 bg-white rounded-full flex items-center justify-center shadow-md">
+                <motion.div
+                  className="absolute bottom-2 right-2 w-8 h-8 bg-white rounded-full flex items-center justify-center shadow-md"
+                  whileHover={{ rotate: 90 }}
+                >
                   <SquarePen className="w-5 h-5 text-gray-600" />
-                </div>
+                </motion.div>
               )}
               <div
                 className={`absolute inset-0 bg-gray-800 bg-opacity-50 flex items-center justify-center rounded-full transition-opacity ${
@@ -638,11 +703,13 @@ export default function ProfileSettings({ profile }: ProfileSettingsProps) {
                 }`}
               >
                 {uploading ? (
-                  <svg
+                  <motion.svg
                     className="animate-spin h-6 w-6 text-white"
                     xmlns="http://www.w3.org/2000/svg"
                     fill="none"
                     viewBox="0 0 24 24"
+                    animate={{ rotate: 360 }}
+                    transition={{ duration: 1, repeat: Infinity }}
                   >
                     <circle
                       className="opacity-25"
@@ -657,12 +724,17 @@ export default function ProfileSettings({ profile }: ProfileSettingsProps) {
                       fill="currentColor"
                       d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
                     ></path>
-                  </svg>
+                  </motion.svg>
                 ) : (
-                  <div className="flex items-center space-x-1">
+                  <motion.div
+                    className="flex items-center space-x-1"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    transition={{ duration: 0.2 }}
+                  >
                     <Camera className="w-5 h-5 text-white" />
                     <span className="text-sm text-white font-medium">Change</span>
-                  </div>
+                  </motion.div>
                 )}
               </div>
             </label>
@@ -676,52 +748,64 @@ export default function ProfileSettings({ profile }: ProfileSettingsProps) {
               disabled={uploading}
               ref={fileInputRef}
             />
-          </div>
-        </div>
+          </motion.div>
+        </motion.div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div>
-            <h3 className="text-lg font-medium text-gray-800 mb-4">Company Information</h3>
-
+        <motion.div
+          className="grid grid-cols-1 md:grid-cols-2 gap-8"
+          variants={sectionVariants}
+          initial="hidden"
+          animate="visible"
+        >
+          <motion.div className="bg-gray-50 p-6 rounded-lg shadow-sm" whileHover={{ boxShadow: '0 4px 20px rgba(0,0,0,0.1)' }}>
+            <motion.h3
+              className="text-xl font-semibold text-gray-800 mb-4 border-l-4 border-[#2B4B9B] pl-3"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.2 }}
+            >
+              Company Information
+            </motion.h3>
             <div className="space-y-4">
-              <div>
+              <div className="relative">
                 <label htmlFor="company_name" className="block text-sm font-medium text-gray-700 mb-1">
                   Company Name
                 </label>
-                <input
+                <motion.input
                   type="text"
                   id="company_name"
                   name="company_name"
                   value={formData.company_name}
                   onChange={handleInputChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-[#2B4B9B] focus:border-[#2B4B9B]"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-[#2B4B9B] focus:border-[#2B4B9B] transition-all"
+                  whileFocus={{ scale: 1.02 }}
                 />
               </div>
-
-              <div>
+              <div className="relative">
                 <label htmlFor="website" className="block text-sm font-medium text-gray-700 mb-1">
                   Website
                 </label>
-                <input
+                <motion.input
                   type="url"
                   id="website"
                   name="website"
                   value={formData.website}
                   onChange={handleInputChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-[#2B4B9B] focus:border-[#2B4B9B]"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-[#2B4B9B] focus:border-[#2B4B9B] transition-all"
+                  whileFocus={{ scale: 1.02 }}
                 />
               </div>
-
-              <div>
+              <div className="relative">
                 <label htmlFor="industry" className="block text-sm font-medium text-gray-700 mb-1">
                   Industry
                 </label>
-                <select
+                <motion.select
                   id="industry"
                   name="industry"
                   value={formData.industry}
                   onChange={handleInputChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-[#2B4B9B] focus:border-[#2B4B9B]"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-[#2B4B9B] focus:border-[#2B4B9B] transition-all"
+                  whileFocus={{ scale: 1.02 }}
                 >
                   <option value="">Select Industry</option>
                   <option value="Technology">Technology</option>
@@ -735,34 +819,34 @@ export default function ProfileSettings({ profile }: ProfileSettingsProps) {
                   <option value="Travel">Travel & Hospitality</option>
                   <option value="Real Estate">Real Estate</option>
                   <option value="Other">Other</option>
-                </select>
+                </motion.select>
               </div>
-
-              <div>
+              <div className="relative">
                 <label htmlFor="industry_details" className="block text-sm font-medium text-gray-700 mb-1">
                   Industry Details
                 </label>
-                <textarea
+                <motion.textarea
                   id="industry_details"
                   name="industry_details"
                   value={formData.industry_details}
                   onChange={handleInputChange}
                   rows={2}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-[#2B4B9B] focus:border-[#2B4B9B]"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-[#2B4B9B] focus:border-[#2B4B9B] transition-all"
                   placeholder="Please provide more specific details about your industry"
+                  whileFocus={{ scale: 1.02 }}
                 />
               </div>
-
-              <div>
+              <div className="relative">
                 <label htmlFor="company_size" className="block text-sm font-medium text-gray-700 mb-1">
                   Company Size
                 </label>
-                <select
+                <motion.select
                   id="company_size"
                   name="company_size"
                   value={formData.company_size}
                   onChange={handleInputChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-[#2B4B9B] focus:border-[#2B4B9B]"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-[#2B4B9B] focus:border-[#2B4B9B] transition-all"
+                  whileFocus={{ scale: 1.02 }}
                 >
                   <option value="">Select Company Size</option>
                   <option value="1-10">1-10 employees</option>
@@ -771,233 +855,274 @@ export default function ProfileSettings({ profile }: ProfileSettingsProps) {
                   <option value="201-500">201-500 employees</option>
                   <option value="501-1000">501-1000 employees</option>
                   <option value="1001+">1001+ employees</option>
-                </select>
+                </motion.select>
               </div>
-
-              <div>
+              <div className="relative">
                 <label htmlFor="location" className="block text-sm font-medium text-gray-700 mb-1">
                   Company Location
                 </label>
-                <input
+                <motion.input
                   type="text"
                   id="location"
                   name="location"
                   value={formData.location}
                   onChange={handleInputChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-[#2B4B9B] focus:border-[#2B4B9B]"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-[#2B4B9B] focus:border-[#2B4B9B] transition-all"
                   placeholder="City, Country"
+                  whileFocus={{ scale: 1.02 }}
                 />
               </div>
             </div>
-          </div>
+          </motion.div>
 
-          <div>
-            <h3 className="text-lg font-medium text-gray-800 mb-4">Contact Information</h3>
-
+          <motion.div className="bg-gray-50 p-6 rounded-lg shadow-sm" whileHover={{ boxShadow: '0 4px 20px rgba(0,0,0,0.1)' }}>
+            <motion.h3
+              className="text-xl font-semibold text-gray-800 mb-4 border-l-4 border-[#2B4B9B] pl-3"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.3 }}
+            >
+              Contact Information
+            </motion.h3>
             <div className="space-y-4">
-              <div>
+              <div className="relative">
                 <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
                   Email Address {formData.email_verified && <span className="text-green-600 text-xs">(Verified)</span>}
                 </label>
                 <div className="flex items-center space-x-2">
-                  <input
+                  <motion.input
                     type="email"
                     id="email"
                     name="email"
                     value={formData.email}
                     onChange={handleInputChange}
                     disabled={true}
-                    className="flex-1 px-3 py-2 border border-gray-300 rounded-lg bg-gray-100 cursor-not-allowed"
+                    className="flex-1 px-3 py-2 border border-gray-300 rounded-lg bg-gray-100 cursor-not-allowed transition-all"
+                    whileFocus={{ scale: 1.02 }}
                   />
                   {!formData.email_verified && (
-                    <button
+                    <motion.button
                       type="button"
                       onClick={sendEmailOtp}
                       disabled={emailOtpLoading}
                       className="px-3 py-2 bg-[#2B4B9B] text-white rounded-lg hover:bg-[#1a2f61] disabled:opacity-50"
+                      variants={buttonVariants}
+                      whileHover="hover"
+                      whileTap="tap"
                     >
                       {emailOtpLoading ? 'Sending...' : 'Verify'}
-                    </button>
+                    </motion.button>
                   )}
                 </div>
               </div>
-
-              <div>
+              <div className="relative">
                 <label htmlFor="contact_person_name" className="block text-sm font-medium text-gray-700 mb-1">
                   Contact Person Name
                 </label>
-                <input
+                <motion.input
                   type="text"
                   id="contact_person_name"
                   name="contact_person_name"
                   value={formData.contact_person_name}
                   onChange={handleInputChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-[#2B4B9B] focus:border-[#2B4B9B]"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-[#2B4B9B] focus:border-[#2B4B9B] transition-all"
+                  whileFocus={{ scale: 1.02 }}
                 />
               </div>
-
-              <div>
+              <div className="relative">
                 <label htmlFor="contact_person_position" className="block text-sm font-medium text-gray-700 mb-1">
                   Position/Title
                 </label>
-                <input
+                <motion.input
                   type="text"
                   id="contact_person_position"
                   name="contact_person_position"
                   value={formData.contact_person_position}
                   onChange={handleInputChange}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-[#2B4B9B] focus:border-[#2B4B9B]"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-[#2B4B9B] focus:border-[#2B4B9B] transition-all"
+                  whileFocus={{ scale: 1.02 }}
                 />
               </div>
-
-              <div>
+              <div className="relative">
                 <label htmlFor="contact_person_phone" className="block text-sm font-medium text-gray-700 mb-1">
                   Phone Number {formData.phone_number_verified && <span className="text-green-600 text-xs">(Verified)</span>}
                 </label>
                 <div className="flex items-center space-x-2">
-                  <input
+                  <motion.input
                     type="tel"
                     id="contact_person_phone"
                     name="contact_person_phone"
                     value={formData.contact_person_phone}
                     onChange={handleInputChange}
-                    className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-[#2B4B9B] focus:border-[#2B4B9B]"
+                    className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-[#2B4B9B] focus:border-[#2B4B9B] transition-all"
                     placeholder="+1234567890"
                     disabled={formData.phone_number_verified}
+                    whileFocus={{ scale: 1.02 }}
                   />
                   {!formData.phone_number_verified && (
-                    <button
+                    <motion.button
                       type="button"
                       onClick={sendPhoneOtp}
                       disabled={phoneOtpLoading || !formData.contact_person_phone}
                       className="px-3 py-2 bg-[#2B4B9B] text-white rounded-lg hover:bg-[#1a2f61] disabled:opacity-50"
+                      variants={buttonVariants}
+                      whileHover="hover"
+                      whileTap="tap"
                     >
                       {phoneOtpLoading ? 'Sending...' : 'Verify'}
-                    </button>
+                    </motion.button>
                   )}
                 </div>
               </div>
-
-              <div>
+              <div className="relative">
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   Social Media
                 </label>
                 <div className="space-y-2">
-                  <input
+                  <motion.input
                     type="url"
                     name="social_media_linkedin"
                     value={(formData.social_media as any)?.linkedin || ''}
                     onChange={handleInputChange}
                     placeholder="LinkedIn URL"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-[#2B4B9B] focus:border-[#2B4B9B]"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-[#2B4B9B] focus:border-[#2B4B9B] transition-all"
+                    whileFocus={{ scale: 1.02 }}
                   />
-                  <input
+                  <motion.input
                     type="url"
                     name="social_media_twitter"
                     value={(formData.social_media as any)?.twitter || ''}
                     onChange={handleInputChange}
                     placeholder="Twitter URL"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-[#2B4B9B] focus:border-[#2B4B9B]"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-[#2B4B9B] focus:border-[#2B4B9B] transition-all"
+                    whileFocus={{ scale: 1.02 }}
                   />
-                  <input
+                  <motion.input
                     type="url"
                     name="social_media_instagram"
                     value={(formData.social_media as any)?.instagram || ''}
                     onChange={handleInputChange}
                     placeholder="Instagram URL"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-[#2B4B9B] focus:border-[#2B4B9B]"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-[#2B4B9B] focus:border-[#2B4B9B] transition-all"
+                    whileFocus={{ scale: 1.02 }}
                   />
-                  <input
+                  <motion.input
                     type="url"
                     name="social_media_facebook"
                     value={(formData.social_media as any)?.facebook || ''}
                     onChange={handleInputChange}
                     placeholder="Facebook URL"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-[#2B4B9B] focus:border-[#2B4B9B]"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-[#2B4B9B] focus:border-[#2B4B9B] transition-all"
+                    whileFocus={{ scale: 1.02 }}
                   />
                 </div>
               </div>
             </div>
-          </div>
-        </div>
+          </motion.div>
+        </motion.div>
 
         {isBrand && (
           <>
-            <hr className="my-6 border-gray-200" />
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <h3 className="text-lg font-medium text-gray-800 mb-4">Marketing Information</h3>
-
+            <hr className="my-8 border-gray-200" />
+            <motion.div
+              className="grid grid-cols-1 md:grid-cols-2 gap-8"
+              variants={sectionVariants}
+              initial="hidden"
+              animate="visible"
+            >
+              <motion.div className="bg-gray-50 p-6 rounded-lg shadow-sm" whileHover={{ boxShadow: '0 4px 20px rgba(0,0,0,0.1)' }}>
+                <motion.h3
+                  className="text-xl font-semibold text-gray-800 mb-4 border-l-4 border-[#2B4B9B] pl-3"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.4 }}
+                >
+                  Marketing Information
+                </motion.h3>
                 <div className="space-y-4">
-                  <div>
+                  <div className="relative">
                     <label htmlFor="annual_marketing_budget" className="block text-sm font-medium text-gray-700 mb-1">
                       Annual Marketing Budget
                     </label>
-                    <input
+                    <motion.input
                       type="number"
                       id="annual_marketing_budget"
                       name="annual_marketing_budget"
                       value={formData.annual_marketing_budget}
                       onChange={handleInputChange}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-[#2B4B9B] focus:border-[#2B4B9B]"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-[#2B4B9B] focus:border-[#2B4B9B] transition-all"
+                      whileFocus={{ scale: 1.02 }}
                     />
                   </div>
-
-                  <div>
+                  <div className="relative group">
                     <label htmlFor="marketing_channels" className="block text-sm font-medium text-gray-700 mb-1">
                       Marketing Channels (comma separated)
                     </label>
-                    <input
+                    <motion.input
                       type="text"
                       id="marketing_channels"
                       value={formData.marketing_channels.join(', ')}
                       onChange={(e) => handleArrayInputChange(e, 'marketing_channels')}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-[#2B4B9B] focus:border-[#2B4B9B]"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-[#2B4B9B] focus:border-[#2B4B9B] transition-all"
                       placeholder="Social Media, Email, Events, etc."
+                      whileFocus={{ scale: 1.02 }}
                     />
+                    <div className="absolute hidden group-hover:block text-xs text-gray-500 mt-1">
+                      Enter channels separated by commas (e.g., Social Media, Email)
+                    </div>
                   </div>
-
-                  <div>
+                  <div className="relative group">
                     <label htmlFor="previous_sponsorships" className="block text-sm font-medium text-gray-700 mb-1">
                       Previous Sponsorships (comma separated)
                     </label>
-                    <textarea
+                    <motion.textarea
                       id="previous_sponsorships"
                       value={Array.isArray(formData.previous_sponsorships) ? formData.previous_sponsorships.join(', ') : formData.previous_sponsorships}
                       onChange={handlePreviousSponsorshipsChange}
                       rows={3}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-[#2B4B9B] focus:border-[#2B4B9B]"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-[#2B4B9B] focus:border-[#2B4B9B] transition-all"
                       placeholder="List previous events or organizations you've sponsored"
+                      whileFocus={{ scale: 1.02 }}
                     />
+                    <div className="absolute hidden group-hover:block text-xs text-gray-500 mt-1">
+                      Enter sponsorships separated by commas
+                    </div>
                   </div>
-
-                  <div>
+                  <div className="relative group">
                     <label htmlFor="sponsorship_goals" className="block text-sm font-medium text-gray-700 mb-1">
-                      Sponsorship Goals (comma separated)
+                      Marketing Goals (comma separated)
                     </label>
-                    <input
+                    <motion.input
                       type="text"
                       id="sponsorship_goals"
                       value={formData.sponsorship_goals.join(', ')}
                       onChange={(e) => handleArrayInputChange(e, 'sponsorship_goals')}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-[#2B4B9B] focus:border-[#2B4B9B]"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-[#2B4B9B] focus:border-[#2B4B9B] transition-all"
                       placeholder="Brand Awareness, Lead Generation, etc."
+                      whileFocus={{ scale: 1.02 }}
                     />
+                    <div className="absolute hidden group-hover:block text-xs text-gray-500 mt-1">
+                      Enter goals separated by commas
+                    </div>
                   </div>
                 </div>
-              </div>
-
-              <div>
-                <h3 className="text-lg font-medium text-gray-800 mb-4">Target Audience</h3>
-
+              </motion.div>
+              <motion.div className="bg-gray-50 p-6 rounded-lg shadow-sm" whileHover={{ boxShadow: '0 4px 20px rgba(0,0,0,0.1)' }}>
+                <motion.h3
+                  className="text-xl font-semibold text-gray-800 mb-4 border-l-4 border-[#2B4B9B] pl-3"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.5 }}
+                >
+                  Target Audience
+                </motion.h3>
                 <div className="space-y-4">
                   <div className="grid grid-cols-2 gap-4">
-                    <div>
+                    <div className="relative">
                       <label htmlFor="min_age" className="block text-sm font-medium text-gray-700 mb-1">
                         Min Age
                       </label>
-                      <input
+                      <motion.input
                         type="number"
                         id="min_age"
                         name="min_age"
@@ -1005,14 +1130,15 @@ export default function ProfileSettings({ profile }: ProfileSettingsProps) {
                         onChange={handleInputChange}
                         min="0"
                         max="100"
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-[#2B4B9B] focus:border-[#2B4B9B]"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-[#2B4B9B] focus:border-[#2B4B9B] transition-all"
+                        whileFocus={{ scale: 1.02 }}
                       />
                     </div>
-                    <div>
+                    <div className="relative">
                       <label htmlFor="max_age" className="block text-sm font-medium text-gray-700 mb-1">
                         Max Age
                       </label>
-                      <input
+                      <motion.input
                         type="number"
                         id="max_age"
                         name="max_age"
@@ -1020,115 +1146,134 @@ export default function ProfileSettings({ profile }: ProfileSettingsProps) {
                         onChange={handleInputChange}
                         min="0"
                         max="100"
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-[#2B4B9B] focus:border-[#2B4B9B]"
+                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-[#2B4B9B] focus:border-[#2B4B9B] transition-all"
+                        whileFocus={{ scale: 1.02 }}
                       />
                     </div>
                   </div>
-
-                  <div>
+                  <div className="relative">
                     <label className="block text-sm font-medium text-gray-700 mb-1">
                       Gender
                     </label>
                     <div className="flex space-x-4">
                       <label className="inline-flex items-center">
-                        <input
+                        <motion.input
                           type="radio"
                           name="gender"
                           value="male"
                           checked={(formData.target_audience as any)?.genders === 'male'}
                           onChange={handleGenderChange}
                           className="mr-2"
+                          whileHover={{ scale: 1.1 }}
                         />
                         Male
                       </label>
                       <label className="inline-flex items-center">
-                        <input
+                        <motion.input
                           type="radio"
                           name="gender"
                           value="female"
                           checked={(formData.target_audience as any)?.genders === 'female'}
                           onChange={handleGenderChange}
                           className="mr-2"
+                          whileHover={{ scale: 1.1 }}
                         />
                         Female
                       </label>
                       <label className="inline-flex items-center">
-                        <input
+                        <motion.input
                           type="radio"
                           name="gender"
                           value="other"
                           checked={(formData.target_audience as any)?.genders === 'other'}
                           onChange={handleGenderChange}
                           className="mr-2"
+                          whileHover={{ scale: 1.1 }}
                         />
                         Other
                       </label>
                     </div>
                   </div>
-
-                  <div>
+                  <div className="relative group">
                     <label htmlFor="interests" className="block text-sm font-medium text-gray-700 mb-1">
                       Interests (comma separated)
                     </label>
-                    <input
+                    <motion.input
                       type="text"
                       id="interests"
                       value={(formData.target_audience as any)?.interests?.join(', ') || ''}
                       onChange={handleInterestsChange}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-[#2B4B9B] focus:border-[#2B4B9B]"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-[#2B4B9B] focus:border-[#2B4B9B] transition-all"
                       placeholder="Technology, Fashion, Sports, etc."
+                      whileFocus={{ scale: 1.02 }}
                     />
+                    <div className="absolute hidden group-hover:block text-xs text-gray-500 mt-1">
+                      Enter interests separated by commas
+                    </div>
                   </div>
-
-                  <div>
+                  <div className="relative group">
                     <label htmlFor="locations" className="block text-sm font-medium text-gray-700 mb-1">
                       Target Locations (comma separated)
                     </label>
-                    <input
+                    <motion.input
                       type="text"
                       id="locations"
                       value={(formData.target_audience as any)?.locations?.join(', ') || ''}
                       onChange={handleLocationsChange}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-[#2B4B9B] focus:border-[#2B4B9B]"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-[#2B4B9B] focus:border-[#2B4B9B] transition-all"
                       placeholder="New York, London, Tokyo, etc."
+                      whileFocus={{ scale: 1.02 }}
                     />
+                    <div className="absolute hidden group-hover:block text-xs text-gray-500 mt-1">
+                      Enter locations separated by commas
+                    </div>
                   </div>
-
-                  <div>
+                  <div className="relative">
                     <label htmlFor="income_level" className="block text-sm font-medium text-gray-700 mb-1">
                       Income Level
                     </label>
-                    <select
+                    <motion.select
                       id="income_level"
                       value={(formData.target_audience as any)?.income_level || ''}
                       onChange={handleIncomeLevelChange}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-[#2B4B9B] focus:border-[#2B4B9B]"
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-[#2B4B9B] focus:border-[#2B4B9B] transition-all"
+                      whileFocus={{ scale: 1.02 }}
                     >
                       <option value="">Select Income Level</option>
                       <option value="low">Low Income</option>
                       <option value="middle">Middle Income</option>
                       <option value="high">High Income</option>
                       <option value="luxury">Luxury</option>
-                    </select>
+                    </motion.select>
                   </div>
                 </div>
-              </div>
-            </div>
+              </motion.div>
+            </motion.div>
           </>
         )}
 
-        <div className="flex justify-end">
-          <button
+        <div className="flex justify-end mt-8">
+          <motion.button
             type="submit"
             disabled={loading || uploading}
             className="inline-flex items-center px-4 py-2 bg-[#2B4B9B] text-white rounded-lg hover:bg-[#1a2f61] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#2B4B9B] disabled:opacity-50"
+            variants={buttonVariants}
+            whileHover="hover"
+            whileTap="tap"
           >
             {loading ? (
               <>
-                <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <motion.svg
+                  className="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  animate={{ rotate: 360 }}
+                  transition={{ duration: 1, repeat: Infinity }}
+                >
                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                </svg>
+                </motion.svg>
                 Saving...
               </>
             ) : (
@@ -1137,179 +1282,241 @@ export default function ProfileSettings({ profile }: ProfileSettingsProps) {
                 Save Profile
               </>
             )}
-          </button>
+          </motion.button>
         </div>
       </form>
 
-      <CustomModal
-        isOpen={showEmailOtpPopup}
-        onClose={() => {
-          setShowEmailOtpPopup(false);
-          setEmailOtp('');
-          setGeneratedEmailOtp(null);
-        }}
-        title="Verify Email Address"
-        customStyles={{ maxWidth: '28rem', height: '15.5rem', width: '90%' }}
-      >
-        <div>
-          <p className="text-sm text-gray-600 mb-4">
-            An OTP has been sent to {formData.email}. Please enter it below.
-          </p>
-          <input
-            type="text"
-            value={emailOtp}
-            onChange={(e) => setEmailOtp(e.target.value)}
-            placeholder="Enter OTP"
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-[#2B4B9B] focus:border-[#2B4B9B] mb-4"
-          />
-          <div className="flex justify-end space-x-2">
-            <button
-              onClick={() => {
-                setShowEmailOtpPopup(false);
-                setEmailOtp('');
-                setGeneratedEmailOtp(null);
-              }}
-              className="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300"
+      <AnimatePresence>
+        {showEmailOtpPopup && (
+          <CustomModal
+            isOpen={showEmailOtpPopup}
+            onClose={() => {
+              setShowEmailOtpPopup(false);
+              setEmailOtp('');
+              setGeneratedEmailOtp(null);
+            }}
+            title="Verify Email Address"
+            customStyles={{ maxWidth: '28rem', height: '15.5rem', width: '90%' }}
+          >
+            <motion.div
+              variants={modalVariants}
+              initial="hidden"
+              animate="visible"
+              exit="exit"
             >
-              Cancel
-            </button>
-            <button
-              onClick={verifyEmailOtp}
-              disabled={emailOtpLoading}
-              className="px-4 py-2 bg-[#2B4B9B] text-white rounded-lg hover:bg-[#1a2f61] disabled:opacity-50"
-            >
-              {emailOtpLoading ? 'Verifying...' : 'Verify OTP'}
-            </button>
-          </div>
-        </div>
-      </CustomModal>
-
-      <CustomModal
-        isOpen={showPhoneOtpPopup}
-        onClose={() => setShowPhoneOtpPopup(false)}
-        title="Verify Phone Number"
-        customStyles={{ maxWidth: '28rem', height: '15.5rem', width: '90%' }}
-      >
-        <div>
-          <p className="text-sm text-gray-600 mb-4">
-            An OTP has been sent to {formData.contact_person_phone}. Please enter it below.
-          </p>
-          <input
-            type="text"
-            value={phoneOtp}
-            onChange={(e) => setPhoneOtp(e.target.value)}
-            placeholder="Enter OTP"
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-[#2B4B9B] focus:border-[#2B4B9B] mb-4"
-          />
-          <div className="flex justify-end space-x-2">
-            <button
-              onClick={() => setShowPhoneOtpPopup(false)}
-              className="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300"
-            >
-              Cancel
-            </button>
-            <button
-              onClick={verifyPhoneOtp}
-              disabled={phoneOtpLoading}
-              className="px-4 py-2 bg-[#2B4B9B] text-white rounded-lg hover:bg-[#1a2f61] disabled:opacity-50"
-            >
-              {phoneOtpLoading ? 'Verifying...' : 'Verify OTP'}
-            </button>
-          </div>
-        </div>
-      </CustomModal>
-
-      {imageSrc && (
-        <CustomModal
-          isOpen={showCropper}
-          onClose={resetFileInput}
-          title="Crop Profile Picture"
-          customStyles={{ maxWidth: '32rem', height: 'auto', width: '90%' }}
-        >
-          <div>
-            <div className="relative w-full h-80">
-              <Cropper
-                image={imageSrc}
-                crop={crop}
-                zoom={zoom}
-                aspect={1}
-                cropShape="round"
-                showGrid={false}
-                onCropChange={setCrop}
-                onZoomChange={setZoom}
-                onCropComplete={handleCropComplete}
+              <p className="text-sm text-gray-600 mb-4">
+                An OTP has been sent to {formData.email}. Please enter it below.
+              </p>
+              <motion.input
+                type="text"
+                value={emailOtp}
+                onChange={(e) => setEmailOtp(e.target.value)}
+                placeholder="Enter OTP"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-[#2B4B9B] focus:border-[#2B4B9B] transition-all"
+                whileFocus={{ scale: 1.02 }}
               />
-            </div>
-            <div className="mt-4">
-              <label className="block text-sm font-medium text-gray-700 mb-1">Zoom</label>
-              <input
-                type="range"
-                min={1}
-                max={3}
-                step={0.1}
-                value={zoom}
-                onChange={(e) => setZoom(parseFloat(e.target.value))}
-                className="w-full"
-              />
-            </div>
-            <div className="flex justify-end space-x-2 mt-6">
-              <button
-                onClick={resetFileInput}
-                className="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleCropConfirm}
-                disabled={uploading}
-                className="px-4 py-2 bg-[#2B4B9B] text-white rounded-lg hover:bg-[#1a2f61] disabled:opacity-50 flex items-center"
-              >
-                {uploading ? (
-                  <>
-                    <svg className="animate-spin -ml-1 mr-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                    Uploading...
-                  </>
-                ) : (
-                  <>
-                    <Crop className="w-4 h-4 mr-2" />
-                    Crop & Upload
-                  </>
-                )}
-              </button>
-            </div>
-          </div>
-        </CustomModal>
-      )}
+              <div className="flex justify-end space-x-2 mt-4">
+                <motion.button
+                  onClick={() => {
+                    setShowEmailOtpPopup(false);
+                    setEmailOtp('');
+                    setGeneratedEmailOtp(null);
+                  }}
+                  className="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300"
+                  variants={buttonVariants}
+                  whileHover="hover"
+                  whileTap="tap"
+                >
+                  Cancel
+                </motion.button>
+                <motion.button
+                  onClick={verifyEmailOtp}
+                  disabled={emailOtpLoading}
+                  className="px-4 py-2 bg-[#2B4B9B] text-white rounded-lg hover:bg-[#1a2f61] disabled:opacity-50"
+                  variants={buttonVariants}
+                  whileHover="hover"
+                  whileTap="tap"
+                >
+                  {emailOtpLoading ? 'Verifying...' : 'Verify OTP'}
+                </motion.button>
+              </div>
+            </motion.div>
+          </CustomModal>
+        )}
 
-      <CustomModal
-        isOpen={showLogoutModal}
-        onClose={() => setShowLogoutModal(false)}
-        title="Confirm Logout"
-        customStyles={{ maxWidth: '28rem', height: '11rem', width: '90%' }}
-      >
-        <div>
-          <p className="text-sm text-gray-600 mb-4">
-            Are you sure you want to log out?
-          </p>
-          <div className="flex justify-end space-x-3 mt-5">
-            <button
-              onClick={() => setShowLogoutModal(false)}
-              className="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300"
+        {showPhoneOtpPopup && (
+          <CustomModal
+            isOpen={showPhoneOtpPopup}
+            onClose={() => setShowPhoneOtpPopup(false)}
+            title="Verify Phone Number"
+            customStyles={{ maxWidth: '28rem', height: '15.5rem', width: '90%' }}
+          >
+            <motion.div
+              variants={modalVariants}
+              initial="hidden"
+              animate="visible"
+              exit="exit"
             >
-              Cancel
-            </button>
-            <button
-              onClick={confirmLogout}
-              className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
+              <p className="text-sm text-gray-600 mb-4">
+                An OTP has been sent to {formData.contact_person_phone}. Please enter it below.
+              </p>
+              <motion.input
+                type="text"
+                value={phoneOtp}
+                onChange={(e) => setPhoneOtp(e.target.value)}
+                placeholder="Enter OTP"
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-[#2B4B9B] focus:border-[#2B4B9B] transition-all"
+                whileFocus={{ scale: 1.02 }}
+              />
+              <div className="flex justify-end space-x-2 mt-4">
+                <motion.button
+                  onClick={() => setShowPhoneOtpPopup(false)}
+                  className="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300"
+                  variants={buttonVariants}
+                  whileHover="hover"
+                  whileTap="tap"
+                >
+                  Cancel
+                </motion.button>
+                <motion.button
+                  onClick={verifyPhoneOtp}
+                  disabled={phoneOtpLoading}
+                  className="px-4 py-2 bg-[#2B4B9B] text-white rounded-lg hover:bg-[#1a2f61] disabled:opacity-50"
+                  variants={buttonVariants}
+                  whileHover="hover"
+                  whileTap="tap"
+                >
+                  {phoneOtpLoading ? 'Verifying...' : 'Verify OTP'}
+                </motion.button>
+              </div>
+            </motion.div>
+          </CustomModal>
+        )}
+
+        {imageSrc && (
+          <CustomModal
+            isOpen={showCropper}
+            onClose={resetFileInput}
+            title="Crop Profile Picture"
+            customStyles={{ maxWidth: '32rem', height: 'auto', width: '90%' }}
+          >
+            <motion.div
+              variants={modalVariants}
+              initial="hidden"
+              animate="visible"
+              exit="exit"
             >
-              Logout
-            </button>
-          </div>
-        </div>
-      </CustomModal>
+              <div className="relative w-full h-80">
+                <Cropper
+                  image={imageSrc}
+                  crop={crop}
+                  zoom={zoom}
+                  aspect={1}
+                  cropShape="round"
+                  showGrid={false}
+                  onCropChange={setCrop}
+                  onZoomChange={setZoom}
+                  onCropComplete={handleCropComplete}
+                />
+              </div>
+              <div className="mt-4">
+                <label className="block text-sm font-medium text-gray-700 mb-1">Zoom</label>
+                <motion.input
+                  type="range"
+                  min={1}
+                  max={3}
+                  step={0.1}
+                  value={zoom}
+                  onChange={(e) => setZoom(parseFloat(e.target.value))}
+                  className="w-full"
+                  whileHover={{ scale: 1.02 }}
+                />
+              </div>
+              <div className="flex justify-end space-x-2 mt-6">
+                <motion.button
+                  onClick={resetFileInput}
+                  className="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300"
+                  variants={buttonVariants}
+                  whileHover="hover"
+                  whileTap="tap"
+                >
+                  Cancel
+                </motion.button>
+                <motion.button
+                  onClick={handleCropConfirm}
+                  disabled={uploading}
+                  className="px-4 py-2 bg-[#2B4B9B] text-white rounded-lg hover:bg-[#1a2f61] disabled:opacity-50 flex items-center"
+                  variants={buttonVariants}
+                  whileHover="hover"
+                  whileTap="tap"
+                >
+                  {uploading ? (
+                    <>
+                      <motion.svg
+                        className="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
+                        xmlns="http://www.w3.org/2000/svg"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        animate={{ rotate: 360 }}
+                        transition={{ duration: 1, repeat: Infinity }}
+                      >
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                      </motion.svg>
+                      Uploading...
+                    </>
+                  ) : (
+                    <>
+                      <Crop className="w-4 h-4 mr-2" />
+                      Crop & Upload
+                    </>
+                  )}
+                </motion.button>
+              </div>
+            </motion.div>
+          </CustomModal>
+        )}
+
+        {showLogoutModal && (
+          <CustomModal
+            isOpen={showLogoutModal}
+            onClose={() => setShowLogoutModal(false)}
+            title="Confirm Logout"
+            customStyles={{ maxWidth: '28rem', height: '11rem', width: '90%' }}
+          >
+            <motion.div
+              variants={modalVariants}
+              initial="hidden"
+              animate="visible"
+              exit="exit"
+            >
+              <p className="text-sm text-gray-600 mb-4">
+                Are you sure you want to log out?
+              </p>
+              <div className="flex justify-end space-x-3 mt-5">
+                <motion.button
+                  onClick={() => setShowLogoutModal(false)}
+                  className="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300"
+                  variants={buttonVariants}
+                  whileHover="hover"
+                  whileTap="tap"
+                >
+                  Cancel
+                </motion.button>
+                <motion.button
+                  onClick={confirmLogout}
+                  className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
+                  variants={buttonVariants}
+                  whileHover="hover"
+                  whileTap="tap"
+                >
+                  Logout
+                </motion.button>
+              </div>
+            </motion.div>
+          </CustomModal>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
