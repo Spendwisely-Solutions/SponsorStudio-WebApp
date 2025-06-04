@@ -1090,7 +1090,7 @@ export default function ProfileSettings({ profile }: ProfileSettingsProps) {
                   </div>
                   <div className="relative group">
                     <label htmlFor="sponsorship_goals" className="block text-sm font-medium text-gray-700 mb-1">
-                      Sponsorship Goals (comma separated)
+                      Marketing Goals (comma separated)
                     </label>
                     <motion.input
                       type="text"
