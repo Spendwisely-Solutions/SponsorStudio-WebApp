@@ -8,7 +8,6 @@ import { supabase } from "../lib/supabase";
 interface PricingTier {
   name: string;
   monthlyPrice: number;
-  annualPrice: number;
   description: string;
   features: string[];
   cta: string;
@@ -20,7 +19,6 @@ const pricingTiers: PricingTier[] = [
   {
     name: "Free",
     monthlyPrice: 0,
-    annualPrice: 0,
     description: "Get started with basic event management tools.",
     features: [
       "1 active event",
@@ -34,7 +32,6 @@ const pricingTiers: PricingTier[] = [
   {
     name: "Basic",
     monthlyPrice: 500,
-    annualPrice: 5400,
     description: "Perfect for small events and startups.",
     features: [
       "5 active events",
@@ -49,7 +46,6 @@ const pricingTiers: PricingTier[] = [
   {
     name: "Premium",
     monthlyPrice: 1000,
-    annualPrice: 10800,
     description: "For enterprises with high-volume events.",
     features: [
       "Unlimited events",
@@ -128,7 +124,6 @@ const WarningModal: React.FC<{
 );
 
 const Pricing: React.FC = () => {
-  const [isAnnual, setIsAnnual] = useState(false);
   const [expandedFAQ, setExpandedFAQ] = useState<number | null>(null);
   const [paymentStatus, setPaymentStatus] = useState<Record<string, string>>({});
   const [paymentInitiated, setPaymentInitiated] = useState<Record<string, boolean>>({});
@@ -270,6 +265,7 @@ const Pricing: React.FC = () => {
   };
 
   const initiateSubscription = async (tier: PricingTier, isUpgrade = false) => {
+    const planName = tier.name;
     if (tier.name === "Free") {
       try {
         const {
@@ -289,7 +285,7 @@ const Pricing: React.FC = () => {
           .upsert(
             {
               user_id: user.id,
-              plan_name: tier.name,
+              plan_name: "Free",
               amount: 0,
               currency: "INR",
               status: "active",
@@ -354,7 +350,7 @@ const Pricing: React.FC = () => {
 
       setPaymentInitiated((prev) => ({ ...prev, [tier.name]: true }));
       setPaymentError((prev) => ({ ...prev, [tier.name]: null }));
-      setLockedBillingCycle(isAnnual ? "yearly" : "monthly");
+      setLockedBillingCycle("monthly");
 
       if (isUpgrade && existingSubscriptionId && originalPlan !== "Free") {
         console.log(`Cancelling existing subscription ${existingSubscriptionId} for user ${user.id}`);
@@ -389,8 +385,8 @@ const Pricing: React.FC = () => {
         }
       }
 
-      const planAmount = isAnnual ? tier.annualPrice : tier.monthlyPrice;
-      const billingCycle = isAnnual ? "yearly" : "monthly";
+      const planAmount = tier.monthlyPrice;
+      const billingCycle = "monthly";
       console.log("Initiating subscription:", {
         plan_name: tier.name,
         billing_cycle: billingCycle,
@@ -428,7 +424,7 @@ const Pricing: React.FC = () => {
       }
 
       console.log(`Upserting subscription for user ${user.id}:`, {
-        plan_name: tier.name,
+        plan_name: planName,
         amount: planAmount * 100,
         subscriptionId,
         orderId,
@@ -454,7 +450,7 @@ const Pricing: React.FC = () => {
         .single();
 
       if (upsertError) {
-        console.error(`Failed to upsert subscription for ${tier.name}:`, upsertError);
+        console.error(`Failed to upsert subscription for ${planName}:`, upsertError);
         throw new Error("Failed to update subscription record");
       }
 
@@ -465,16 +461,16 @@ const Pricing: React.FC = () => {
         amount: amount * 100,
         currency,
         name: "Sponsor Studio",
-        description: `${tier.name} Plan (${isAnnual ? "Annual" : "Monthly"})`,
+        description: `${planName} Plan`,
         order_id: orderId,
         subscription_id: subscriptionId,
         handler: async (response: any) => {
           try {
             console.log("Razorpay payment response:", JSON.stringify(response, null, 2));
             setPaymentError((prev) => ({ ...prev, [tier.name]: null }));
-            await checkSubscriptionStatus(subscriptionId, tier.name);
+            await checkSubscriptionStatus(subscriptionId, planName);
           } catch (error: any) {
-            console.error(`Error for ${tier.name}:`, error.message);
+            console.error(`Error for ${planName}:`, error.message);
             setPaymentError((prev) => ({
               ...prev,
               [tier.name]: "Failed to confirm payment. Please check your account or contact support.",
@@ -485,12 +481,12 @@ const Pricing: React.FC = () => {
           }
         },
         prefill: {
-          name: user.user_metadata?.full_name || "User",
-          email: user.email || "user@example.com",
+          name: user.user_metadata?.name || "User",
+          email: user.email || "Pending",
           contact: user.user_metadata?.phone || "+919999999999",
         },
         theme: {
-          color: "#2B4B9B",
+          color: "#2B4B4",
         },
         notes: {
           subscription_id: subscriptionId,
@@ -520,7 +516,7 @@ const Pricing: React.FC = () => {
       });
       razorpay.open();
     } catch (error: any) {
-      console.error(`Subscription error for ${tier.name}:`, error.message);
+      console.error(`Subscription error for ${planName}:`, error.message);
       setPaymentError((prev) => ({
         ...prev,
         [tier.name]: error.message || "Failed to initiate subscription",
@@ -531,7 +527,8 @@ const Pricing: React.FC = () => {
   };
 
   const handlePlanSelection = (tier: PricingTier) => {
-    if (currentPlan === "Basic" && tier.name === "Premium") {
+    const isUpgrade = currentPlan === "Basic" && tier.name === "Premium";
+    if (isUpgrade) {
       setSelectedTier(tier);
       setShowWarningModal(true);
     } else {
@@ -606,38 +603,6 @@ const Pricing: React.FC = () => {
           </motion.p>
         </div>
 
-        <motion.div
-          className="flex justify-center mb-8"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.4 }}
-        >
-          <div className="bg-white/80 backdrop-blur-sm p-1 rounded-full shadow-sm flex items-center">
-            <button
-              className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
-                !isAnnual
-                  ? "bg-gradient-to-r from-indigo-400 to-indigo-600 text-white shadow-sm"
-                  : "text-gray-600 hover:text-gray-900"
-              }`}
-              onClick={() => !lockedBillingCycle && setIsAnnual(false)}
-              disabled={!!lockedBillingCycle}
-            >
-              Monthly
-            </button>
-            <button
-              className={`px-4 py-2 rounded-full text-sm font-medium transition-all ${
-                isAnnual
-                  ? "bg-gradient-to-r from-indigo-400 to-indigo-600 text-white shadow-sm"
-                  : "text-gray-600 hover:text-gray-900"
-              }`}
-              onClick={() => !lockedBillingCycle && setIsAnnual(true)}
-              disabled={!!lockedBillingCycle}
-            >
-              Annual (Save ~10%)
-            </button>
-          </div>
-        </motion.div>
-
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {pricingTiers.map((tier, index) => {
             const isCurrentPlan = currentPlan === tier.name;
@@ -675,13 +640,8 @@ const Pricing: React.FC = () => {
                   <h3 className="text-xl font-bold text-gray-900 mb-2">{tier.name}</h3>
                   <p className="text-sm text-gray-600 mb-4">{tier.description}</p>
                   <div className="mb-6">
-                    <span className="text-3xl font-extrabold text-gray-900">
-                      ₹{isAnnual ? Math.round(tier.annualPrice / 12) : tier.monthlyPrice}
-                    </span>
+                    <span className="text-3xl font-extrabold text-gray-900">₹{tier.monthlyPrice}</span>
                     <span className="text-sm text-gray-600">/month</span>
-                    {isAnnual && tier.monthlyPrice > 0 && (
-                      <p className="text-sm text-gray-500">Billed annually at ₹{tier.annualPrice}</p>
-                    )}
                   </div>
                   {paymentError[tier.name] && (
                     <p className="text-sm text-red-600 mb-4">{paymentError[tier.name]}</p>
