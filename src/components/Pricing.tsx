@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Check, X } from "lucide-react";
 import { useRazorpay } from "react-razorpay";
+import { Link } from "react-router-dom";
 import axios from "axios";
 import { supabase } from "../lib/supabase";
 
@@ -236,20 +237,19 @@ const Pricing: React.FC = () => {
   };
 
   const initiateSubscription = async (tier: PricingTier, isUpgrade = false) => {
-    const planName = tier.name;
-    if (tier.name === "Free") {
-      try {
-        const {
-          data: { user },
-        } = await supabase.auth.getUser();
-        if (!user) {
-          setPaymentError((prev) => ({
-            ...prev,
-            [tier.name]: "Please log in to subscribe.",
-          }));
-          return;
-        }
+    try {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) {
+        setPaymentError((prev) => ({
+          ...prev,
+          [tier.name]: "Please log in to subscribe.",
+        }));
+        return;
+      }
 
+      if (tier.name === "Free") {
         console.log(`Initiating Free plan for user ${user.id}`);
         setPaymentInitiated((prev) => ({ ...prev, [tier.name]: true }));
         const { data, error } = await supabase
@@ -280,28 +280,8 @@ const Pricing: React.FC = () => {
         setPaymentStatus((prev) => ({ ...prev, [tier.name]: "active" }));
         setPaymentError((prev) => ({ ...prev, [tier.name]: null }));
         setCurrentPlan("Free");
-      } catch (error: any) {
-        console.error(`Free plan error for ${tier.name}:`, error.message);
-        setPaymentError((prev) => ({
-          ...prev,
-          [tier.name]: error.message || "Failed to set Free plan",
-        }));
-      } finally {
         setPaymentInitiated((prev) => ({ ...prev, [tier.name]: false }));
         setLockedBillingCycle(null);
-      }
-      return;
-    }
-
-    try {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (!user) {
-        setPaymentError((prev) => ({
-          ...prev,
-          [tier.name]: "Please log in to subscribe.",
-        }));
         return;
       }
 
@@ -396,7 +376,7 @@ const Pricing: React.FC = () => {
       }
 
       console.log(`Upserting subscription for user ${user.id}:`, {
-        plan_name: planName,
+        plan_name: tier.name,
         amount: planAmount * 100,
         subscriptionId,
         orderId,
@@ -422,7 +402,7 @@ const Pricing: React.FC = () => {
         .single();
 
       if (upsertError) {
-        console.error(`Failed to upsert subscription for ${planName}:`, upsertError);
+        console.error(`Failed to upsert subscription for ${tier.name}:`, upsertError);
         throw new Error("Failed to update subscription record");
       }
 
@@ -433,16 +413,16 @@ const Pricing: React.FC = () => {
         amount: amount * 100,
         currency,
         name: "Sponsor Studio",
-        description: `${planName} Plan`,
+        description: `${tier.name} Plan`,
         order_id: orderId,
         subscription_id: subscriptionId,
         handler: async (response: any) => {
           try {
             console.log("Razorpay payment response:", JSON.stringify(response, null, 2));
             setPaymentError((prev) => ({ ...prev, [tier.name]: null }));
-            await checkSubscriptionStatus(subscriptionId, planName);
+            await checkSubscriptionStatus(subscriptionId, tier.name);
           } catch (error: any) {
-            console.error(`Error for ${planName}:`, error.message);
+            console.error(`Error for ${tier.name}:`, error.message);
             setPaymentError((prev) => ({
               ...prev,
               [tier.name]: "Failed to confirm payment. Please check your account or contact support.",
@@ -488,7 +468,7 @@ const Pricing: React.FC = () => {
       });
       razorpay.open();
     } catch (error: any) {
-      console.error(`Subscription error for ${planName}:`, error.message);
+      console.error(`Subscription error for ${tier.name}:`, error.message);
       setPaymentError((prev) => ({
         ...prev,
         [tier.name]: error.message || "Failed to initiate subscription",
@@ -539,9 +519,36 @@ const Pricing: React.FC = () => {
   }
 
   return (
-    <div className="bg-gradient-to-b from-gray-50 to-gray-100 min-h-screen py-12 px-4 sm:px-6 lg:px-8">
+    <div className="bg-gradient-to-b from-gray-50 to-gray-100 min-h-screen">
+      {/* Navigation Bar */}
+      <nav className="bg-white shadow-sm">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="flex justify-between h-16">
+            <div className="flex">
+              <div className="flex-shrink-0 flex items-center">
+                <span className="text-xl font-bold text-gray-900">Sponsor Studio</span>
+              </div>
+              <div className="ml-10 flex items-center space-x-4">
+                <Link
+                  to="/"
+                  className="text-gray-600 hover:text-indigo-600 px-3 py-2 rounded-md text-sm font-medium"
+                >
+                  Home
+                </Link>
+                <Link
+                  to="/dashboard"
+                  className="text-gray-600 hover:text-indigo-600 px-3 py-2 rounded-md text-sm font-medium"
+                >
+                  Dashboard
+                </Link>
+              </div>
+            </div>
+          </div>
+        </div>
+      </nav>
+
       <motion.div
-        className="max-w-7xl mx-auto"
+        className="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 0.8 }}
