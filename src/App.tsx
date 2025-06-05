@@ -8,6 +8,7 @@ import NavBar from './components/HomePage/NavBar';
 import HeroSection from './components/HomePage/HeroSection';
 import HowWeWorkSection from './components/HomePage/HowWeWorkSection';
 import ClientsSection from './components/HomePage/ClientsSection';
+import PricingSectionStatic from './components/HomePage/PricingStatic';
 import SuccessStoriesSection from './components/HomePage/SuccessStoriesSection';
 import ContactSection from './components/HomePage/ContactSection';
 import Footer from './components/HomePage/Footer';
@@ -184,6 +185,7 @@ const App: React.FC = () => {
       <HeroSection user={user} setShowAuthForm={setShowAuthForm} />
       <HowWeWorkSection />
       <ClientsSection loading={loading} clientLogos={clientLogos} />
+      <PricingSectionStatic />
       <SuccessStoriesSection
         loading={loading}
         successStories={successStories}
