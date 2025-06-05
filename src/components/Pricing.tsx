@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Check, X, ChevronDown } from "lucide-react";
+import { Check, X } from "lucide-react";
 import { useRazorpay } from "react-razorpay";
 import axios from "axios";
 import { supabase } from "../lib/supabase";
@@ -19,12 +19,10 @@ const pricingTiers: PricingTier[] = [
   {
     name: "Free",
     monthlyPrice: 0,
-    description: "Get started with basic event management tools.",
+    description: "Start connecting your brand with opportunities.",
     features: [
-      "1 active event",
-      "Up to 50 attendees",
-      "Basic analytics",
-      "Email support",
+      "Express interest in up to 3 opportunities per month",
+      "1 Risk Analysis report per month",
     ],
     cta: "Sign Up Free",
     disabled: false,
@@ -32,13 +30,10 @@ const pricingTiers: PricingTier[] = [
   {
     name: "Basic",
     monthlyPrice: 500,
-    description: "Perfect for small events and startups.",
+    description: "Ideal for growing brands seeking more opportunities.",
     features: [
-      "5 active events",
-      "Up to 500 attendees",
-      "Standard analytics",
-      "Priority email support",
-      "Custom branding",
+      "Express interest in up to 10 opportunities per month",
+      "3 Risk Analysis reports per month",
     ],
     cta: "Start Basic Plan",
     isPopular: true,
@@ -46,36 +41,13 @@ const pricingTiers: PricingTier[] = [
   {
     name: "Premium",
     monthlyPrice: 1000,
-    description: "For enterprises with high-volume events.",
+    description: "For brands maximizing their opportunity engagement.",
     features: [
-      "Unlimited events",
-      "Unlimited attendees",
-      "Premium analytics",
-      "24/7 phone support",
-      "Custom branding",
-      "API access",
+      "Express unlimited interest in opportunities",
+      "5 Risk Analysis reports per month",
       "Dedicated account manager",
     ],
     cta: "Start Premium Plan",
-  },
-];
-
-const faqs = [
-  {
-    question: "Can I switch plans later?",
-    answer: "Yes, you can upgrade, downgrade, or cancel your plan at any time from your account settings.",
-  },
-  {
-    question: "Is there a free trial for paid plans?",
-    answer: "We offer a 14-day free trial for Basic and Premium plans, no credit card required.",
-  },
-  {
-    question: "What payment methods are accepted?",
-    answer: "We accept all major credit cards, UPI, and net banking via Razorpay.",
-  },
-  {
-    question: "Do you offer discounts for nonprofits?",
-    answer: "Yes, we offer a 20% discount for registered nonprofits. Contact our support team for details.",
   },
 ];
 
@@ -99,9 +71,9 @@ const WarningModal: React.FC<{
           exit={{ scale: 0.8, opacity: 0 }}
           className="bg-white rounded-lg p-6 max-w-md w-full mx-4"
         >
-          <h3 className="text-lg font-bold text-gray-900 mb-4">Confirm Plan Upgrade</h3>
+          <h3 className="text-lg font-semibold text-gray-900 mb-4">Confirm Plan Upgrade</h3>
           <p className="text-sm text-gray-600 mb-6">
-            Upgrading to the {tierName} plan will cancel your current subscription. Do you want to continue?
+            Upgrading to the {tierName} plan will cancel your existing plan. Do you want to continue?
           </p>
           <div className="flex justify-end space-x-3">
             <button
@@ -124,7 +96,6 @@ const WarningModal: React.FC<{
 );
 
 const Pricing: React.FC = () => {
-  const [expandedFAQ, setExpandedFAQ] = useState<number | null>(null);
   const [paymentStatus, setPaymentStatus] = useState<Record<string, string>>({});
   const [paymentInitiated, setPaymentInitiated] = useState<Record<string, boolean>>({});
   const [paymentError, setPaymentError] = useState<Record<string, string | null>>({});
@@ -287,8 +258,8 @@ const Pricing: React.FC = () => {
             {
               user_id: user.id,
               plan_name: "Free",
-              amount: 0,
-              currency: "INR",
+              amount: null,
+              currency: null,
               status: "active",
               razorpay_subscription_id: null,
               razorpay_order_id: null,
@@ -484,7 +455,7 @@ const Pricing: React.FC = () => {
         prefill: {
           name: user.user_metadata?.full_name || "User",
           email: user.email || "user@example.com",
-          contact: user.user_metadata?.phone || "+919999999999",
+          contact: user.user_metadata?.phone || "+91",
         },
         theme: {
           color: "#2B4B9B",
@@ -553,7 +524,7 @@ const Pricing: React.FC = () => {
 
   const buttonVariants = {
     hover: { scale: 1.1, transition: { duration: 0.2 } },
-    tap: { scale: 0.95, opacity: 0.8, transition: { duration: 0.1 } }, // Added tap animation
+    tap: { scale: 0.95, opacity: 0.8, transition: { duration: 0.1 } },
   };
 
   if (loading) {
@@ -600,7 +571,7 @@ const Pricing: React.FC = () => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3 }}
           >
-            Choose the plan that fits your needs. No hidden fees, cancel anytime.
+            Choose the plan that fits your brand’s needs. No hidden fees, cancel anytime.
           </motion.p>
         </div>
 
@@ -623,7 +594,7 @@ const Pricing: React.FC = () => {
             return (
               <motion.div
                 key={tier.name}
-                className={`relative rounded-2xl overflow-hidden border border-gray-200/50 shadow-lg ${
+                className={`relative rounded-2xl overflow-hidden border border-gray-200/50 shadow-lg min-h-[500px] ${
                   tier.isPopular ? "ring-2 ring-indigo-500" : ""
                 } ${isDisabled ? "opacity-50 cursor-not-allowed" : ""}`}
                 variants={cardVariants}
@@ -632,17 +603,17 @@ const Pricing: React.FC = () => {
                 whileHover={isDisabled ? {} : "hover"}
                 transition={{ delay: 0.1 * index }}
               >
-                <div className="bg-white/80 backdrop-blur-sm p-6 h-full flex flex-col">
+                <div className="bg-white/80 backdrop-blur-sm p-8 h-full flex flex-col">
                   {tier.isPopular && (
-                    <div className="absolute top-0 right-0 bg-indigo-600 text-white text-xs font-semibold px-3 py-1 rounded-bl-lg">
+                    <div className="absolute top-0 right-0 bg-gray-800 text-white text-sm font-semibold px-4 py-1 rounded-full">
                       Most Popular
                     </div>
                   )}
-                  <h3 className="text-xl font-bold text-gray-900 mb-2">{tier.name}</h3>
-                  <p className="text-sm text-gray-600 mb-4">{tier.description}</p>
-                  <div className="mb-6">
-                    <span className="text-3xl font-extrabold text-gray-900">₹{tier.monthlyPrice}</span>
-                    <span className="text-sm text-gray-600">/month</span>
+                  <h3 className="text-xl font-bold text-gray-900 mb-4">{tier.name}</h3>
+                  <p className="text-sm text-gray-600 mb-6">{tier.description}</p>
+                  <div className="mb-8">
+                    <span className="text-4xl font-extrabold text-gray-900">₹{tier.monthlyPrice}</span>
+                    <span className="text-base text-gray-500">/month</span>
                   </div>
                   {paymentError[tier.name] && (
                     <p className="text-sm text-red-600 mb-4">{paymentError[tier.name]}</p>
@@ -652,7 +623,7 @@ const Pricing: React.FC = () => {
                     className={`w-full py-3 rounded-full text-sm font-semibold transition-all duration-200 ${
                       isDisabled || paymentInitiated[tier.name]
                         ? "bg-gray-300 text-gray-500 cursor-not-allowed"
-                        : "bg-gradient-to-r from-indigo-400 to-indigo-600 text-white hover:brightness-110 shadow-sm"
+                        : "bg-gradient-to-r from-blue-700 to-indigo-600 text-white hover:brightness-110 shadow-md"
                     }`}
                     variants={buttonVariants}
                     whileHover={isDisabled || paymentInitiated[tier.name] ? {} : "hover"}
@@ -664,7 +635,7 @@ const Pricing: React.FC = () => {
                       <motion.span
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
-                        transition={{ duration: 0.2 }}
+                        transition={{ duration: 0.3 }}
                         className="flex items-center justify-center"
                       >
                         <svg className="animate-spin h-5 w-5 mr-2 text-white" viewBox="0 0 24 24">
@@ -690,121 +661,25 @@ const Pricing: React.FC = () => {
                       </motion.span>
                     )}
                   </motion.button>
-                  <ul className="mt-6 space-y-3 flex-1">
+                  <ul className="mt-6 space-y-4 flex-1">
                     {tier.features.map((feature, i) => (
                       <li key={i} className="flex items-center text-sm text-gray-600">
-                        <Check className="w-4 h-4 text-green-500 mr-2 flex-shrink-0" />
-                        <span>{feature}</span>
+                        <Check className="w-5 h-5 text-green-600 mr-3 flex-shrink-0" />
+                        <span className="text-base">{feature}</span>
                       </li>
                     ))}
+                    {tier.name !== "Premium" && (
+                      <li className="flex items-center text-sm text-gray-600">
+                        <X className="w-5 h-5 text-red-500 mr-3 flex-shrink-0" />
+                        <span className="text-base">No dedicated account manager</span>
+                      </li>
+                    )}
                   </ul>
                 </div>
               </motion.div>
             );
           })}
         </div>
-
-        <motion.div
-          className="mt-16 bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg p-6"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-        >
-          <h2 className="text-2xl font-bold text-gray-900 mb-6 text-center">Compare Plans</h2>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm text-gray-600">
-              <thead>
-                <tr>
-                  <th className="py-3 px-4 text-left font-semibold text-gray-900">Feature</th>
-                  {pricingTiers.map((tier) => (
-                    <th
-                      key={tier.name}
-                      className="py-3 px-4 text-center font-semibold text-gray-900"
-                    >
-                      {tier.name}
-                    </th>
-                  ))}
-                </tr>
-              </thead>
-              <tbody>
-                {[
-                  "Active Events",
-                  "Attendees",
-                  "Analytics",
-                  "Support",
-                  "Custom Branding",
-                  "API Access",
-                  "Account Manager",
-                ].map((feature, index) => (
-                  <tr key={index} className="border-t border-gray-200">
-                    <td className="py-3 px-4">{feature}</td>
-                    {pricingTiers.map((tier) => {
-                      const hasFeature = tier.features.some((f) =>
-                        f.toLowerCase().includes(feature.toLowerCase())
-                      );
-                      return (
-                        <td key={tier.name} className="py-3 px-4 text-center">
-                          {hasFeature ? (
-                            <Check className="w-5 h-5 text-green-500 mx-auto" />
-                          ) : (
-                            <X className="w-5 h-5 text-red-500 mx-auto" />
-                          )}
-                        </td>
-                      );
-                    })}
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        </motion.div>
-
-        <motion.div
-          className="mt-16 max-w-3xl mx-auto"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-        >
-          <h2 className="text-2xl font-bold text-gray-900 mb-6 text-center">Frequently Asked Questions</h2>
-          <div className="space-y-4">
-            {faqs.map((faq, index) => (
-              <motion.div
-                key={index}
-                className="bg-white rounded-lg shadow-sm"
-                variants={cardVariants}
-                initial="hidden"
-                animate="visible"
-                transition={{ duration: 0.3 + index * 0.1 }}
-              >
-                <button
-                  className="w-full p-4 text-left flex justify-between items-center"
-                  onClick={() => setExpandedFAQ(expandedFAQ === index ? null : index)}
-                >
-                  <span className="text-sm font-semibold text-gray-900">{faq.question}</span>
-                  <motion.div
-                    animate={{ rotate: expandedFAQ === index ? 180 : 0 }}
-                    transition={{ duration: 0.3 }}
-                  >
-                    <ChevronDown className="w-5 h-5 text-gray-600" />
-                  </motion.div>
-                </button>
-                <AnimatePresence>
-                  {expandedFAQ === index && (
-                    <motion.div
-                      initial={{ height: 0, opacity: 0 }}
-                      animate={{ height: "auto", opacity: 1 }}
-                      exit={{ height: 0, opacity: 0 }}
-                      transition={{ duration: 0.3 }}
-                      className="px-4 pb-4 text-sm text-gray-600"
-                    >
-                      {faq.answer}
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </motion.div>
-            ))}
-          </div>
-        </motion.div>
       </motion.div>
     </div>
   );
