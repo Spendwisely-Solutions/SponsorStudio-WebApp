@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Check, X } from "lucide-react";
 import { useRazorpay } from "react-razorpay";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
 import { supabase } from "../lib/supabase";
 
@@ -96,6 +96,25 @@ const WarningModal: React.FC<{
   </AnimatePresence>
 );
 
+// Skeleton UI for pricing cards
+const PricingSkeleton = () => (
+  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+    {[...Array(3)].map((_, index) => (
+      <div key={index} className="bg-white/80 rounded-2xl shadow-lg p-8 min-h-[500px] animate-pulse">
+        <div className="h-6 bg-gray-200 rounded w-1/3 mb-4"></div>
+        <div className="h-4 bg-gray-200 rounded w-2/3 mb-6"></div>
+        <div className="h-10 bg-gray-200 rounded mb-8"></div>
+        <div className="h-10 bg-gray-200 rounded-full mb-6"></div>
+        <div className="space-y-4">
+          {[...Array(3)].map((_, i) => (
+            <div key={i} className="h-4 bg-gray-200 rounded w-full"></div>
+          ))}
+        </div>
+      </div>
+    ))}
+  </div>
+);
+
 const Pricing: React.FC = () => {
   const [paymentStatus, setPaymentStatus] = useState<Record<string, string>>({});
   const [paymentInitiated, setPaymentInitiated] = useState<Record<string, boolean>>({});
@@ -105,30 +124,61 @@ const Pricing: React.FC = () => {
   const [currentPlan, setCurrentPlan] = useState<string | null>(null);
   const [showWarningModal, setShowWarningModal] = useState(false);
   const [selectedTier, setSelectedTier] = useState<PricingTier | null>(null);
+  const [isBrand, setIsBrand] = useState<boolean | null>(null);
   const { Razorpay } = useRazorpay();
+  const navigate = useNavigate();
 
   useEffect(() => {
-    async function fetchOrCreateSubscription() {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (!user) {
-        console.log("No authenticated user found");
-        setLoading(false);
-        return;
-      }
+    async function checkUserTypeAndSubscription() {
+      setLoading(true);
 
       try {
-        let { data: subscriptions, error } = await supabase
+        // Parallelize auth and profile queries
+        const [authResponse, profileResponse] = await Promise.all([
+          supabase.auth.getUser(),
+          supabase.auth.getUser().then(({ data: { user } }) =>
+            user ? supabase.from("profiles").select("user_type").eq("id", user.id).single() : Promise.reject(new Error("No user"))
+          ),
+        ]);
+
+        const { data: { user }, error: authError } = authResponse;
+        const { data: profile, error: profileError } = profileResponse;
+
+        if (authError || !user) {
+          console.log("No authenticated user found");
+          navigate("/login");
+          setLoading(false);
+          return;
+        }
+
+        if (profileError) {
+          console.error("Error fetching user profile:", profileError);
+          navigate("/unauthorized");
+          setLoading(false);
+          return;
+        }
+
+        if (profile.user_type !== "brand") {
+          console.log(`User ${user.id} is not a brand, user_type: ${profile.user_type}`);
+          setIsBrand(false);
+          navigate("/unauthorized");
+          setLoading(false);
+          return;
+        }
+
+        setIsBrand(true);
+
+        // Fetch subscription only if user is a brand
+        let { data: subscriptions, error: subError } = await supabase
           .from("subscriptions")
           .select("plan_name, status")
           .eq("user_id", user.id)
           .limit(1)
           .maybeSingle();
 
-        if (error) {
-          console.error("Error fetching subscriptions:", error);
-          throw error;
+        if (subError) {
+          console.error("Error fetching subscriptions:", subError);
+          throw subError;
         }
 
         if (!subscriptions) {
@@ -162,14 +212,15 @@ const Pricing: React.FC = () => {
         setCurrentPlan(subscriptions.plan_name);
         setPaymentStatus((prev) => ({ ...prev, ...statusMap }));
       } catch (error: any) {
-        console.error("Unexpected error handling subscriptions:", error.message);
+        console.error("Unexpected error handling user check or subscriptions:", error.message);
+        navigate("/error");
       } finally {
         setLoading(false);
       }
     }
 
-    fetchOrCreateSubscription();
-  }, []);
+    checkUserTypeAndSubscription();
+  }, [navigate]);
 
   const checkSubscriptionStatus = async (
     subscriptionId: string,
@@ -478,23 +529,30 @@ const Pricing: React.FC = () => {
     }
   };
 
-  const handlePlanSelection = (tier: PricingTier) => {
-    const isUpgrade = currentPlan === "Basic" && tier.name === "Premium";
-    if (isUpgrade) {
-      setSelectedTier(tier);
-      setShowWarningModal(true);
-    } else {
-      initiateSubscription(tier);
-    }
-  };
+  const handlePlanSelection = useMemo(
+    () =>
+      (tier: PricingTier) => {
+        const isUpgrade = currentPlan === "Basic" && tier.name === "Premium";
+        if (isUpgrade) {
+          setSelectedTier(tier);
+          setShowWarningModal(true);
+        } else {
+          initiateSubscription(tier);
+        }
+      },
+    [currentPlan]
+  );
 
-  const handleConfirmUpgrade = () => {
-    if (selectedTier) {
-      initiateSubscription(selectedTier, true);
-    }
-    setShowWarningModal(false);
-    setSelectedTier(null);
-  };
+  const handleConfirmUpgrade = useMemo(
+    () => () => {
+      if (selectedTier) {
+        initiateSubscription(selectedTier, true);
+      }
+      setShowWarningModal(false);
+      setSelectedTier(null);
+    },
+    [selectedTier]
+  );
 
   const cardVariants = {
     hidden: { opacity: 0, y: 20 },
@@ -509,18 +567,64 @@ const Pricing: React.FC = () => {
 
   if (loading) {
     return (
+      <div className="bg-gradient-to-b from-gray-50 to-gray-100 min-h-screen">
+        <nav className="bg-white shadow-sm">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div className="flex justify-between h-16">
+              <div className="flex">
+                <div className="flex-shrink-0 flex items-center">
+                  <span className="text-xl font-bold text-gray-900">Sponsor Studio</span>
+                </div>
+                <div className="ml-10 flex items-center space-x-4">
+                  <Link
+                    to="/"
+                    className="text-gray-600 hover:text-indigo-600 px-3 py-2 rounded-md text-sm font-medium"
+                  >
+                    Home
+                  </Link>
+                  <Link
+                    to="/dashboard"
+                    className="text-gray-600 hover:text-indigo-600 px-3 py-2 rounded-md text-sm font-medium"
+                  >
+                    Dashboard
+                  </Link>
+                </div>
+              </div>
+            </div>
+          </div>
+        </nav>
+        <div className="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
+          <div className="text-center mb-12">
+            <div className="h-10 bg-gray-200 rounded w-1/2 mx-auto mb-4 animate-pulse"></div>
+            <div className="h-6 bg-gray-200 rounded w-2/3 mx-auto animate-pulse"></div>
+          </div>
+          <PricingSkeleton />
+        </div>
+      </div>
+    );
+  }
+
+  if (isBrand === false) {
+    return (
       <div className="flex justify-center items-center min-h-screen">
-        <svg className="animate-spin h-8 w-8 text-indigo-600" viewBox="0 0 24 24">
-          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
-        </svg>
+        <div className="text-center">
+          <h2 className="text-2xl font-bold text-gray-900 mb-4">Unauthorized Access</h2>
+          <p className="text-gray-600 mb-4">
+            This page is only accessible to users with a Brand account.
+          </p>
+          <Link
+            to="/"
+            className="px-4 py-2 rounded-full text-sm font-medium text-white bg-indigo-600 hover:bg-indigo-700"
+          >
+            Return to Home
+          </Link>
+        </div>
       </div>
     );
   }
 
   return (
     <div className="bg-gradient-to-b from-gray-50 to-gray-100 min-h-screen">
-      {/* Navigation Bar */}
       <nav className="bg-white shadow-sm">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-16">
@@ -692,4 +796,4 @@ const Pricing: React.FC = () => {
   );
 };
 
-export default Pricing;
+export default React.memo(Pricing);

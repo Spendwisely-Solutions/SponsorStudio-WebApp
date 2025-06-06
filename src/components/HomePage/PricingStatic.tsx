@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { motion } from "framer-motion";
 import { Check, X } from "lucide-react";
 import { Link } from "react-router-dom";
+import { User } from '../../App'; // Assuming User type is defined in App.tsx
 
 interface BrandPricingTier {
   name: string;
@@ -18,6 +19,11 @@ interface OpportunityPricingStep {
   description: string;
   details: string[];
   isHighlighted?: boolean;
+}
+
+interface PricingSectionStaticProps {
+  user: User | null;
+  setShowAuthForm: (value: boolean) => void;
 }
 
 const brandPricingTiers: BrandPricingTier[] = [
@@ -84,7 +90,7 @@ const opportunityPricingSteps: OpportunityPricingStep[] = [
   },
 ];
 
-const PricingSectionStatic: React.FC = () => {
+const PricingSectionStatic: React.FC<PricingSectionStaticProps> = ({ user, setShowAuthForm }) => {
   const [view, setView] = useState<"Brands" | "Opportunity Providers">("Brands");
 
   const cardVariants = {
@@ -188,17 +194,30 @@ const PricingSectionStatic: React.FC = () => {
                     <span className="text-4xl font-extrabold text-gray-900">₹{tier.monthlyPrice}</span>
                     <span className="text-base text-gray-500">/month</span>
                   </div>
-                  <Link to="/pricing">
+                  {user ? (
+                    <Link to="/pricing">
+                      <motion.button
+                        className="w-full py-3 rounded-full text-sm font-semibold transition-all duration-200 bg-gradient-to-r from-blue-700 to-indigo-600 text-white hover:brightness-110 shadow-md"
+                        variants={buttonVariants}
+                        whileHover="hover"
+                        whileTap="tap"
+                        aria-label={`View ${tier.name} plan details`}
+                      >
+                        {tier.cta}
+                      </motion.button>
+                    </Link>
+                  ) : (
                     <motion.button
                       className="w-full py-3 rounded-full text-sm font-semibold transition-all duration-200 bg-gradient-to-r from-blue-700 to-indigo-600 text-white hover:brightness-110 shadow-md"
+                      onClick={() => setShowAuthForm(true)}
                       variants={buttonVariants}
                       whileHover="hover"
                       whileTap="tap"
-                      aria-label={`View ${tier.name} plan details`}
+                      aria-label={`Sign up for ${tier.name} plan`}
                     >
                       {tier.cta}
                     </motion.button>
-                  </Link>
+                  )}
                   <ul className="mt-6 space-y-4 flex-1">
                     {tier.features.map((feature, i) => (
                       <li key={i} className="flex items-center text-sm text-gray-600">
@@ -242,6 +261,30 @@ const PricingSectionStatic: React.FC = () => {
                   <div className="mb-8">
                     <span className="text-3xl font-extrabold text-gray-900">{step.cost}</span>
                   </div>
+                  {user ? (
+                    <Link to="/pricing">
+                      <motion.button
+                        className="w-full py-3 rounded-full text-sm font-semibold transition-all duration-200 bg-gradient-to-r from-blue-700 to-indigo-600 text-white hover:brightness-110 shadow-md"
+                        variants={buttonVariants}
+                        whileHover="hover"
+                        whileTap="tap"
+                        aria-label={`View ${step.name} details`}
+                      >
+                        Learn More
+                      </motion.button>
+                    </Link>
+                  ) : (
+                    <motion.button
+                      className="w-full py-3 rounded-full text-sm font-semibold transition-all duration-200 bg-gradient-to-r from-blue-700 to-indigo-600 text-white hover:brightness-110 shadow-md"
+                      onClick={() => setShowAuthForm(true)}
+                      variants={buttonVariants}
+                      whileHover="hover"
+                      whileTap="tap"
+                      aria-label={`Sign up for ${step.name}`}
+                    >
+                      Learn More
+                    </motion.button>
+                  )}
                   <ul className="mt-6 space-y-4 flex-1">
                     {step.details.map((detail, i) => (
                       <li key={i} className="flex items-center text-sm text-gray-600">
