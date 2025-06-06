@@ -12,6 +12,8 @@ import PricingSectionStatic from './components/HomePage/PricingStatic';
 import SuccessStoriesSection from './components/HomePage/SuccessStoriesSection';
 import ContactSection from './components/HomePage/ContactSection';
 import Footer from './components/HomePage/Footer';
+import AOS from 'aos';
+import 'aos/dist/aos.css'; // Import AOS styles
 
 // Shared types
 interface Database {
@@ -78,6 +80,13 @@ const App: React.FC = () => {
   });
   const [showThankYou, setShowThankYou] = useState<boolean>(false);
   const [shouldShowProfileDialog, setShouldShowProfileDialog] = useState<boolean>(false);
+
+  useEffect(() => {
+    AOS.init({
+      once: false, // Ensures animations only run once
+    offset: 50, // Triggers animations 100px before element enters viewport
+    });
+  }, []);
 
   // Initialize and update dialog visibility
   useEffect(() => {
@@ -148,7 +157,7 @@ const App: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-white" style={{ overflowX: 'hidden' }}>
       {showAuthForm && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="relative w-full max-w-md">
@@ -185,7 +194,7 @@ const App: React.FC = () => {
       <HeroSection user={user} setShowAuthForm={setShowAuthForm} />
       <HowWeWorkSection />
       <ClientsSection loading={loading} clientLogos={clientLogos} />
-      <PricingSectionStatic user={user} setShowAuthForm={setShowAuthForm}/>
+      <PricingSectionStatic />
       <SuccessStoriesSection
         loading={loading}
         successStories={successStories}
