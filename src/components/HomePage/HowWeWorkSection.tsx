@@ -25,14 +25,36 @@ const HowWeWorkSection: React.FC = () => {
     <section className="py-20 bg-white relative z-10" id="about">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center">
-          <h2 className="text-4xl sm:text-3xl md:text-4xl font-extrabold text-gray-900">How We Work</h2>
-          <p className="mt-4 text-xl sm:text-lg text-gray-600">
+          <h2
+            className="text-4xl sm:text-3xl md:text-4xl font-extrabold text-gray-900"
+            data-aos="zoom-in-up"
+            data-aos-duration="800"
+            data-aos-easing="ease-out-cubic"
+            data-aos-delay="100"
+            data-aos-once="false" 
+          >
+            How We Work
+          </h2>
+          <p
+            className="mt-4 text-xl sm:text-lg text-gray-600"
+            data-aos="zoom-in-up"
+            data-aos-duration="800"
+            data-aos-easing="ease-out-cubic"
+            data-aos-delay="150"
+            data-aos-once="false"
+          >
             Simple steps to connect brands with the right sponsorship opportunities
           </p>
         </div>
         <div className="mt-16 grid grid-cols-1 md:grid-cols-3 gap-8">
           {steps.map((step, index) => (
-            <Step key={index} icon={step.icon} title={step.title} description={step.description} index={index} />
+            <Step
+              key={index}
+              icon={step.icon}
+              title={step.title}
+              description={step.description}
+              index={index}
+            />
           ))}
         </div>
       </div>
