@@ -185,7 +185,7 @@ const App: React.FC = () => {
       <HeroSection user={user} setShowAuthForm={setShowAuthForm} />
       <HowWeWorkSection />
       <ClientsSection loading={loading} clientLogos={clientLogos} />
-      <PricingSectionStatic />
+      <PricingSectionStatic user={user} setShowAuthForm={setShowAuthForm}/>
       <SuccessStoriesSection
         loading={loading}
         successStories={successStories}
