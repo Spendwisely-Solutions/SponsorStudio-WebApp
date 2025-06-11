@@ -6,6 +6,7 @@ import { sendMatchNotification } from '../../lib/email';
 import { Search } from 'lucide-react';
 import Skeleton from 'react-loading-skeleton';
 import 'react-loading-skeleton/dist/skeleton.css';
+import { Tooltip } from 'react-tooltip';
 import ProfileAlert from './BrandDashboard/ProfileAlert';
 import FilterSection from './BrandDashboard/FilterSection';
 import TabsSection from './BrandDashboard/TabsSection';
@@ -15,6 +16,7 @@ import NoResultsCard from './BrandDashboard/NoResultsCard';
 import OpportunityCard from './BrandDashboard/OpportunityCard';
 import InfluencerPostCard from './BrandDashboard/InfluencerPostCard';
 import type { Opportunity, Post, Category, Match, Database } from './BrandDashboard/types';
+import coinIcon from '../../assets/dashboard/coin.png';
 
 interface BrandDashboardProps {
   onUpdateProfile: () => void;
@@ -397,6 +399,11 @@ export default function BrandDashboard({ onUpdateProfile }: BrandDashboardProps)
   if (loading) {
     return (
       <div className="max-w-full overflow-x-hidden">
+        {/* Credits Skeleton */}
+        <div className="mb-4 flex items-center space-x-2">
+          <Skeleton circle width={24} height={24} />
+          <Skeleton width={80} height={20} />
+        </div>
         <ProfileAlert companyName={profile?.company_name} onUpdateProfile={onUpdateProfile} />
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-4">
           <Skeleton width={200} height={24} />
@@ -459,6 +466,36 @@ export default function BrandDashboard({ onUpdateProfile }: BrandDashboardProps)
 
   return (
     <div className="max-w-full overflow-x-hidden">
+      {/* Display Credits with Custom Coin Icon and Tooltip */}
+      <div className="mb-4 bg-gradient-to-r from-white to-gray-50 p-4 rounded-xl shadow-md flex items-center justify-between transition-all duration-300 hover:shadow-lg">
+        <div className="flex items-center space-x-2">
+          <img
+            src={coinIcon}
+            alt="Credits"
+            className="w-6 h-6"
+            data-tooltip-id="credits-tooltip"
+            data-tooltip-content="Available Credits"
+          />
+          <span
+            className="text-sm sm:text-base font-semibold text-gray-800"
+            data-tooltip-id="credits-tooltip"
+            data-tooltip-content="Available Credits"
+          >
+            {profile?.credits ?? 'N/A'}
+          </span>
+          <Tooltip id="credits-tooltip" place="top" className="text-xs" />
+        </div>
+        <button
+          className="px-4 py-2 bg-[#2B4B9B] text-white rounded-lg hover:bg-[#1a2f61] transition-colors duration-200 text-xs sm:text-sm font-medium"
+          onClick={() => {
+            console.log('Navigate to purchase credits');
+            // Implement navigation to a payment page or open a modal
+          }}
+        >
+          Add Credits
+        </button>
+      </div>
+
       <ProfileAlert companyName={profile?.company_name} onUpdateProfile={onUpdateProfile} />
       {(activeTab === 'discover' || activeTab === 'influencers') && (
         <FilterSection
@@ -569,8 +606,7 @@ export default function BrandDashboard({ onUpdateProfile }: BrandDashboardProps)
                     No more influencer posts available
                   </h3>
                   <p className="text-xs sm:text-sm text-gray-500 mb-3 sm:mb-4">
-                    You've gone through all available influencer posts matching your
-                    criteria.
+                    You've gone through all available influencer posts matching your criteria.
                   </p>
                   <button
                     onClick={resetFilters}
