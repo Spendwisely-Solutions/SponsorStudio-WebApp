@@ -488,8 +488,7 @@ export default function BrandDashboard({ onUpdateProfile }: BrandDashboardProps)
         <button
           className="px-4 py-2 bg-[#2B4B9B] text-white rounded-lg hover:bg-[#1a2f61] transition-colors duration-200 text-xs sm:text-sm font-medium"
           onClick={() => {
-            console.log('Navigate to purchase credits');
-            // Implement navigation to a payment page or open a modal
+            window.location.href = '/purchase';
           }}
         >
           Add Credits

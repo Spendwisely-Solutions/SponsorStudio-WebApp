@@ -15,6 +15,7 @@ import ResetPassword from './components/ResetPassword';
 import Logout from './components/Logout';
 import SuccessPage from './components/dashboard/CreatorDashboard/Success';
 import Pricing from './components/Pricing';
+import PurchaseCredits from './components/PurchaseCredits';
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
@@ -29,6 +30,8 @@ createRoot(document.getElementById('root')!).render(
           <Route path="/logout" element={<Logout />} />
           <Route path="/success" element={<SuccessPage />} />
           <Route path='/pricing' element={<Pricing />} />
+          <Route path='/purchase' element={<PurchaseCredits />} />
+
           <Route 
             path="/admin/*" 
             element={
