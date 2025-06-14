@@ -1,12 +1,13 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
-import { AnimatePresence } from 'framer-motion';
+import { AnimatePresence, motion } from 'framer-motion';
 import { sendMatchNotification } from '../../lib/email';
 import { Search } from 'lucide-react';
 import Skeleton from 'react-loading-skeleton';
 import 'react-loading-skeleton/dist/skeleton.css';
 import { Tooltip } from 'react-tooltip';
+import toast from 'react-hot-toast';
 import ProfileAlert from './BrandDashboard/ProfileAlert';
 import FilterSection from './BrandDashboard/FilterSection';
 import TabsSection from './BrandDashboard/TabsSection';
@@ -15,7 +16,7 @@ import MatchesSection from './BrandDashboard/MatchesSection';
 import NoResultsCard from './BrandDashboard/NoResultsCard';
 import OpportunityCard from './BrandDashboard/OpportunityCard';
 import InfluencerPostCard from './BrandDashboard/InfluencerPostCard';
-import type { Opportunity, Post, Category, Match, Database } from './BrandDashboard/types';
+import type { Opportunity, Post, Category, Match } from './BrandDashboard/types';
 import coinIcon from '../../assets/dashboard/coin.png';
 
 interface BrandDashboardProps {
@@ -49,6 +50,9 @@ export default function BrandDashboard({ onUpdateProfile }: BrandDashboardProps)
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [swipeActions, setSwipeActions] = useState<{ [key: string]: 'like' | 'dislike' | null }>({});
   const [showFullDetails, setShowFullDetails] = useState(false);
+  const [shakeCredits, setShakeCredits] = useState(false);
+  const [pendingLikeId, setPendingLikeId] = useState<string | null>(null);
+  const [credits, setCredits] = useState<number | null>(profile?.credits ?? null);
 
   const isInitialLoad = useRef(true);
   const hasRefreshed = useRef(false);
@@ -76,6 +80,11 @@ export default function BrandDashboard({ onUpdateProfile }: BrandDashboardProps)
       };
     }
   }, [user, profile]);
+
+  useEffect(() => {
+    // Sync local credits with profile.credits when profile changes
+    setCredits(profile?.credits ?? null);
+  }, [profile?.credits]);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -221,18 +230,145 @@ export default function BrandDashboard({ onUpdateProfile }: BrandDashboardProps)
     }
   }, [user, selectedCategory, adTypeFilter, priceRangeFilter, locationSearch, searchQuery, userMatches, activeTab]);
 
-  const handleLike = async (id: string, type: 'opportunity' | 'post' = 'opportunity') => {
-    if (!user) return;
+  const fetchProfile = async () => {
+    if (!user) return null;
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('credits, company_name')
+        .eq('id', user.id)
+        .single();
+      if (error) throw error;
+      setCredits(data.credits ?? null);
+      console.log(`fetchProfile: Updated local credits to ${data.credits}`);
+      return data;
+    } catch (error) {
+      console.error('Error fetching profile:', error);
+      return null;
+    }
+  };
 
+  const refreshToken = async () => {
+    console.log('refreshToken: Attempting to refresh session');
+    try {
+      const { data, error } = await supabase.auth.refreshSession();
+      if (error) throw error;
+      if (!data.session?.access_token) {
+        throw new Error('No access token in refreshed session');
+      }
+      console.log('refreshToken: Session refreshed successfully');
+      return data.session.access_token;
+    } catch (error) {
+      console.error('refreshToken: Failed to refresh session:', error);
+      throw error;
+    }
+  };
+
+  const deductCredits = async (userId: string, accessToken: string) => {
+    console.log(`deductCredits: Calling API with userId=${userId}, token=${accessToken.slice(0, 10)}...`);
+    try {
+      const response = await fetch('https://urablfvmqregyvfyaovi.supabase.co/functions/v1/update-credits', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify({
+          userId,
+          creditsToDeduct: 50,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        if (response.status === 401 && errorData.message === 'Invalid JWT') {
+          throw new Error('Invalid JWT');
+        }
+        throw new Error(`Failed to deduct credits: ${response.statusText} - ${JSON.stringify(errorData)}`);
+      }
+
+      const data = await response.json();
+      console.log('deductCredits: Credits deducted successfully:', data);
+      return data;
+    } catch (error) {
+      console.error('deductCredits: Error:', error);
+      throw error;
+    }
+  };
+
+  const handleLike = async (id: string, type: 'opportunity' | 'post' = 'opportunity') => {
+    if (!user || !profile) {
+      console.error('handleLike: User or profile not available');
+      toast.error('Please log in to perform this action.', {
+        duration: 4000,
+        position: 'top-center',
+      });
+      return;
+    }
+
+    console.log(`handleLike: Attempting to like ${type} with ID ${id}, credits: ${credits}`);
+
+    // Check if user has enough credits
+    if ((credits ?? 0) < 50) {
+      console.log('handleLike: Insufficient credits');
+      setShakeCredits(true);
+      toast.error('Insufficient credits! Please add more credits to like.', {
+        duration: 4000,
+        position: 'top-center',
+      });
+      setTimeout(() => setShakeCredits(false), 500);
+      setSwipeActions((prev) => ({ ...prev, [id]: null }));
+      return;
+    }
+
+    // Store the item being liked
+    let item: Opportunity | Post | null = null;
     if (type === 'opportunity') {
-      const updatedOpportunities = opportunities.filter((opp) => opp.id !== id);
-      setOpportunities(updatedOpportunities);
+      item = opportunities.find((opp) => opp.id === id) || null;
     } else {
-      const updatedPosts = posts.filter((post) => post.id !== id);
-      setPosts(updatedPosts);
+      item = posts.find((post) => post.id === id) || null;
+    }
+    if (!item) {
+      console.error('handleLike: Item not found');
+      return;
+    }
+
+    // Store original credits for rollback on failure
+    const originalCredits = credits;
+
+    // Optimistic credit deduction
+    setCredits((prev) => (prev ?? 0) - 50);
+    console.log(`handleLike: Optimistically updated credits to ${(credits ?? 0) - 50}`);
+
+    // Set pending like ID to prevent rendering during processing
+    setPendingLikeId(id);
+
+    // Remove item optimistically to show next card
+    if (type === 'opportunity') {
+      setOpportunities(opportunities.filter((opp) => opp.id !== id));
+    } else {
+      setPosts(posts.filter((post) => post.id !== id));
     }
 
     try {
+      // Ensure valid token
+      let accessToken = user.access_token;
+      if (!accessToken) {
+        console.log('handleLike: No access token, attempting refresh');
+        accessToken = await refreshToken();
+      }
+
+      // Deduct credits
+      await deductCredits(user.id, accessToken);
+      console.log('handleLike: Credits deducted successfully');
+
+      // Sync credits with server
+      const serverProfile = await fetchProfile();
+      if (serverProfile && serverProfile.credits !== credits) {
+        console.log(`handleLike: Server credits (${serverProfile.credits}) differ from local (${credits}), syncing`);
+        setCredits(serverProfile.credits ?? null);
+      }
+
       if (type === 'opportunity') {
         const { data: opportunityData, error: opportunityError } = await supabase
           .from('opportunities')
@@ -243,7 +379,10 @@ export default function BrandDashboard({ onUpdateProfile }: BrandDashboardProps)
           .eq('id', id)
           .single();
 
-        if (opportunityError) throw opportunityError;
+        if (opportunityError) {
+          console.error('handleLike: Error fetching opportunity data:', opportunityError);
+          throw opportunityError;
+        }
 
         const { error } = await supabase.from('matches').insert({
           opportunity_id: id,
@@ -251,7 +390,10 @@ export default function BrandDashboard({ onUpdateProfile }: BrandDashboardProps)
           status: 'pending',
         });
 
-        if (error) throw error;
+        if (error) {
+          console.error('handleLike: Error inserting match:', error);
+          throw error;
+        }
 
         if (profile) {
           try {
@@ -266,6 +408,7 @@ export default function BrandDashboard({ onUpdateProfile }: BrandDashboardProps)
               opportunityData.calendly_link,
               opportunityData.sponsorship_brochure_url
             );
+            console.log('handleLike: Match notification sent');
 
             setMatchedOpportunity(opportunityData);
             setShowMatchSuccess(true);
@@ -275,7 +418,7 @@ export default function BrandDashboard({ onUpdateProfile }: BrandDashboardProps)
               setMatchedOpportunity(null);
             }, 5000);
           } catch (emailError) {
-            console.error('Error sending email notification:', emailError);
+            console.error('handleLike: Error sending email notification:', emailError);
           }
         }
 
@@ -293,7 +436,10 @@ export default function BrandDashboard({ onUpdateProfile }: BrandDashboardProps)
           .eq('id', id)
           .single();
 
-        if (postError) throw postError;
+        if (postError) {
+          console.error('handleLike: Error fetching post data:', postError);
+          throw postError;
+        }
 
         const { error } = await supabase.from('matches').insert({
           post_id: id,
@@ -301,7 +447,10 @@ export default function BrandDashboard({ onUpdateProfile }: BrandDashboardProps)
           status: 'pending',
         });
 
-        if (error) throw error;
+        if (error) {
+          console.error('handleLike: Error inserting match:', error);
+          throw error;
+        }
 
         if (profile) {
           try {
@@ -316,6 +465,7 @@ export default function BrandDashboard({ onUpdateProfile }: BrandDashboardProps)
               null,
               null
             );
+            console.log('handleLike: Match notification sent for post');
 
             setShowMatchSuccess(true);
 
@@ -323,21 +473,42 @@ export default function BrandDashboard({ onUpdateProfile }: BrandDashboardProps)
               setShowMatchSuccess(false);
             }, 5000);
           } catch (emailError) {
-            console.error('Error sending email notification:', emailError);
+            console.error('handleLike: Error sending email notification:', emailError);
           }
         }
       }
-    } catch (error) {
-      console.error('Error creating match:', error);
-      if (type === 'opportunity') {
-        await fetchOpportunities();
-      } else {
-        await fetchPosts();
+      console.log(`handleLike: Successfully liked ${type} with ID ${id}, staying on next card`);
+    } catch (error: any) {
+      console.error('handleLike: Error creating match or deducting credits:', error);
+      // Restore the item and credits
+      if (item) {
+        if (type === 'opportunity') {
+          setOpportunities([item as Opportunity, ...opportunities]);
+        } else {
+          setPosts([item as Post, ...posts]);
+        }
       }
+      setCredits(originalCredits);
+      console.log(`handleLike: Restored credits to ${originalCredits} due to failure`);
+      setSwipeActions((prev) => ({ ...prev, [id]: null }));
+      if (error.message === 'Invalid JWT') {
+        toast.error('Session expired. Please log in again.', {
+          duration: 4000,
+          position: 'top-center',
+        });
+      } else {
+        toast.error('Failed to process like. Please try again.', {
+          duration: 4000,
+          position: 'top-center',
+        });
+      }
+    } finally {
+      setPendingLikeId(null);
     }
   };
 
   const handleReject = (id: string, type: 'opportunity' | 'post') => {
+    console.log(`handleReject: Rejecting ${type} with ID ${id}`);
     const updatedRejections = [...rejections, id];
     setRejections(updatedRejections);
 
@@ -399,7 +570,6 @@ export default function BrandDashboard({ onUpdateProfile }: BrandDashboardProps)
   if (loading) {
     return (
       <div className="max-w-full overflow-x-hidden">
-        {/* Credits Skeleton */}
         <div className="mb-4 flex items-center space-x-2">
           <Skeleton circle width={24} height={24} />
           <Skeleton width={80} height={20} />
@@ -464,10 +634,14 @@ export default function BrandDashboard({ onUpdateProfile }: BrandDashboardProps)
     );
   }
 
+  console.log(`Rendering BrandDashboard with credits: ${credits}, access_token: ${user?.access_token ? 'present' : 'missing'}`);
+
   return (
     <div className="max-w-full overflow-x-hidden">
-      {/* Display Credits with Custom Coin Icon and Tooltip */}
-      <div className="mb-4 bg-gradient-to-r from-white to-gray-50 p-4 rounded-xl shadow-md flex items-center justify-between transition-all duration-300 hover:shadow-lg">
+      <motion.div
+        className="mb-4 bg-gradient-to-r from-white to-gray-50 p-4 rounded-xl shadow-md flex items-center justify-between transition-all duration-300 hover:shadow-lg"
+        animate={shakeCredits ? { x: [0, -10, 10, -10, 10, 0], transition: { duration: 0.5 } } : {}}
+      >
         <div className="flex items-center space-x-2">
           <img
             src={coinIcon}
@@ -481,7 +655,7 @@ export default function BrandDashboard({ onUpdateProfile }: BrandDashboardProps)
             data-tooltip-id="credits-tooltip"
             data-tooltip-content="Available Credits"
           >
-            {profile?.credits ?? 'N/A'}
+            {credits ?? 'N/A'}
           </span>
           <Tooltip id="credits-tooltip" place="top" className="text-xs" />
         </div>
@@ -493,7 +667,7 @@ export default function BrandDashboard({ onUpdateProfile }: BrandDashboardProps)
         >
           Add Credits
         </button>
-      </div>
+      </motion.div>
 
       <ProfileAlert companyName={profile?.company_name} onUpdateProfile={onUpdateProfile} />
       {(activeTab === 'discover' || activeTab === 'influencers') && (
@@ -532,26 +706,30 @@ export default function BrandDashboard({ onUpdateProfile }: BrandDashboardProps)
           ) : (
             <div className="min-h-[calc(100vh-150px)] sm:min-h-[calc(100vh-100px)]">
               <AnimatePresence>
-                {opportunities.slice(0, 1).map((opportunity) => (
-                  <OpportunityCard
-                    key={opportunity.id}
-                    opportunity={opportunity}
-                    onLike={async (id: string) => {
-                      setSwipeActions((prev) => ({ ...prev, [id]: 'like' }));
-                      await handleLike(id, 'opportunity');
-                    }}
-                    onReject={(id: string) => {
-                      setSwipeActions((prev) => ({ ...prev, [id]: 'dislike' }));
-                      handleReject(id, 'opportunity');
-                    }}
-                    swipeAction={swipeActions[opportunity.id] || null}
-                    onAnimationComplete={handleAnimationComplete}
-                    showFullDetails={showFullDetails}
-                    setShowFullDetails={setShowFullDetails}
-                  />
-                ))}
+                {opportunities
+                  .filter((opportunity) => opportunity.id !== pendingLikeId)
+                  .slice(0, 1)
+                  .map((opportunity) => (
+                    <OpportunityCard
+                      key={opportunity.id}
+                      opportunity={opportunity}
+                      onLike={async (id: string) => {
+                        setSwipeActions((prev) => ({ ...prev, [id]: 'like' }));
+                        await handleLike(id, 'opportunity');
+                      }}
+                      onReject={(id: string) => {
+                        setSwipeActions((prev) => ({ ...prev, [id]: 'dislike' }));
+                        handleReject(id, 'opportunity');
+                      }}
+                      swipeAction={swipeActions[opportunity.id] || null}
+                      onAnimationComplete={handleAnimationComplete}
+                      showFullDetails={showFullDetails}
+                      setShowFullDetails={setShowFullDetails}
+                      credits={credits ?? 0}
+                    />
+                  ))}
               </AnimatePresence>
-              {opportunities.length === 1 && (
+              {opportunities.length === 1 && !pendingLikeId && (
                 <div className="w-full min-h-[calc(100vh-150px)] sm:min-h-[calc(100vh-100px)] flex items-center justify-center">
                   <div className="text-center p-6">
                     <Search className="w-10 h-10 sm:w-12 sm:h-12 text-gray-400 mx-auto mb-3 sm:mb-4" />
@@ -595,6 +773,7 @@ export default function BrandDashboard({ onUpdateProfile }: BrandDashboardProps)
                     }}
                     swipeAction={swipeActions[post.id] || null}
                     onAnimationComplete={handleAnimationComplete}
+                    credits={credits ?? 0}
                   />
                 ))}
               </AnimatePresence>
