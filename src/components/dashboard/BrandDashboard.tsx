@@ -82,7 +82,6 @@ export default function BrandDashboard({ onUpdateProfile }: BrandDashboardProps)
   }, [user, profile]);
 
   useEffect(() => {
-    // Sync local credits with profile.credits when profile changes
     setCredits(profile?.credits ?? null);
   }, [profile?.credits]);
 
@@ -264,9 +263,38 @@ export default function BrandDashboard({ onUpdateProfile }: BrandDashboardProps)
     }
   };
 
-  const deductCredits = async (userId: string, accessToken: string) => {
-    console.log(`deductCredits: Calling API with userId=${userId}, token=${accessToken.slice(0, 10)}...`);
+  const deductCredits = async (creditsToDeduct: number): Promise<void> => {
+    if (!user) {
+      console.error('deductCredits: User not available');
+      toast.error('Please log in to perform this action.', {
+        duration: 4000,
+        position: 'top-center',
+      });
+      throw new Error('User not authenticated');
+    }
+
+    if ((credits ?? 0) < creditsToDeduct) {
+      console.log(`deductCredits: Insufficient credits, need ${creditsToDeduct}, have ${credits}`);
+      setShakeCredits(true);
+      toast.error(`Insufficient credits! You need ${creditsToDeduct} credits to perform this action.`, {
+        duration: 4000,
+        position: 'top-center',
+      });
+      setTimeout(() => setShakeCredits(false), 500);
+      throw new Error('Insufficient credits');
+    }
+
+    const originalCredits = credits;
+    setCredits((prev) => (prev ?? 0) - creditsToDeduct);
+    console.log(`deductCredits: Optimistically updated credits to ${(credits ?? 0) - creditsToDeduct}`);
+
     try {
+      let accessToken = user.access_token;
+      if (!accessToken) {
+        console.log('deductCredits: No access token, attempting refresh');
+        accessToken = await refreshToken();
+      }
+
       const response = await fetch('https://urablfvmqregyvfyaovi.supabase.co/functions/v1/update-credits', {
         method: 'POST',
         headers: {
@@ -274,24 +302,67 @@ export default function BrandDashboard({ onUpdateProfile }: BrandDashboardProps)
           'Authorization': `Bearer ${accessToken}`,
         },
         body: JSON.stringify({
-          userId,
-          creditsToDeduct: 50,
+          userId: user.id,
+          creditsToDeduct,
         }),
       });
 
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
-        if (response.status === 401 && errorData.message === 'Invalid JWT') {
-          throw new Error('Invalid JWT');
+        if (response.status === 401 && errorData.code === 401 && errorData.message === 'Invalid JWT') {
+          console.error('deductCredits: Invalid JWT, attempting token refresh');
+          try {
+            accessToken = await refreshToken();
+            const retryResponse = await fetch('https://urablfvmqregyvfyaovi.supabase.co/functions/v1/update-credits', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${accessToken}`,
+              },
+              body: JSON.stringify({
+                userId: user.id,
+                creditsToDeduct,
+              }),
+            });
+            if (!retryResponse.ok) {
+              const retryErrorData = await retryResponse.json().catch(() => ({}));
+              throw new Error(`Retry failed: ${retryErrorData.message || retryResponse.statusText}`);
+            }
+          } catch (refreshError) {
+            console.error('deductCredits: Token refresh failed:', refreshError);
+            toast.error('Session expired. Please log in again.', {
+              duration: 4000,
+              position: 'top-center',
+            });
+            throw new Error('Invalid JWT');
+          }
+        } else {
+          throw new Error(`Failed to deduct credits: ${errorData.message || response.statusText}`);
         }
-        throw new Error(`Failed to deduct credits: ${response.statusText} - ${JSON.stringify(errorData)}`);
       }
 
       const data = await response.json();
       console.log('deductCredits: Credits deducted successfully:', data);
-      return data;
-    } catch (error) {
-      console.error('deductCredits: Error:', error);
+
+      const serverProfile = await fetchProfile();
+      if (serverProfile && serverProfile.credits !== credits) {
+        console.log(`deductCredits: Server credits (${serverProfile.credits}) differ from local (${credits}), syncing`);
+        setCredits(serverProfile.credits ?? null);
+      }
+    } catch (error: any) {
+      setCredits(originalCredits);
+      console.log(`deductCredits: Restored credits to ${originalCredits} due to failure`);
+      if (error.message === 'Invalid JWT') {
+        toast.error('Session expired. Please log in again.', {
+          duration: 4000,
+          position: 'top-center',
+        });
+      } else {
+        toast.error(`Failed to deduct ${creditsToDeduct} credits. Please try again.`, {
+          duration: 4000,
+          position: 'top-center',
+        });
+      }
       throw error;
     }
   };
@@ -307,21 +378,8 @@ export default function BrandDashboard({ onUpdateProfile }: BrandDashboardProps)
     }
 
     console.log(`handleLike: Attempting to like ${type} with ID ${id}, credits: ${credits}`);
+    setPendingLikeId(id);
 
-    // Check if user has enough credits
-    if ((credits ?? 0) < 50) {
-      console.log('handleLike: Insufficient credits');
-      setShakeCredits(true);
-      toast.error('Insufficient credits! Please add more credits to like.', {
-        duration: 4000,
-        position: 'top-center',
-      });
-      setTimeout(() => setShakeCredits(false), 500);
-      setSwipeActions((prev) => ({ ...prev, [id]: null }));
-      return;
-    }
-
-    // Store the item being liked
     let item: Opportunity | Post | null = null;
     if (type === 'opportunity') {
       item = opportunities.find((opp) => opp.id === id) || null;
@@ -330,46 +388,15 @@ export default function BrandDashboard({ onUpdateProfile }: BrandDashboardProps)
     }
     if (!item) {
       console.error('handleLike: Item not found');
+      setPendingLikeId(null);
       return;
     }
 
-    // Store original credits for rollback on failure
-    const originalCredits = credits;
-
-    // Optimistic credit deduction
-    setCredits((prev) => (prev ?? 0) - 50);
-    console.log(`handleLike: Optimistically updated credits to ${(credits ?? 0) - 50}`);
-
-    // Set pending like ID to prevent rendering during processing
-    setPendingLikeId(id);
-
-    // Remove item optimistically to show next card
-    if (type === 'opportunity') {
-      setOpportunities(opportunities.filter((opp) => opp.id !== id));
-    } else {
-      setPosts(posts.filter((post) => post.id !== id));
-    }
-
     try {
-      // Ensure valid token
-      let accessToken = user.access_token;
-      if (!accessToken) {
-        console.log('handleLike: No access token, attempting refresh');
-        accessToken = await refreshToken();
-      }
-
-      // Deduct credits
-      await deductCredits(user.id, accessToken);
-      console.log('handleLike: Credits deducted successfully');
-
-      // Sync credits with server
-      const serverProfile = await fetchProfile();
-      if (serverProfile && serverProfile.credits !== credits) {
-        console.log(`handleLike: Server credits (${serverProfile.credits}) differ from local (${credits}), syncing`);
-        setCredits(serverProfile.credits ?? null);
-      }
+      await deductCredits(50);
 
       if (type === 'opportunity') {
+        setOpportunities(opportunities.filter((opp) => opp.id !== id));
         const { data: opportunityData, error: opportunityError } = await supabase
           .from('opportunities')
           .select(`
@@ -424,9 +451,9 @@ export default function BrandDashboard({ onUpdateProfile }: BrandDashboardProps)
 
         const updatedMatches = [...matches, id];
         setMatches(updatedMatches);
-
         fetchUserMatches();
       } else {
+        setPosts(posts.filter((post) => post.id !== id));
         const { data: postData, error: postError } = await supabase
           .from('posts')
           .select(`
@@ -477,32 +504,15 @@ export default function BrandDashboard({ onUpdateProfile }: BrandDashboardProps)
           }
         }
       }
-      console.log(`handleLike: Successfully liked ${type} with ID ${id}, staying on next card`);
+      console.log(`handleLike: Successfully liked ${type} with ID ${id}`);
     } catch (error: any) {
-      console.error('handleLike: Error creating match or deducting credits:', error);
-      // Restore the item and credits
-      if (item) {
-        if (type === 'opportunity') {
-          setOpportunities([item as Opportunity, ...opportunities]);
-        } else {
-          setPosts([item as Post, ...posts]);
-        }
-      }
-      setCredits(originalCredits);
-      console.log(`handleLike: Restored credits to ${originalCredits} due to failure`);
-      setSwipeActions((prev) => ({ ...prev, [id]: null }));
-      if (error.message === 'Invalid JWT') {
-        toast.error('Session expired. Please log in again.', {
-          duration: 4000,
-          position: 'top-center',
-        });
+      console.error('handleLike: Error:', error);
+      if (type === 'opportunity') {
+        setOpportunities([item as Opportunity, ...opportunities]);
       } else {
-        toast.error('Failed to process like. Please try again.', {
-          duration: 4000,
-          position: 'top-center',
-        });
+        setPosts([item as Post, ...posts]);
       }
-    } finally {
+      setSwipeActions((prev) => ({ ...prev, [id]: null }));
       setPendingLikeId(null);
     }
   };
@@ -726,6 +736,7 @@ export default function BrandDashboard({ onUpdateProfile }: BrandDashboardProps)
                       showFullDetails={showFullDetails}
                       setShowFullDetails={setShowFullDetails}
                       credits={credits ?? 0}
+                      deductCredits={deductCredits}
                     />
                   ))}
               </AnimatePresence>
