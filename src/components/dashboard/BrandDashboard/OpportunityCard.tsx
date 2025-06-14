@@ -1,5 +1,5 @@
 import React, { memo, useState, useEffect, useMemo, useRef } from 'react';
-import { Calendar, DollarSign, MapPin, FileText, Heart, X, Volume2, VolumeX, Link as LinkIcon, Tag, User, Users } from 'lucide-react';
+import { Calendar, DollarSign, MapPin, FileText, Heart, X, Volume2, VolumeX, Link as LinkIcon, Tag, User, Users, Unlock } from 'lucide-react';
 import { motion, useMotionValue, useTransform } from 'framer-motion';
 import toast from 'react-hot-toast';
 
@@ -35,6 +35,7 @@ interface OpportunityCardProps {
   showFullDetails: boolean;
   setShowFullDetails: (value: boolean) => void;
   credits: number;
+  deductCredits: (creditsToDeduct: number) => Promise<void>;
 }
 
 const useSwipeAnimation = (
@@ -104,7 +105,7 @@ const useSwipeAnimation = (
 };
 
 const OpportunityCard: React.FC<OpportunityCardProps> = memo(
-  ({ opportunity, onLike, onReject, swipeAction, onAnimationComplete, showFullDetails, credits }) => {
+  ({ opportunity, onLike, onReject, swipeAction, onAnimationComplete, showFullDetails, credits, deductCredits }) => {
     const [isSwipePending, setIsSwipePending] = useState(false);
     const { x, rotate, likeOpacity, dislikeOpacity, handleDragEnd } = useSwipeAnimation(
       () => onLike(opportunity.id),
@@ -116,6 +117,8 @@ const OpportunityCard: React.FC<OpportunityCardProps> = memo(
     const [isMuted, setIsMuted] = useState(true);
     const [showMuteIndicator, setShowMuteIndicator] = useState(false);
     const [selectedMedia, setSelectedMedia] = useState(opportunity.media_urls?.[0] || '');
+    const [isBrochureUnlocked, setIsBrochureUnlocked] = useState(false);
+    const [isUnlocking, setIsUnlocking] = useState(false); // New loading state
     const videoRef = useRef<HTMLVideoElement>(null);
 
     useEffect(() => {
@@ -220,6 +223,34 @@ const OpportunityCard: React.FC<OpportunityCardProps> = memo(
         });
       } finally {
         setIsSwipePending(false);
+      }
+    };
+
+    const handleUnlockBrochure = async () => {
+      if (credits < 100) {
+        console.log('handleUnlockBrochure: Insufficient credits for brochure');
+        toast.error('Insufficient credits! You need 100 credits to unlock the brochure.', {
+          duration: 4000,
+          position: 'top-center',
+        });
+        return;
+      }
+
+      setIsUnlocking(true); // Start loading
+      try {
+        console.log('handleUnlockBrochure: Attempting to deduct 100 credits');
+        await deductCredits(100);
+        setIsBrochureUnlocked(true);
+        toast.success('Brochure unlocked successfully!', {
+          duration: 4000,
+          position: 'top-center',
+        });
+        console.log('handleUnlockBrochure: Brochure unlocked');
+      } catch (error: any) {
+        console.error('handleUnlockBrochure: Error deducting credits:', error);
+        // Error messages (e.g., "Session expired" or "Failed to deduct credits") are handled by deductCredits in BrandDashboard
+      } finally {
+        setIsUnlocking(false); // Stop loading
       }
     };
 
@@ -363,15 +394,44 @@ const OpportunityCard: React.FC<OpportunityCardProps> = memo(
         icon: <FileText className="w-5 h-5 sm:w-6 sm:h-6 text-gray-700" />,
         label: 'Brochure',
         value: opportunity.sponsorship_brochure_url ? (
-          <a
-            href={opportunity.sponsorship_brochure_url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-blue-600 hover:text-blue-800 flex items-center"
-          >
-            <LinkIcon className="w-4 h-4 mr-1" />
-            View
-          </a>
+          <div className="flex flex-col space-y-1">
+            {isBrochureUnlocked ? (
+              <a
+                href={opportunity.sponsorship_brochure_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center text-blue-600 hover:text-blue-800"
+                aria-label="View sponsorship brochure"
+              >
+                <LinkIcon className="w-4 h-4 mr-1" />
+                View Brochure
+              </a>
+            ) : (
+              <button
+                onClick={handleUnlockBrochure}
+                disabled={credits < 100 || isUnlocking}
+                className={`flex items-center px-2 py-1 rounded-md transition-colors duration-200 ${
+                  credits < 100 || isUnlocking
+                    ? 'bg-gray-400/80 text-gray-600 cursor-not-allowed'
+                    : 'bg-blue-600/80 text-white hover:bg-blue-700/90'
+                }`}
+                aria-label="Unlock sponsorship brochure, costs 100 credits"
+              >
+                {isUnlocking ? (
+                  <span className="flex items-center">
+                    <span className="inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-1"></span>
+                    Unlocking...
+                  </span>
+                ) : (
+                  <>
+                    <Unlock className="w-4 h-4 mr-1" />
+                    Unlock Brochure
+                  </>
+                )}
+              </button>
+            )}
+            <p className="text-xs text-gray-500">Costs 100 credits to view</p>
+          </div>
         ) : 'Not Available',
       },
       {
