@@ -1,6 +1,7 @@
 import React, { memo, useState, useEffect, useMemo, useRef } from 'react';
 import { Calendar, DollarSign, MapPin, FileText, Heart, X, Volume2, VolumeX, Link as LinkIcon, Tag, User, Users } from 'lucide-react';
 import { motion, useMotionValue, useTransform } from 'framer-motion';
+import toast from 'react-hot-toast';
 
 interface Opportunity {
   id: string;
@@ -33,11 +34,14 @@ interface OpportunityCardProps {
   onAnimationComplete: (id: string) => void;
   showFullDetails: boolean;
   setShowFullDetails: (value: boolean) => void;
+  credits: number;
 }
 
 const useSwipeAnimation = (
   onLike: () => Promise<void>,
-  onReject: () => void
+  onReject: () => void,
+  setIsSwipePending: (value: boolean) => void,
+  credits: number
 ) => {
   const x = useMotionValue(0);
   const rotate = useTransform(x, [-200, 200], [-15, 15]);
@@ -50,23 +54,49 @@ const useSwipeAnimation = (
 
   const handleDragEnd = async (event: any, info: any) => {
     const swipeThreshold = 100;
+    setIsSwipePending(true);
+    console.log(`handleDragEnd: Swipe offset x=${info.offset.x}, credits=${credits}`);
+
     try {
       if (Math.abs(info.offset.x) > swipeThreshold) {
         if (info.offset.x > swipeThreshold) {
+          if (credits < 50) {
+            console.log('handleDragEnd: Insufficient credits for like');
+            toast.error('Insufficient credits! Please add more credits to like.', {
+              duration: 4000,
+              position: 'top-center',
+            });
+            x.set(0, {
+              type: 'spring',
+              stiffness: 300,
+              damping: 30,
+            });
+            setIsSwipePending(false);
+            return;
+          }
+          console.log('handleDragEnd: Triggering onLike');
           await onLike();
         } else if (info.offset.x < -swipeThreshold) {
+          console.log('handleDragEnd: Triggering onReject');
           onReject();
         }
       } else {
+        console.log('handleDragEnd: Resetting position (swipe below threshold)');
         x.set(0, {
           type: 'spring',
           stiffness: 300,
-          damping: 30
+          damping: 30,
         });
       }
     } catch (error) {
-      console.error('Swipe animation error:', error);
-      x.set(0, true);
+      console.error('handleDragEnd: Swipe animation error:', error);
+      x.set(0, {
+        type: 'spring',
+        stiffness: 300,
+        damping: 30,
+      });
+    } finally {
+      setIsSwipePending(false);
     }
   };
 
@@ -74,20 +104,24 @@ const useSwipeAnimation = (
 };
 
 const OpportunityCard: React.FC<OpportunityCardProps> = memo(
-  ({ opportunity, onLike, onReject, swipeAction, onAnimationComplete }) => {
+  ({ opportunity, onLike, onReject, swipeAction, onAnimationComplete, showFullDetails, credits }) => {
+    const [isSwipePending, setIsSwipePending] = useState(false);
     const { x, rotate, likeOpacity, dislikeOpacity, handleDragEnd } = useSwipeAnimation(
       () => onLike(opportunity.id),
-      () => onReject(opportunity.id)
+      () => onReject(opportunity.id),
+      setIsSwipePending,
+      credits
     );
 
-    const [isMuted, setIsMuted] = useState(false);
+    const [isMuted, setIsMuted] = useState(true);
     const [showMuteIndicator, setShowMuteIndicator] = useState(false);
     const [selectedMedia, setSelectedMedia] = useState(opportunity.media_urls?.[0] || '');
     const videoRef = useRef<HTMLVideoElement>(null);
 
     useEffect(() => {
+      console.log(`OpportunityCard: Mounted with credits=${credits}, opportunity.id=${opportunity.id}`);
       x.set(0);
-    }, [opportunity.id, x]);
+    }, [opportunity.id, x, credits]);
 
     useEffect(() => {
       let timeout: NodeJS.Timeout;
@@ -102,59 +136,96 @@ const OpportunityCard: React.FC<OpportunityCardProps> = memo(
     useEffect(() => {
       if (!videoRef.current) return;
 
+      const video = videoRef.current;
+      video.muted = isMuted;
+
       const observer = new IntersectionObserver(
         ([entry]) => {
-          if (entry.isIntersecting) {
-            videoRef.current.muted = isMuted;
-            const playPromise = videoRef.current.play();
+          if (entry.isIntersecting && !isSwipePending) {
+            video.muted = isMuted;
+            const playPromise = video.play();
             if (playPromise !== undefined) {
               playPromise.catch(error => {
                 console.error('Video playback failed:', error);
                 setIsMuted(true);
-                videoRef.current.muted = true;
-                videoRef.current.play().catch(err => {
+                video.muted = true;
+                video.play().catch(err => {
                   console.error('Video playback failed even when muted:', err);
                 });
               });
             }
           } else {
-            videoRef.current.pause();
+            video.pause();
           }
         },
         { threshold: 0.5 }
       );
 
-      observer.observe(videoRef.current);
+      observer.observe(video);
 
       return () => {
         observer.disconnect();
       };
-    }, [opportunity.id, isMuted, selectedMedia]);
+    }, [opportunity.id, isMuted, selectedMedia, isSwipePending]);
 
-    const handleButtonAction = async (action: 'like' | 'dislike') => {
-      try {
-        if (action === 'like') {
-          await onLike(opportunity.id);
-        } else {
-          onReject(opportunity.id);
-        }
-      } catch (error) {
-        console.error(`Action ${action} failed:`, error);
+    const handleToggleMute = (e?: React.MouseEvent | React.TouchEvent) => {
+      if (e) {
+        e.preventDefault();
+        e.stopPropagation();
       }
-    };
 
-    const handleVideoClick = () => {
       if (videoRef.current) {
         const newMuteState = !isMuted;
         videoRef.current.muted = newMuteState;
         setIsMuted(newMuteState);
         setShowMuteIndicator(true);
+        console.log(`handleToggleMute: Video ${newMuteState ? 'muted' : 'unmuted'}`);
+      }
+    };
+
+    const handleButtonAction = async (action: 'like' | 'dislike') => {
+      if (isSwipePending) {
+        console.log(`handleButtonAction: Action ${action} blocked due to pending swipe`);
+        return;
+      }
+      setIsSwipePending(true);
+      console.log(`handleButtonAction: Triggering ${action}, credits=${credits}`);
+
+      try {
+        if (action === 'like') {
+          if (credits < 50) {
+            console.log('handleButtonAction: Insufficient credits for like');
+            toast.error('Insufficient credits! Please add more credits to like.', {
+              duration: 4000,
+              position: 'top-center',
+            });
+            x.set(0, {
+              type: 'spring',
+              stiffness: 300,
+              damping: 30,
+            });
+            setIsSwipePending(false);
+            return;
+          }
+          await onLike(opportunity.id);
+        } else {
+          onReject(opportunity.id);
+        }
+      } catch (error) {
+        console.error(`handleButtonAction: Action ${action} failed:`, error);
+        x.set(0, {
+          type: 'spring',
+          stiffness: 300,
+          damping: 30,
+        });
+      } finally {
+        setIsSwipePending(false);
       }
     };
 
     const handleMediaSelect = (mediaUrl: string) => {
       setSelectedMedia(mediaUrl);
-      if (videoRef.current && /\.(mp4|webm|ogg|mov|avi|flv|wmv)$/i.test(mediaUrl)) {
+      if (videoRef.current && /\.(mp4|webm|ogg)$/i.test(mediaUrl)) {
         videoRef.current.load();
         videoRef.current.muted = isMuted;
         videoRef.current.play().catch(error => {
@@ -166,6 +237,7 @@ const OpportunityCard: React.FC<OpportunityCardProps> = memo(
           });
         });
       }
+      console.log(`handleMediaSelect: Selected media ${mediaUrl}`);
     };
 
     const mediaContent = useMemo(() => {
@@ -182,7 +254,7 @@ const OpportunityCard: React.FC<OpportunityCardProps> = memo(
         );
       }
 
-      const isVideo = /\.(mp4|webm|ogg|mov|avi|flv|wmv)$/i.test(selectedMedia);
+      const isVideo = /\.(mp4|webm|ogg)$/i.test(selectedMedia);
 
       return (
         <motion.div
@@ -194,25 +266,27 @@ const OpportunityCard: React.FC<OpportunityCardProps> = memo(
         >
           {isVideo ? (
             <div className="relative w-full h-full">
-              <video 
+              <video
                 ref={videoRef}
-                loop 
+                loop
                 muted={isMuted}
-                playsInline 
+                playsInline
                 className="w-full h-full object-cover"
-                onClick={handleVideoClick}
+                onTouchStart={handleToggleMute}
+                onClick={handleToggleMute}
               >
                 <source src={selectedMedia} type="video/mp4" />
                 Your browser does not support the video tag.
               </video>
               <motion.div
                 className="absolute top-4 right-4"
-                initial={{ opacity: 0 }}
+                initial={{ opacity: showMuteIndicator ? 1 : 0 }}
                 animate={{ opacity: showMuteIndicator ? 1 : 0 }}
                 transition={{ duration: 0.3 }}
               >
                 <button
-                  onClick={handleVideoClick}
+                  onClick={handleToggleMute}
+                  onTouchStart={handleToggleMute}
                   className="p-2 bg-gray-200/70 rounded-full hover:bg-gray-300/90 transition-colors duration-200"
                   aria-label={isMuted ? 'Unmute' : 'Mute'}
                 >
@@ -243,7 +317,7 @@ const OpportunityCard: React.FC<OpportunityCardProps> = memo(
       return (
         <div className="flex justify-center gap-2 p-2 bg-gray-100">
           {opportunity.media_urls.map((url, index) => {
-            const isThumbnailVideo = /\.(mp4|webm|ogg|mov|avi|flv|wmv)$/i.test(url);
+            const isThumbnailVideo = /\.(mp4|webm|ogg)$/i.test(url);
             return (
               <button
                 key={index}
@@ -319,13 +393,10 @@ const OpportunityCard: React.FC<OpportunityCardProps> = memo(
 
     const formattedDate = opportunity.start_date
       ? opportunity.end_date &&
-        new Date(opportunity.start_date).toDateString() ===
-        new Date(opportunity.end_date).toDateString()
+        new Date(opportunity.start_date).toDateString() === new Date(opportunity.end_date).toDateString()
         ? new Date(opportunity.start_date).toLocaleDateString()
         : `${new Date(opportunity.start_date).toLocaleDateString()}${
-            opportunity.end_date
-              ? ` - ${new Date(opportunity.end_date).toLocaleDateString()}`
-              : ''
+            opportunity.end_date ? ` - ${new Date(opportunity.end_date).toLocaleDateString()}` : ''
           }`
       : 'N/A';
 
@@ -334,56 +405,56 @@ const OpportunityCard: React.FC<OpportunityCardProps> = memo(
         <motion.div
           key={opportunity.id}
           className="snap-center flex-shrink-0 w-full h-[calc(100vh-150px)] sm:h-[calc(100vh-100px)] flex flex-col bg-white rounded-lg overflow-hidden relative"
-          drag="x"
+          drag={isSwipePending ? false : 'x'}
           dragConstraints={{ left: -300, right: 300 }}
           dragElastic={0.2}
           dragMomentum={false}
           onDragEnd={handleDragEnd}
-          initial={{ 
+          initial={{
             scale: 0.95,
-            opacity: 0
+            opacity: 0,
           }}
-          animate={{ 
+          animate={{
             scale: 1,
             opacity: 1,
-            transition: { 
+            transition: {
               type: 'spring',
               stiffness: 200,
               damping: 25,
-              mass: 0.8
-            }
+              mass: 0.8,
+            },
           }}
           exit={{
             x: swipeAction === 'like' ? '100%' : swipeAction === 'dislike' ? '-100%' : 0,
             opacity: 0,
-            transition: { 
-              duration: 0.3, 
-              ease: 'easeOut'
-            }
+            transition: {
+              duration: 0.3,
+              ease: 'easeOut',
+            },
           }}
-          style={{ 
-            x, 
+          style={{
+            x,
             rotate,
             willChange: 'transform',
-            touchAction: 'pan-y'
+            touchAction: 'pan-y',
           }}
-          transition={{ 
-            type: 'spring', 
-            stiffness: 200, 
+          transition={{
+            type: 'spring',
+            stiffness: 200,
             damping: 25,
-            mass: 0.8
+            mass: 0.8,
           }}
           onAnimationComplete={() => {
-            if (swipeAction) {
+            if (swipeAction && !isSwipePending) {
               onAnimationComplete(opportunity.id);
             }
           }}
         >
           {mediaContent}
           <motion.div
-            style={{ 
+            style={{
               opacity: likeOpacity,
-              pointerEvents: 'none'
+              pointerEvents: 'none',
             }}
             className="absolute inset-0 flex items-center justify-center bg-green-600/90"
           >
@@ -392,9 +463,9 @@ const OpportunityCard: React.FC<OpportunityCardProps> = memo(
             </div>
           </motion.div>
           <motion.div
-            style={{ 
+            style={{
               opacity: dislikeOpacity,
-              pointerEvents: 'none'
+              pointerEvents: 'none',
             }}
             className="absolute inset-0 flex items-center justify-center bg-red-600/90"
           >
@@ -425,15 +496,23 @@ const OpportunityCard: React.FC<OpportunityCardProps> = memo(
           <div className="absolute top-1/2 right-4 sm:right-6 transform -translate-y-1/2 flex flex-col gap-2">
             <button
               onClick={() => handleButtonAction('like')}
-              className="p-2 bg-green-600/80 rounded-full hover:bg-green-700/90 transition-colors duration-200"
+              className={`p-2 rounded-full transition-colors duration-200 ${
+                credits < 50 || isSwipePending
+                  ? 'bg-gray-400/80 cursor-not-allowed'
+                  : 'bg-green-600/80 hover:bg-green-700/90'
+              }`}
               aria-label="Like"
+              disabled={credits < 50 || isSwipePending}
             >
               <Heart className="w-5 h-5 sm:w-6 sm:h-6 text-white" fill="currentColor" />
             </button>
             <button
               onClick={() => handleButtonAction('dislike')}
-              className="p-2 bg-red-600/80 rounded-full hover:bg-red-700/90 transition-colors duration-200"
+              className={`p-2 rounded-full transition-colors duration-200 ${
+                isSwipePending ? 'bg-gray-400/80 cursor-not-allowed' : 'bg-red-600/80 hover:bg-red-700/90'
+              }`}
               aria-label="Reject"
+              disabled={isSwipePending}
             >
               <X className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
             </button>
