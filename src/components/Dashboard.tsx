@@ -1,5 +1,3 @@
-// Dashboard.tsx
-
 import React, { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
 import { ArrowRight, Building2, BarChart3, FileCheck, MessageSquare, Menu, ChevronRight, X, Home, Calendar, FileText, User, LogOut } from 'lucide-react';
@@ -17,27 +15,34 @@ import CreatorDashboard from './dashboard/CreatorDashboard';
 import InfluencerDashboard from './dashboard/InfluencerDashboard';
 import ProfileSettings from './dashboard/ProfileSettings';
 import ScheduledMeetings from './dashboard/ScheduledMeetings';
+import ReportsList from './dashboard/ReportsList';
 import { signOut } from '../lib/auth';
 import Skeleton from 'react-loading-skeleton';
 import 'react-loading-skeleton/dist/skeleton.css';
 
 type ClientLogo = Database['public']['Tables']['client_logos']['Row'];
 type SuccessStory = Database['public']['Tables']['success_stories']['Row'];
+type Match = Database['public']['Tables']['matches']['Row'] & {
+  opportunities: Database['public']['Tables']['opportunities']['Row'] & {
+    profiles: Database['public']['Tables']['profiles']['Row'];
+  };
+};
 
 export default function Dashboard() {
   const location = useLocation();
   const { user, profile, loading } = useAuth();
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'matches' | 'profile'>(() => {
-    return (location.state as any)?.activeTab || 'dashboard';
-  });
-  const [userProfile, setUserProfile] = useState(null);
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'matches' | 'profile' | 'messages' | 'meetings' | 'reports'>(
+    () => (location.state as any)?.activeTab || 'dashboard'
+  );
+  const [userProfile, setUserProfile] = useState<Database['public']['Tables']['profiles']['Row'] | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [opportunities, setOpportunities] = useState([]);
-  const [posts, setPosts] = useState([]);
-  const [meetings, setMeetings] = useState([]);
-  const [selectedOpportunity, setSelectedOpportunity] = useState(null);
+  const [opportunities, setOpportunities] = useState<Database['public']['Tables']['opportunities']['Row'][]>([]);
+  const [posts, setPosts] = useState<Database['public']['Tables']['posts']['Row'][]>([]);
+  const [meetings, setMeetings] = useState<Match[]>([]);
+  const [selectedOpportunity, setSelectedOpportunity] = useState<Database['public']['Tables']['opportunities']['Row'] | null>(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [avatarError, setAvatarError] = useState(false);
 
   useEffect(() => {
@@ -93,7 +98,8 @@ export default function Dashboard() {
                 profiles:creator_id (*)
               )
             `)
-            .eq('brand_id', user.id);
+            .eq('brand_id', profile.id)
+            .in('status', ['accepted', 'completed']);
         } else if (profile.user_type === 'creator' || profile.user_type === 'event_organizer') {
           const { data: creatorOpps, error: oppsError } = await supabase
             .from('opportunities')
@@ -111,7 +117,8 @@ export default function Dashboard() {
                 profiles:brand_id (*),
                 opportunities:opportunity_id (*)
               `)
-              .in('opportunity_id', oppIds);
+              .in('opportunity_id', oppIds)
+              .in('status', ['accepted', 'completed']);
           }
         } else if (profile.user_type === 'influencer') {
           const { data: influencerPosts, error: postsError } = await supabase
@@ -130,7 +137,8 @@ export default function Dashboard() {
                 profiles:brand_id (*),
                 posts:post_id (*)
               `)
-              .in('post_id', postIds);
+              .in('post_id', postIds)
+              .in('status', ['accepted', 'completed']);
           }
         }
         
@@ -159,12 +167,12 @@ export default function Dashboard() {
 
   const handleUpdateProfile = () => {
     setActiveTab('profile');
+    setMobileSidebarOpen(false);
   };
 
   if (loading || isLoading) {
     return (
       <div className="min-h-screen bg-gray-50 flex">
-        {/* Sidebar Skeleton (Desktop) */}
         <div className="w-64 bg-white shadow-md hidden md:block fixed h-full p-6">
           <Skeleton height={48} width={120} className="mb-6" />
           <div className="flex items-center space-x-3 mb-8">
@@ -184,8 +192,6 @@ export default function Dashboard() {
             </ul>
           </nav>
         </div>
-
-        {/* Main Content Skeleton */}
         <div className="flex-1 md:ml-64 p-6">
           <div className="flex justify-between items-center mb-6">
             <Skeleton width={200} height={24} />
@@ -208,8 +214,6 @@ export default function Dashboard() {
             ))}
           </div>
         </div>
-
-        {/* Bottom Nav Skeleton (Mobile) */}
         <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white shadow-t z-50">
           <div className="flex justify-around p-2">
             {Array(4).fill(0).map((_, index) => (
@@ -221,7 +225,6 @@ export default function Dashboard() {
     );
   }
 
-  // Check if profile is null
   if (!profile) {
     return (
       <div className="min-h-screen bg-gray-50 flex justify-center items-center p-6">
@@ -252,6 +255,7 @@ export default function Dashboard() {
 
   return (
     <div className="min-h-screen bg-gray-50 flex">
+      {/* Desktop Sidebar */}
       <div className="w-64 bg-white shadow-md hidden md:block fixed h-full">
         <div className="p-6">
           <img 
@@ -351,6 +355,116 @@ export default function Dashboard() {
         </nav>
       </div>
 
+      {/* Mobile Sidebar */}
+      <div
+        className={`fixed inset-y-0 left-0 w-64 bg-white shadow-md z-50 transform ${
+          mobileSidebarOpen ? 'translate-x-0' : '-translate-x-full'
+        } transition-transform duration-300 ease-in-out md:hidden`}
+      >
+        <div className="p-6">
+          <div className="flex justify-between items-center mb-6">
+            <img 
+              src="https://i.ibb.co/ZzPfwrxP/logo-final-png.png" 
+              alt="Sponsor Studio" 
+              className="h-12 cursor-pointer"
+              onClick={() => navigate('/')}
+            />
+            <button onClick={() => setMobileSidebarOpen(false)}>
+              <X className="w-6 h-6 text-gray-600" />
+            </button>
+          </div>
+          <div className="flex items-center space-x-3 mb-8">
+            {userProfile?.profile_picture_url && !avatarError ? (
+              <img
+                src={userProfile.profile_picture_url}
+                alt="Profile"
+                className="w-10 h-10 rounded-full object-cover"
+                onError={() => setAvatarError(true)}
+              />
+            ) : (
+              <div className="w-10 h-10 rounded-full bg-[#2B4B9B] flex items-center justify-center text-white">
+                {userProfile?.company_name ? userProfile.company_name.charAt(0).toUpperCase() : user?.email?.charAt(0).toUpperCase()}
+              </div>
+            )}
+            <div>
+              <p className="font-medium">{userProfile?.company_name || 'Your Account'}</p>
+              <p className="text-sm text-gray-500">{userProfile?.user_type.replace('_', ' ')}</p>
+            </div>
+          </div>
+        </div>
+        <nav className="px-4">
+          <ul className="space-y-2">
+            <li>
+              <button
+                onClick={() => { setActiveTab('dashboard'); setMobileSidebarOpen(false); }}
+                className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg ${
+                  activeTab === 'dashboard' ? 'bg-blue-50 text-[#2B4B9B]' : 'text-gray-700 hover:bg-gray-100'
+                }`}
+              >
+                <Home className="w-5 h-5" />
+                <span>Dashboard</span>
+              </button>
+            </li>
+            <li>
+              <button
+                onClick={() => { setActiveTab('messages'); setMobileSidebarOpen(false); }}
+                className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg ${
+                  activeTab === 'messages' ? 'bg-blue-50 text-[#2B4B9B]' : 'text-gray-700 hover:bg-gray-100'
+                }`}
+              >
+                <MessageSquare className="w-5 h-5" />
+                <span>Messages</span>
+              </button>
+            </li>
+            <li>
+              <button
+                onClick={() => { setActiveTab('meetings'); setMobileSidebarOpen(false); }}
+                className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg ${
+                  activeTab === 'meetings' ? 'bg-blue-50 text-[#2B4B9B]' : 'text-gray-700 hover:bg-gray-100'
+                }`}
+              >
+                <Calendar className="w-5 h-5" />
+                <span>Meetings</span>
+              </button>
+            </li>
+            {isBrand && (
+              <li>
+                <button
+                  onClick={() => { setActiveTab('reports'); setMobileSidebarOpen(false); }}
+                  className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg ${
+                    activeTab === 'reports' ? 'bg-blue-50 text-[#2B4B9B]' : 'text-gray-700 hover:bg-gray-100'
+                  }`}
+                >
+                  <FileText className="w-5 h-5" />
+                  <span>Reports</span>
+                </button>
+              </li>
+            )}
+            <li>
+              <button
+                onClick={() => { setActiveTab('profile'); setMobileSidebarOpen(false); }}
+                className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg ${
+                  activeTab === 'profile' ? 'bg-blue-50 text-[#2B4B9B]' : 'text-gray-700 hover:bg-gray-100'
+                }`}
+              >
+                <User className="w-5 h-5" />
+                <span>Profile</span>
+              </button>
+            </li>
+            <li>
+              <button
+                onClick={() => { handleSignOut(); setMobileSidebarOpen(false); }}
+                className="w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-red-600 hover:bg-red-50"
+              >
+                <LogOut className="w-5 h-5" />
+                <span>Sign Out</span>
+              </button>
+            </li>
+          </ul>
+        </nav>
+      </div>
+
+      {/* Mobile Bottom Navigation */}
       <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white shadow-t z-50">
         <div className="flex justify-around p-2">
           <button
@@ -359,12 +473,21 @@ export default function Dashboard() {
           >
             <Home className="w-6 h-6 mx-auto" />
           </button>
-          <button
-            onClick={() => setActiveTab('messages')}
-            className={`p-2 rounded-lg ${activeTab === 'messages' ? 'text-[#2B4B9B]' : 'text-gray-500'}`}
-          >
-            <MessageSquare className="w-6 h-6 mx-auto" />
-          </button>
+          {isBrand ? (
+            <button
+              onClick={() => setActiveTab('reports')}
+              className={`p-2 rounded-lg ${activeTab === 'reports' ? 'text-[#2B4B9B]' : 'text-gray-500'}`}
+            >
+              <FileText className="w-6 h-6 mx-auto" />
+            </button>
+          ) : (
+            <button
+              onClick={() => setActiveTab('messages')}
+              className={`p-2 rounded-lg ${activeTab === 'messages' ? 'text-[#2B4B9B]' : 'text-gray-500'}`}
+            >
+              <MessageSquare className="w-6 h-6 mx-auto" />
+            </button>
+          )}
           <button
             onClick={() => setActiveTab('meetings')}
             className={`p-2 rounded-lg ${activeTab === 'meetings' ? 'text-[#2B4B9B]' : 'text-gray-500'}`}
@@ -380,7 +503,25 @@ export default function Dashboard() {
         </div>
       </div>
 
+      {/* Main Content */}
       <div className="flex-1 md:ml-64 p-6">
+        {/* Mobile Header with Menu Button */}
+        <div className="md:hidden flex items-center justify-between mb-4">
+          <button
+            onClick={() => setMobileSidebarOpen(true)}
+            className="p-2 rounded-lg text-gray-600 hover:bg-gray-100"
+          >
+            <Menu className="w-6 h-6" />
+          </button>
+          <img 
+            src="https://i.ibb.co/ZzPfwrxP/logo-final-png.png" 
+            alt="Sponsor Studio" 
+            className="h-8 cursor-pointer"
+            onClick={() => navigate('/')}
+          />
+          <div className="w-6"></div> {/* Placeholder for alignment */}
+        </div>
+
         {activeTab === 'dashboard' && (
           <>
             {isBrand && <BrandDashboard onUpdateProfile={handleUpdateProfile} />}
@@ -407,13 +548,7 @@ export default function Dashboard() {
         )}
         {activeTab === 'reports' && isBrand && (
           <div className="bg-white rounded-lg shadow p-6">
-            <h2 className="text-2xl font-bold text-gray-800 mb-6">Sponsorship Reports</h2>
-            <div className="text-center py-8">
-              <FileText className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-              <p className="text-gray-600">
-                Reports feature coming soon! You'll be able to view detailed analytics and performance metrics for your sponsorships here.
-              </p>
-            </div>
+            <ReportsList meetings={meetings} />
           </div>
         )}
       </div>
