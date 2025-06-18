@@ -76,22 +76,7 @@ function ReportsTab({ opportunityIds }: ReportsTabProps) {
   }
 
   return (
-    <div className="space-y-6">
-      {reports.map((report) => (
-        <div key={report.id} className="bg-white rounded-lg shadow-sm p-6">
-          <h3 className="text-lg font-semibold text-gray-800 mb-2">
-            {report.opportunities?.title || 'Untitled Opportunity'}
-          </h3>
-          <div
-            className="prose text-gray-700"
-            dangerouslySetInnerHTML={{ __html: report.content }}
-          />
-          <p className="text-sm text-gray-500 mt-4">
-            Posted on: {new Date(report.created_at).toLocaleString()}
-          </p>
-        </div>
-      ))}
-    </div>
+    <></>
   );
 }
 

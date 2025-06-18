@@ -1,5 +1,7 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Heart, FileText, Calendar, Video } from 'lucide-react';
+import { supabase } from '../../../lib/supabase'; // Adjust import path as needed
+import toast from 'react-hot-toast';
 import type { Match } from './types';
 
 interface MatchesSectionProps {
@@ -19,6 +21,72 @@ const MatchesSection: React.FC<MatchesSectionProps> = ({
   setActiveTab,
   generateGoogleCalendarLink,
 }) => {
+  const [requestedAnalyses, setRequestedAnalyses] = useState<Set<string>>(new Set());
+  const [loadingRequests, setLoadingRequests] = useState<Set<string>>(new Set());
+
+  // Fetch existing risk analysis requests to disable buttons for already requested opportunities
+  useEffect(() => {
+    const fetchRequestedAnalyses = async () => {
+      try {
+        const { data: userData, error: userError } = await supabase.auth.getUser();
+        if (userError || !userData.user) {
+          throw new Error('User not authenticated');
+        }
+
+        const { data, error } = await supabase
+          .from('risk_analysis')
+          .select('opportunity_id')
+          .eq('user_id', userData.user.id);
+
+        if (error) throw error;
+
+        const requestedIds = new Set(data.map(item => item.opportunity_id));
+        setRequestedAnalyses(requestedIds);
+      } catch (error) {
+        console.error('Error fetching risk analysis requests:', error);
+        toast.error('Failed to load existing requests');
+      }
+    };
+
+    fetchRequestedAnalyses();
+  }, []);
+
+  const handleRequestRiskAnalysis = async (opportunityId: string) => {
+    if (!opportunityId) {
+      toast.error('Invalid opportunity');
+      return;
+    }
+
+    setLoadingRequests(prev => new Set([...prev, opportunityId]));
+
+    try {
+      const { data: userData, error: userError } = await supabase.auth.getUser();
+      if (userError || !userData.user) throw new Error('User not authenticated');
+
+      const { error } = await supabase
+        .from('risk_analysis')
+        .insert({
+          user_id: userData.user.id,
+          opportunity_id: opportunityId,
+          status: 'requested',
+        });
+
+      if (error) throw error;
+
+      setRequestedAnalyses(prev => new Set([...prev, opportunityId]));
+      toast.success('Risk analysis requested successfully');
+    } catch (error) {
+      console.error('Error requesting risk analysis:', error);
+      toast.error('Failed to request risk analysis');
+    } finally {
+      setLoadingRequests(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(opportunityId);
+        return newSet;
+      });
+    }
+  };
+
   return (
     <div className="bg-white rounded-lg shadow-sm p-3 sm:p-6 pb-14 sm:pb-6">
       <h2 className="text-lg sm:text-xl font-bold text-gray-800 mb-4 sm:mb-6">
@@ -102,6 +170,22 @@ const MatchesSection: React.FC<MatchesSectionProps> = ({
                             View Brochure
                           </a>
                         )}
+                        <button
+                          onClick={() => handleRequestRiskAnalysis(match.opportunity_id)}
+                          disabled={requestedAnalyses.has(match.opportunity_id) || loadingRequests.has(match.opportunity_id)}
+                          className={`px-2 sm:px-3 py-0.5 sm:py-1 rounded-lg flex items-center text-xs sm:text-sm ${
+                            requestedAnalyses.has(match.opportunity_id) || loadingRequests.has(match.opportunity_id)
+                              ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                          }`}
+                        >
+                          <FileText className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1" />
+                          {loadingRequests.has(match.opportunity_id)
+                            ? 'Requesting...'
+                            : requestedAnalyses.has(match.opportunity_id)
+                            ? 'Requested'
+                            : 'Request Risk Analysis'}
+                        </button>
                       </div>
                     </div>
                   </div>
@@ -159,6 +243,22 @@ const MatchesSection: React.FC<MatchesSectionProps> = ({
                                 View Brochure
                               </a>
                             )}
+                            <button
+                              onClick={() => handleRequestRiskAnalysis(match.opportunity_id)}
+                              disabled={requestedAnalyses.has(match.opportunity_id) || loadingRequests.has(match.opportunity_id)}
+                              className={`px-4 py-2 text-sm font-medium rounded-md flex items-center justify-center flex-1 sm:flex-none ${
+                                requestedAnalyses.has(match.opportunity_id) || loadingRequests.has(match.opportunity_id)
+                                  ? 'bg-gray-300 text-gray-500 cursor-not-allowed'
+                                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                              }`}
+                            >
+                              <FileText className="w-4 h-4 mr-2" />
+                              {loadingRequests.has(match.opportunity_id)
+                                ? 'Requesting...'
+                                : requestedAnalyses.has(match.opportunity_id)
+                                ? 'Requested'
+                                : 'Request Risk Analysis'}
+                            </button>
                             {match.meeting_scheduled_at && (
                               <a
                                 href={generateGoogleCalendarLink(match)}
