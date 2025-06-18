@@ -531,9 +531,9 @@ export default function MatchList({
                     {isMissingOpportunity ? (
                       <span className="text-red-600 font-medium">(Opportunity Data Missing)</span>
                     ) : isPaid ? (
-                      <span className="text-green-600 font-medium">(Paid)</span>
+                      <span className="text-green-600 font-medium">(Unlocked)</span>
                     ) : (
-                      <span className="text-red-600 font-medium">(Unpaid)</span>
+                      <span className="text-red-600 font-medium">(Locked)</span>
                     )}
                   </p>
                 </div>
