@@ -15,11 +15,13 @@ import {
   Settings as SettingsIcon,
   LayoutDashboard,
   Briefcase,
-  Link as LinkIcon
+  Link as LinkIcon,
+  FileText
 } from 'lucide-react';
 import Opportunities from './Opportunities';
 import MatchedOpportunities from './MatchedOpportunities';
 import ManageUsers from './ManageUsers';
+import RiskAnalysisRequests from './RiskAnalysisRequests';
 
 export default function AdminDashboard() {
   const navigate = useNavigate();
@@ -124,19 +126,19 @@ export default function AdminDashboard() {
               Matched Opportunities
             </Link>
             <Link
+              to="/admin/risk-analysis"
+              className="flex items-center px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg"
+            >
+              <FileText className="w-5 h-5 mr-3" />
+              Risk Analysis Requests
+            </Link>
+            <Link
               to="/admin/manage-users"
               className="flex items-center px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg"
             >
               <UserCog className="w-5 h-5 mr-3" />
               Manage Users
             </Link>
-            {/* <Link
-              to="/admin/manage-events"
-              className="flex items-center px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg"
-            >
-              <ClipboardList className="w-5 h-5 mr-3" />
-              Manage Events
-            </Link> */}
             <Link
               to="/admin/settings"
               className="flex items-center px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg"
@@ -281,7 +283,16 @@ export default function AdminDashboard() {
               />
             }
           />
-           <Route
+          <Route
+            path="/risk-analysis"
+            element={
+              <RiskAnalysisRequests 
+                searchTerm={searchTerm}
+                setSearchTerm={setSearchTerm}
+              />
+            }
+          />
+          <Route
             path="/manage-users"
             element={
               <ManageUsers 
@@ -289,6 +300,10 @@ export default function AdminDashboard() {
                 setSearchTerm={setSearchTerm}
               />
             }
+          />
+          <Route
+            path="/settings"
+            element={<div className="text-center mt-8">Settings Page (Coming Soon)</div>}
           />
           <Route
             path="*"

@@ -547,9 +547,9 @@ export default function Dashboard() {
           <ScheduledMeetings meetings={meetings} isBrand={isBrand} />
         )}
         {activeTab === 'reports' && isBrand && (
-          <div className="bg-white rounded-lg shadow p-6">
-            <ReportsList meetings={meetings} />
-          </div>
+          // <div className="bg-white rounded-lg shadow p-6">
+            <ReportsList />
+          // </div>
         )}
       </div>
     </div>
