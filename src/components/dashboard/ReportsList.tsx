@@ -1,10 +1,14 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { supabase } from '../../lib/supabase';
 import toast from 'react-hot-toast';
 import { format, parseISO, subDays } from 'date-fns';
-import { ExternalLink, File, Download, Search, RefreshCw, Filter } from 'lucide-react';
+import { ExternalLink, File, Search, RefreshCw, Filter, Lock, Eye } from 'lucide-react';
 import debounce from 'lodash.debounce';
 import type { Database } from '../../lib/database.types';
+import { motion } from 'framer-motion';
+import { Tooltip } from 'react-tooltip';
+import coinIcon from '../../assets/dashboard/coin.png';
+import { useAuth } from '../../contexts/AuthContext';
 
 // Type definitions for reports
 type GeneralReport = Database['public']['Tables']['reports']['Row'] & {
@@ -20,6 +24,7 @@ const PAGE_SIZE = 10;
 
 export default function ReportsList() {
   // State management
+  const { user, profile } = useAuth();
   const [generalReports, setGeneralReports] = useState<GeneralReport[]>([]);
   const [riskAnalysisReports, setRiskAnalysisReports] = useState<RiskAnalysisReport[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
@@ -32,9 +37,15 @@ export default function ReportsList() {
   const [dateTo, setDateTo] = useState<string>(format(new Date(), 'yyyy-MM-dd'));
   const [currentPage, setCurrentPage] = useState<{ general: number; risk_analysis: number }>({ general: 1, risk_analysis: 1 });
   const [totalPages, setTotalPages] = useState<{ general: number; risk_analysis: number }>({ general: 1, risk_analysis: 1 });
-  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-  const [userId, setUserId] = useState<string | null>(null);
-  const modalRef = useRef<HTMLDialogElement>(null);
+  const [credits, setCredits] = useState<number | null>(profile?.credits ?? null);
+  const [shakeCredits, setShakeCredits] = useState<boolean>(false);
+  const [unlockedReports, setUnlockedReports] = useState<Set<string>>(new Set());
+  const [unlockingReport, setUnlockingReport] = useState<string | null>(null);
+
+  // Sync credits with profile
+  useEffect(() => {
+    setCredits(profile?.credits ?? null);
+  }, [profile?.credits]);
 
   // Debounced search handler
   const debouncedSearch = useCallback(
@@ -45,18 +56,154 @@ export default function ReportsList() {
     [activeTab]
   );
 
+  // Fetch profile data
+  const fetchProfile = async (): Promise<{ credits: number | null; company_name: string | null } | null> => {
+    if (!user?.id) {
+      console.error('fetchProfile: No user ID available');
+      toast.error('Please log in to access profile data.', { duration: 4000, position: 'top-center' });
+      return null;
+    }
+    try {
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('credits, company_name')
+        .eq('id', user.id)
+        .single();
+      if (error) throw error;
+      setCredits(data.credits ?? null);
+      console.log(`fetchProfile: Updated local credits to ${data.credits}`);
+      return data;
+    } catch (error) {
+      console.error('fetchProfile: Error fetching profile:', error);
+      toast.error('Failed to fetch profile data. Please try again.', { duration: 4000, position: 'top-center' });
+      return null;
+    }
+  };
+
+  // Refresh authentication token
+  const refreshToken = async (): Promise<string> => {
+    console.log('refreshToken: Attempting to refresh session');
+    try {
+      const { data, error } = await supabase.auth.refreshSession();
+      if (error) throw error;
+      if (!data.session?.access_token) {
+        throw new Error('No access token in refreshed session');
+      }
+      console.log('refreshToken: Session refreshed successfully');
+      return data.session.access_token;
+    } catch (error) {
+      console.error('refreshToken: Failed to refresh session:', error);
+      toast.error('Session refresh failed. Please log in again.', { duration: 4000, position: 'top-center' });
+      throw error;
+    }
+  };
+
+  // Deduct credits and unlock report (only for general reports)
+  const unlockReport = async (reportId: string, url: string): Promise<void> => {
+    if (!user?.id) {
+      console.error('unlockReport: User not authenticated');
+      toast.error('Please log in to unlock reports.', { duration: 4000, position: 'top-center' });
+      throw new Error('User not authenticated');
+    }
+
+    if (!url) {
+      console.error('unlockReport: Invalid report URL');
+      toast.error('Invalid report URL.', { duration: 4000, position: 'top-center' });
+      throw new Error('Invalid report URL');
+    }
+
+    if (credits === null || credits < 100) {
+      console.log(`unlockReport: Insufficient credits, need 100, have ${credits}`);
+      setShakeCredits(true);
+      toast.error('Insufficient credits! You need 100 credits to unlock this report.', {
+        duration: 4000,
+        position: 'top-center',
+      });
+      setTimeout(() => setShakeCredits(false), 500);
+      throw new Error('Insufficient credits');
+    }
+
+    const originalCredits = credits;
+    setCredits(prev => (prev ?? 0) - 100);
+    setUnlockingReport(reportId);
+    console.log(`unlockReport: Optimistically updated credits to ${(credits ?? 0) - 100}`);
+
+    try {
+      let accessToken = user.access_token || (await refreshToken());
+      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/update-credits`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify({
+          userId: user.id,
+          creditsToDeduct: 100,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        if (response.status === 401 && errorData.message === 'Invalid JWT') {
+          console.log('unlockReport: Invalid JWT, retrying with refreshed token');
+          accessToken = await refreshToken();
+          const retryResponse = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/update-credits`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${accessToken}`,
+            },
+            body: JSON.stringify({
+              userId: user.id,
+              creditsToDeduct: 100,
+            }),
+          });
+          if (!retryResponse.ok) {
+            const retryErrorData = await retryResponse.json().catch(() => ({}));
+            throw new Error(`Retry failed: ${retryErrorData.message || retryResponse.statusText}`);
+          }
+        } else {
+          throw new Error(`Failed to deduct credits: ${errorData.message || response.statusText}`);
+        }
+      }
+
+      console.log('unlockReport: Credits deducted successfully');
+      setUnlockedReports(prev => new Set(prev).add(reportId));
+      const serverProfile = await fetchProfile();
+      if (serverProfile && serverProfile.credits !== null && serverProfile.credits !== credits) {
+        console.log(`unlockReport: Syncing credits, server: ${serverProfile.credits}, local: ${credits}`);
+        setCredits(serverProfile.credits);
+      }
+    } catch (error: any) {
+      setCredits(originalCredits);
+      console.log(`unlockReport: Restored credits to ${originalCredits} due to error`);
+      toast.error('Failed to unlock report. Please try again.', { duration: 4000, position: 'top-center' });
+      throw error;
+    } finally {
+      setUnlockingReport(null);
+    }
+  };
+
+  // Handle view report
+  const viewReport = (url: string) => {
+    if (!url) {
+      toast.error('Invalid report URL.', { duration: 4000, position: 'top-center' });
+      return;
+    }
+    window.open(url, '_blank', 'noopener,noreferrer');
+  };
+
   // Fetch reports from Supabase
   const fetchReports = useCallback(async () => {
+    if (!user?.id) {
+      setError('Please log in to view reports.');
+      setLoading(false);
+      return;
+    }
+
     try {
       setLoading(true);
       setError(null);
-
-      // Authenticate user
-      const { data: { user }, error: authError } = await supabase.auth.getUser();
-      if (authError || !user) {
-        throw new Error('Authentication failed. Please log in again.');
-      }
-      setUserId(user.id);
 
       // Fetch opportunity_ids for accepted matches
       const { data: matchData, error: matchError } = await supabase
@@ -65,17 +212,14 @@ export default function ReportsList() {
         .eq('brand_id', user.id)
         .eq('status', 'accepted');
 
-      if (matchError) {
-        throw new Error(`Failed to fetch matches: ${matchError.message}`);
-      }
+      if (matchError) throw new Error(`Failed to fetch matches: ${matchError.message}`);
 
-      // Extract opportunity_ids as an array, default to empty array if no matches
       const opportunityIds = matchData?.map(match => match.opportunity_id) || [];
       if (opportunityIds.length === 0) {
         setGeneralReports([]);
         setTotalPages(prev => ({ ...prev, general: 1 }));
       } else {
-        // Fetch post-event reports for accepted matches
+        // Fetch general reports
         let generalQuery = supabase
           .from('reports')
           .select(
@@ -92,18 +236,15 @@ export default function ReportsList() {
           .range((currentPage.general - 1) * PAGE_SIZE, currentPage.general * PAGE_SIZE - 1);
 
         if (searchQuery) {
-          generalQuery.ilike('opportunity.title', `%${searchQuery}%`);
+          generalQuery = generalQuery.ilike('opportunity.title', `%${searchQuery}%`);
         }
 
         const { data: generalData, error: generalError, count: generalCount } = await generalQuery;
-
-        if (generalError) {
-          throw new Error(`Failed to fetch post-event reports: ${generalError.message}`);
-        }
+        if (generalError) throw new Error(`Failed to fetch general reports: ${generalError.message}`);
 
         const generalReportsWithUrls = generalData?.map(report => ({
           ...report,
-          signedUrl: supabase.storage.from('reports').getPublicUrl(report.pdf_path).data.publicUrl,
+          signedUrl: supabase.storage.from('reports').getPublicUrl(report.pdf_path).data.publicUrl || '',
         })) || [];
 
         setGeneralReports(generalReportsWithUrls);
@@ -131,18 +272,15 @@ export default function ReportsList() {
         .range((currentPage.risk_analysis - 1) * PAGE_SIZE, currentPage.risk_analysis * PAGE_SIZE - 1);
 
       if (searchQuery) {
-        riskQuery.or(`opportunity.title.ilike.%${searchQuery}%,profile.company_name.ilike.%${searchQuery}%`);
+        riskQuery = riskQuery.or(`opportunity.title.ilike.%${searchQuery}%,profile.company_name.ilike.%${searchQuery}%`);
       }
 
       if (statusFilter !== 'all') {
-        riskQuery.eq('status', statusFilter);
+        riskQuery = riskQuery.eq('status', statusFilter);
       }
 
       const { data: riskData, error: riskError, count: riskCount } = await riskQuery;
-
-      if (riskError) {
-        throw new Error(`Failed to fetch risk analysis reports: ${riskError.message}`);
-      }
+      if (riskError) throw new Error(`Failed to fetch risk analysis reports: ${riskError.message}`);
 
       setRiskAnalysisReports(riskData || []);
       setTotalPages(prev => ({
@@ -150,14 +288,14 @@ export default function ReportsList() {
         risk_analysis: Math.ceil((riskCount ?? 0) / PAGE_SIZE),
       }));
     } catch (err: any) {
-      console.error('Error fetching reports:', err);
+      console.error('fetchReports: Error fetching reports:', err);
       const errorMessage = err.message || 'Failed to load reports. Please try again.';
       setError(errorMessage);
-      toast.error(errorMessage);
+      toast.error(errorMessage, { duration: 4000, position: 'top-center' });
     } finally {
       setLoading(false);
     }
-  }, [activeTab, searchQuery, sortOrder, statusFilter, dateFrom, dateTo, currentPage]);
+  }, [activeTab, searchQuery, sortOrder, statusFilter, dateFrom, dateTo, currentPage, user?.id]);
 
   useEffect(() => {
     fetchReports();
@@ -183,37 +321,27 @@ export default function ReportsList() {
   // Handle date filter
   const handleDateFilter = () => {
     if (!dateFrom || !dateTo) {
-      toast.error('Please select both start and end dates.');
+      toast.error('Please select both start and end dates.', { duration: 4000, position: 'top-center' });
       return;
     }
     if (new Date(dateFrom) > new Date(dateTo)) {
-      toast.error('Start date cannot be after end date.');
+      toast.error('Start date cannot be after end date.', { duration: 4000, position: 'top-center' });
       return;
     }
     setCurrentPage(prev => ({ ...prev, [activeTab]: 1 }));
     fetchReports();
   };
 
-  // Handle preview
-  const handlePreview = (url: string) => {
-    if (!url) {
-      toast.error('Invalid report URL.');
-      return;
-    }
-    setPreviewUrl(url);
-    modalRef.current?.showModal();
-  };
-
   // Render skeleton loading
   const renderSkeleton = () => (
     <div className="space-y-3 p-3">
       {[...Array(5)].map((_, i) => (
-        <div key={i} className="bg-gray-100 h-20 rounded-lg animate-pulse"></div>
+        <div key={i} className="bg-gray-100 h-20 rounded-lg animate-pulse" />
       ))}
     </div>
   );
 
-  // Filter reports client-side for additional search precision
+  // Filter reports client-side
   const filteredGeneralReports = generalReports.filter(
     report =>
       report.opportunity?.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -227,14 +355,14 @@ export default function ReportsList() {
       (statusFilter === 'all' || report.status === statusFilter)
   );
 
-  // Render post-event reports
+  // Render general reports
   const renderGeneralReports = () => {
     if (filteredGeneralReports.length === 0 && !loading) {
       return (
         <div className="p-4 text-center" role="alert">
           <File className="mx-auto text-gray-300" size={36} />
           <p className="mt-3 text-gray-600 text-base font-medium">No post-event reports found</p>
-          <p className="mt-1 text-gray-500 text-xs">No accepted matches have associated reports. Contact your account manager for assistance.</p>
+          <p className="mt-1 text-gray-500 text-sm">No accepted matches have associated reports. Contact your account manager.</p>
         </div>
       );
     }
@@ -251,33 +379,56 @@ export default function ReportsList() {
             >
               <div className="space-y-2">
                 <div>
-                  <span className="text-[10px] font-semibold text-gray-500 uppercase">Opportunity</span>
+                  <span className="text-xs font-semibold text-gray-500 uppercase">Opportunity</span>
                   <p className="text-sm font-medium text-gray-900 truncate">{report.opportunity?.title || 'N/A'}</p>
                 </div>
                 <div>
-                  <span className="text-[10px] font-semibold text-gray-500 uppercase">File</span>
-                  <div className="flex items-center space-x-2 mt-1">
-                    <button
-                      onClick={() => handlePreview(report.signedUrl)}
-                      className="text-blue-600 hover:underline flex items-center text-xs truncate max-w-[140px]"
-                      aria-label={`Preview ${report.filename}`}
-                    >
-                      {report.filename}
-                      <ExternalLink size={12} className="ml-1" />
-                    </button>
-                    <a
-                      href={report.signedUrl}
-                      download={report.filename}
-                      type="application/pdf"
-                      className="text-green-600 hover:text-green-700"
-                      aria-label={`Download ${report.filename}`}
-                    >
-                      <Download size={12} />
-                    </a>
+                  <span className="text-xs font-semibold text-gray-500 uppercase">File</span>
+                  <div className="flex items-center mt-1">
+                    {unlockedReports.has(report.id) ? (
+                      <button
+                        onClick={() => viewReport(report.signedUrl)}
+                        className="px-3 py-1.5 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-xs font-medium flex items-center transition-colors"
+                        aria-label={`View ${report.filename}`}
+                        data-tooltip-id={`view-tooltip-${report.id}`}
+                        data-tooltip-content="View report in new tab"
+                      >
+                        View Report
+                        <Eye size={12} className="ml-2" />
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => unlockReport(report.id, report.signedUrl)}
+                        disabled={unlockingReport === report.id}
+                        className={`px-3 py-1.5 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-md text-xs font-medium flex items-center transition-all duration-200 hover:from-purple-700 hover:to-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed ${
+                          unlockingReport === report.id ? 'animate-pulse' : ''
+                        }`}
+                        aria-label={`Unlock ${report.filename} (100 credits)`}
+                        data-tooltip-id={`unlock-tooltip-${report.id}`}
+                        data-tooltip-content="Unlock costs 100 credits"
+                      >
+                        {unlockingReport === report.id ? (
+                          <>
+                            Unlocking
+                            <svg className="animate-spin ml-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                          </>
+                        ) : (
+                          <>
+                            Unlock Report
+                            <Lock size={12} className="ml-2" />
+                          </>
+                        )}
+                      </button>
+                    )}
+                    <Tooltip id={`view-tooltip-${report.id}`} place="top" className="text-xs" />
+                    <Tooltip id={`unlock-tooltip-${report.id}`} place="top" className="text-xs" />
                   </div>
                 </div>
                 <div>
-                  <span className="text-[10px] font-semibold text-gray-500 uppercase">Uploaded</span>
+                  <span className="text-xs font-semibold text-gray-500 uppercase">Uploaded</span>
                   <p className="text-xs text-gray-500">{format(parseISO(report.created_at), 'MMM dd, yyyy')}</p>
                 </div>
               </div>
@@ -303,24 +454,47 @@ export default function ReportsList() {
                     {report.opportunity?.title || 'N/A'}
                   </td>
                   <td className="px-4 py-3 text-sm" role="gridcell">
-                    <div className="flex items-center space-x-2">
-                      <button
-                        onClick={() => handlePreview(report.signedUrl)}
-                        className="text-blue-600 hover:underline flex items-center text-sm truncate max-w-[180px]"
-                        aria-label={`Preview ${report.filename}`}
-                      >
-                        {report.filename}
-                        <ExternalLink size={14} className="ml-1" />
-                      </button>
-                      <a
-                        href={report.signedUrl}
-                        download={report.filename}
-                        type="application/pdf"
-                        className="text-green-600 hover:text-green-700"
-                        aria-label={`Download ${report.filename}`}
-                      >
-                        <Download size={14} />
-                      </a>
+                    <div className="flex items-center">
+                      {unlockedReports.has(report.id) ? (
+                        <button
+                          onClick={() => viewReport(report.signedUrl)}
+                          className="px-3 py-1.5 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-sm font-medium flex items-center transition-colors"
+                          aria-label={`View ${report.filename}`}
+                          data-tooltip-id={`view-tooltip-${report.id}`}
+                          data-tooltip-content="View report in new tab"
+                        >
+                          View Report
+                          <Eye size={14} className="ml-2" />
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() => unlockReport(report.id, report.signedUrl)}
+                          disabled={unlockingReport === report.id}
+                          className={`px-3 py-1.5 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-md text-sm font-medium flex items-center transition-all duration-200 hover:from-purple-700 hover:to-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed ${
+                            unlockingReport === report.id ? 'animate-pulse' : ''
+                          }`}
+                          aria-label={`Unlock ${report.filename} (100 credits)`}
+                          data-tooltip-id={`unlock-tooltip-${report.id}`}
+                          data-tooltip-content="Unlock costs 100 credits"
+                        >
+                          {unlockingReport === report.id ? (
+                            <>
+                              Unlocking
+                              <svg className="animate-spin ml-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                              </svg>
+                            </>
+                          ) : (
+                            <>
+                              Unlock Report
+                              <Lock size={14} className="ml-2" />
+                            </>
+                          )}
+                        </button>
+                      )}
+                      <Tooltip id={`view-tooltip-${report.id}`} place="top" className="text-xs" />
+                      <Tooltip id={`unlock-tooltip-${report.id}`} place="top" className="text-xs" />
                     </div>
                   </td>
                   <td className="px-4 py-3 text-sm text-gray-500" role="gridcell">
@@ -342,7 +516,7 @@ export default function ReportsList() {
         <div className="p-4 text-center" role="alert">
           <File className="mx-auto text-gray-300" size={36} />
           <p className="mt-3 text-gray-600 text-base font-medium">No risk analysis reports found</p>
-          <p className="mt-1 text-gray-500 text-xs">Request a risk analysis for your opportunities.</p>
+          <p className="mt-1 text-gray-500 text-sm">Request a risk analysis for your opportunities.</p>
         </div>
       );
     }
@@ -359,18 +533,18 @@ export default function ReportsList() {
             >
               <div className="space-y-2">
                 <div>
-                  <span className="text-[10px] font-semibold text-gray-500 uppercase">Opportunity</span>
+                  <span className="text-xs font-semibold text-gray-500 uppercase">Opportunity</span>
                   <p className="text-sm font-medium text-gray-900 truncate">{report.opportunity?.title || 'N/A'}</p>
                 </div>
                 <div>
-                  <span className="text-[10px] font-semibold text-gray-500 uppercase">Company</span>
+                  <span className="text-xs font-semibold text-gray-500 uppercase">Company</span>
                   <p className="text-sm text-gray-900 truncate">{report.profile?.company_name || 'N/A'}</p>
                 </div>
                 <div>
-                  <span className="text-[10px] font-semibold text-gray-500 uppercase">Status</span>
+                  <span className="text-xs font-semibold text-gray-500 uppercase">Status</span>
                   <p className="text-sm">
                     <span
-                      className={`px-1.5 py-0.5 rounded-full text-[10px] ${
+                      className={`px-1.5 py-0.5 rounded-full text-xs ${
                         report.status === 'completed'
                           ? 'bg-green-100 text-green-800'
                           : report.status === 'in_progress'
@@ -385,27 +559,21 @@ export default function ReportsList() {
                   </p>
                 </div>
                 <div>
-                  <span className="text-[10px] font-semibold text-gray-500 uppercase">File</span>
-                  <div className="flex items-center space-x-2 mt-1">
+                  <span className="text-xs font-semibold text-gray-500 uppercase">File</span>
+                  <div className="flex items-center mt-1">
                     {report.report_url ? (
                       <>
                         <button
-                          onClick={() => handlePreview(report.report_url)}
-                          className="text-blue-600 hover:underline flex items-center text-xs truncate max-w-[140px]"
-                          aria-label="Preview report"
+                          onClick={() => viewReport(report.report_url)}
+                          className="px-3 py-1.5 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-xs font-medium flex items-center transition-colors"
+                          aria-label="View report"
+                          data-tooltip-id={`view-tooltip-${report.id}`}
+                          data-tooltip-content="View report in new tab"
                         >
-                          Report
-                          <ExternalLink size={12} className="ml-1" />
+                          View Report
+                          <Eye size={12} className="ml-2" />
                         </button>
-                        <a
-                          href={report.report_url}
-                          download={`risk_analysis_${report.id}.pdf`}
-                          type="application/pdf"
-                          className="text-green-600 hover:text-green-700"
-                          aria-label="Download report"
-                        >
-                          <Download size={12} />
-                        </a>
+                        <Tooltip id={`view-tooltip-${report.id}`} place="top" className="text-xs" />
                       </>
                     ) : (
                       <span className="text-gray-500 text-xs">No report uploaded</span>
@@ -413,8 +581,10 @@ export default function ReportsList() {
                   </div>
                 </div>
                 <div>
-                  <span className="text-[10px] font-semibold text-gray-500 uppercase">Requested</span>
-                  <p className="text-xs text-gray-500">{format(parseISO(report.created_at || new Date()), 'MMM dd, yyyy')}</p>
+                  <span className="text-xs font-semibold text-gray-500 uppercase">Requested</span>
+                  <p className="text-xs text-gray-500">
+                    {format(parseISO(report.created_at || new Date().toISOString()), 'MMM dd, yyyy')}
+                  </p>
                 </div>
               </div>
             </div>
@@ -460,31 +630,25 @@ export default function ReportsList() {
                   </td>
                   <td className="px-4 py-3 text-sm" role="gridcell">
                     {report.report_url ? (
-                      <div className="flex items-center space-x-2">
+                      <div className="flex items-center">
                         <button
-                          onClick={() => handlePreview(report.report_url)}
-                          className="text-blue-600 hover:underline flex items-center text-sm truncate max-w-[180px]"
-                          aria-label="Preview report"
+                          onClick={() => viewReport(report.report_url)}
+                          className="px-3 py-1.5 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-sm font-medium flex items-center transition-colors"
+                          aria-label="View report"
+                          data-tooltip-id={`view-tooltip-${report.id}`}
+                          data-tooltip-content="View report in new tab"
                         >
-                          Report
-                          <ExternalLink size={14} className="ml-1" />
+                          View Report
+                          <Eye size={14} className="ml-2" />
                         </button>
-                        <a
-                          href={report.report_url}
-                          download={`risk-report-${report.id}.pdf`}
-                          type="application/pdf"
-                          className="text-green-600 hover:text-green-700"
-                          aria-label="Download report"
-                        >
-                          <Download size={14} />
-                        </a>
+                        <Tooltip id={`view-tooltip-${report.id}`} place="top" className="text-xs" />
                       </div>
                     ) : (
-                      <span className="text-gray-500">No report</span>
+                      <span className="text-gray-600">No report</span>
                     )}
                   </td>
                   <td className="px-4 py-3 text-sm text-gray-500" role="gridcell">
-                    {format(parseISO(report.created_at || new Date()), 'MMM dd, yyyy')}
+                    {format(parseISO(report.created_at || new Date().toISOString()), 'MMM dd, yyyy')}
                   </td>
                 </tr>
               ))}
@@ -501,11 +665,11 @@ export default function ReportsList() {
     if (pages <= 1) return null;
 
     return (
-      <div className="flex flex-wrap justify-center items-center gap-2 mt-4 px-3">
+      <div className="flex items-center justify-center gap-2 mt-4 px-3 flex-wrap">
         <button
           onClick={() => handlePageChange(currentPage[activeTab] - 1)}
           disabled={currentPage[activeTab] === 1}
-          className="px-3 py-1.5 rounded-lg bg-gray-100 text-gray-700 disabled:opacity-50 hover:bg-gray-200 text-xs font-medium min-w-[44px] transition-colors"
+          className="px-3 py-1.5 rounded-lg bg-gray-100 text-gray-700 disabled:opacity-50 hover:bg-gray-200 text-sm font-medium transition-colors"
           aria-label="Previous page"
         >
           Previous
@@ -514,10 +678,8 @@ export default function ReportsList() {
           <button
             key={i}
             onClick={() => handlePageChange(i + 1)}
-            className={`px-3 py-1.5 rounded-lg text-xs font-medium min-w-[44px] ${
-              currentPage[activeTab] === i + 1
-                ? 'bg-blue-600 text-white'
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+            className={`px-3 py-1.5 rounded-lg text-sm font-medium ${
+              currentPage[activeTab] === i + 1 ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
             } transition-colors`}
             aria-current={currentPage[activeTab] === i + 1 ? 'page' : undefined}
           >
@@ -527,7 +689,7 @@ export default function ReportsList() {
         <button
           onClick={() => handlePageChange(currentPage[activeTab] + 1)}
           disabled={currentPage[activeTab] === pages}
-          className="px-3 py-1.5 rounded-lg bg-gray-100 text-gray-700 disabled:opacity-50 hover:bg-gray-200 text-xs font-medium min-w-[44px] transition-colors"
+          className="px-3 py-1.5 rounded-lg bg-gray-100 text-gray-700 disabled:opacity-50 hover:bg-gray-200 text-sm font-medium transition-colors"
           aria-label="Next page"
         >
           Next
@@ -537,22 +699,53 @@ export default function ReportsList() {
   };
 
   return (
-    <div className="bg-white rounded-lg shadow-sm p-4 mx-2 sm:mx-4 md:mx-auto max-w-[100vw] overflow-x-hidden">
+    <div className="bg-white rounded-lg shadow-sm p-4 mx-auto max-w-[100vw] overflow-x-hidden">
+      {/* Credits Display */}
+      <motion.div
+        className="mb-4 bg-gradient-to-r from-white to-gray-50 p-4 rounded-lg shadow-sm flex items-center justify-between transition-colors duration-200 hover:shadow-md"
+        animate={shakeCredits ? { x: [0, -10, 10, -10, 10, 0] } : {}}
+      >
+        <div className="flex items-center space-x-2">
+          <img
+            src={coinIcon}
+            alt="Credits"
+            className="w-6 h-6"
+            data-tooltip-id="credits-tooltip"
+            data-tooltip-content="Available credits"
+          />
+          <span
+            className="text-sm font-semibold text-gray-800"
+            data-tooltip-id="credits-tooltip"
+            data-tooltip-content="Available credits"
+          >
+            {credits ?? 'N/A'}
+          </span>
+          <Tooltip id="credits-tooltip" place="top" className="text-xs" />
+        </div>
+        <button
+          className="px-3 py-1.5 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-sm font-medium transition-colors"
+          onClick={() => {
+            window.location.href = '/purchase';
+          }}
+          aria-label="Add credits"
+        >
+          Add Credits
+        </button>
+      </motion.div>
+
       {/* Header */}
       <div className="flex flex-col gap-2 mb-4">
-        <h2 className="text-xl sm:text-lg font-bold text-gray-900">Your Reports</h2>
-        <div className="flex flex-col gap-3">
+        <h2 className="text-xl font-semibold text-gray-900">Your Reports</h2>
+        <div className="flex flex-col sm:flex-row gap-3">
           <div className="flex flex-wrap gap-2">
             <button
               onClick={() => {
                 setActiveTab('general');
                 setCurrentPage(prev => ({ ...prev, general: 1 }));
               }}
-              className={`flex-1 px-3 py-2 text-sm font-medium rounded-lg transition-all duration-300 ${
-                activeTab === 'general'
-                  ? 'bg-blue-50 text-blue-700 bg-gradient-to-r from-blue-600 to-blue-700 bg-clip-text text-transparent shadow-sm'
-                  : 'text-gray-600 hover:bg-gray-100'
-              } min-w-[100px]`}
+              className={`flex-1 px-3 py-2 text-sm font-medium rounded-md transition-colors duration-200 ${
+                activeTab === 'general' ? 'bg-blue-50 text-blue-700' : 'text-gray-600 hover:bg-gray-100'
+              } min-w-[120px]`}
               aria-current={activeTab === 'general' ? 'page' : undefined}
             >
               Post-Event Reports
@@ -562,18 +755,18 @@ export default function ReportsList() {
                 setActiveTab('risk_analysis');
                 setCurrentPage(prev => ({ ...prev, risk_analysis: 1 }));
               }}
-              className={`flex-1 px-3 py-2 text-sm font-medium rounded-lg transition-all duration-300 ${
-                activeTab === 'risk_analysis'
-                  ? 'bg-blue-50 text-blue-700 bg-gradient-to-r from-blue-600 to-blue-700 bg-clip-text text-transparent'
-                  : 'text-gray-600 hover:bg-gray-100'
-              } min-w-[100px]`}
+              className={`flex-1 px-3 py-2 text-sm font-medium rounded-md transition-colors duration-200 ${
+                activeTab === 'risk_analysis' ? 'bg-blue-50 text-blue-700' : 'text-gray-600 hover:bg-gray-100'
+              } min-w-[120px]`}
               aria-current={activeTab === 'risk_analysis' ? 'page' : undefined}
             >
               Risk Analysis
             </button>
           </div>
-          <div className="relative w-full max-w-md">
-            <Search className="absolute left-2.5 top-1/2 transform -translate-y-1/2 text-gray-400" size={16} />
+          <div className="relative w-full max-w-md flex items-center">
+            <span className="absolute left-2 top-1/2 -translate-y-1/2 flex items-center pointer-events-none">
+              <Search className="text-gray-400" size={16} />
+            </span>
             <input
               type="text"
               placeholder="Search by title or company..."
@@ -587,11 +780,11 @@ export default function ReportsList() {
 
       {/* Filters and Actions */}
       <div className="flex flex-col gap-3 mb-4">
-        <div className="flex flex-col gap-2">
+        <div className="flex flex-col sm:flex-row gap-2 justify-between">
           <div className="flex flex-wrap items-center gap-2">
             <button
               onClick={handleSortToggle}
-              className="px-3 py-1.5 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 text-xs font-medium min-w-[80px] transition-colors"
+              className="px-3 py-1.5 bg-gray-100 rounded-md text-gray-700 hover:bg-gray-200 text-sm font-medium transition-colors"
               aria-label={`Sort by date ${sortOrder === 'desc' ? 'oldest first' : 'newest first'}`}
             >
               Sort: {sortOrder === 'desc' ? 'Newest' : 'Oldest'}
@@ -604,14 +797,14 @@ export default function ReportsList() {
                     setStatusFilter(e.target.value as typeof statusFilter);
                     setCurrentPage(prev => ({ ...prev, risk_analysis: 1 }));
                   }}
-                  className="px-3 py-1.5 bg-gray-100 text-gray-700 rounded-md text-xs font-medium appearance-none pr-6 focus:outline-none focus:ring-2 focus:ring-blue-500 min-w-[100px]"
+                  className="px-3 py-1.5 bg-gray-100 text-gray-700 rounded-md text-sm font-medium appearance-none pr-6 focus:outline-none focus:ring-2 focus:ring-blue-500 min-w-[120px]"
                   aria-label="Filter by status"
                 >
                   <option value="all">All Statuses</option>
                   <option value="requested">Requested</option>
                   <option value="in_progress">In Progress</option>
-                  <option value="completed">Completed</option>
-                  <option value="rejected">Rejected</option>
+                  <option value="completed">Complete</option>
+                  <option value="rejected">Failed</option>
                 </select>
                 <Filter className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400" size={12} />
               </div>
@@ -622,20 +815,20 @@ export default function ReportsList() {
               type="date"
               value={dateFrom}
               onChange={e => setDateFrom(e.target.value)}
-              className="px-2 py-1.5 border border-gray-300 rounded-md text-xs focus:outline-none focus:ring-2 focus:ring-blue-500 max-w-[130px]"
+              className="px-2 py-1.5 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 max-w-[140px]"
               aria-label="Filter by start date"
             />
-            <span className="text-gray-500 text-xs font-medium">to</span>
+            <span className="text-gray-600 text-sm">to</span>
             <input
               type="date"
               value={dateTo}
               onChange={e => setDateTo(e.target.value)}
-              className="px-2 py-1.5 border border-gray-300 rounded-md text-xs focus:outline-none focus:ring-2 focus:ring-blue-500 max-w-[130px]"
+              className="px-2 py-1.5 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 max-w-[140px]"
               aria-label="Filter by end date"
             />
             <button
               onClick={handleDateFilter}
-              className="px-3 py-1.5 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-xs font-medium min-w-[60px] transition-colors"
+              className="px-4 py-1.5 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-sm font-medium transition-colors"
               aria-label="Apply date filter"
             >
               Apply
@@ -645,10 +838,10 @@ export default function ReportsList() {
         <div className="flex justify-end">
           <button
             onClick={fetchReports}
-            className="px-3 py-1.5 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-xs font-medium flex items-center min-w-[80px] transition-colors"
+            className="px-4 py-1.5 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-sm font-medium flex items-center transition-colors"
             aria-label="Refresh reports"
           >
-            <RefreshCw className="w-3 h-3 mr-1" />
+            <RefreshCw className="w-4 h-4 mr-2" />
             Refresh
           </button>
         </div>
@@ -656,37 +849,12 @@ export default function ReportsList() {
 
       {/* Content */}
       {error && (
-        <div className="p-3 bg-red-100 text-red-700 rounded-md mb-3 text-sm" role="alert">
+        <div className="p-3 bg-red-50 text-red-600 rounded-md text-center mb-4 text-sm" role="alert">
           {error}
         </div>
       )}
       {loading ? renderSkeleton() : activeTab === 'general' ? renderGeneralReports() : renderRiskAnalysisReports()}
       {renderPagination()}
-
-      {/* Preview Modal */}
-      <dialog ref={modalRef} className="rounded-lg p-0 w-[95vw] max-w-[95vw] sm:max-w-2xl max-h-[90vh] backdrop:bg-black/70">
-        <div className="flex justify-between items-center p-3 border-b border-gray-200">
-          <h3 className="text-base font-semibold text-gray-900">Report Preview</h3>
-          <button
-            onClick={() => modalRef.current?.close()}
-            className="text-gray-500 hover:text-gray-700 p-1 rounded"
-            aria-label="Close preview"
-          >
-            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
-        </div>
-        <div className="p-3 overflow-y-auto">
-          {previewUrl && (
-            <iframe
-              src={previewUrl}
-              className="w-full h-[60vh] sm:h-[400px] border border-gray-200 rounded"
-              title="Report preview"
-            />
-          )}
-        </div>
-      </dialog>
     </div>
   );
 }
