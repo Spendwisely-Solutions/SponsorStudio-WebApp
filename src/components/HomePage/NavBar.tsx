@@ -111,7 +111,11 @@ const NavBar: React.FC<NavBarProps> = ({
                   <span className="text-[#2B4B9B] font-medium group-hover:text-[#1F3A7A] transition-colors text-lg sm:text-base">
                     {profile?.company_name || 'Complete Profile'}
                   </span>
-                  <span className="text-sm sm:text-xs text-gray-500 capitalize">{profile?.user_type.replace('_', ' ')}</span>
+                    <span className="text-sm sm:text-xs text-gray-500 capitalize">
+                    {profile?.user_type === 'event_organizer'
+                      ? 'Opportunity Provider'
+                      : profile?.user_type?.replace('_', ' ')}
+                    </span>
                 </div>
                 {!isProfileComplete && (
                   <div className="absolute -top-1 -right-1 w-3 h-3 bg-yellow-400 rounded-full animate-pulse" />

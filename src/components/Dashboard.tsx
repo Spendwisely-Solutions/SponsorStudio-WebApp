@@ -279,7 +279,11 @@ export default function Dashboard() {
             )}
             <div>
               <p className="font-medium">{userProfile?.company_name || 'Your Account'}</p>
-              <p className="text-sm text-gray-500">{userProfile?.user_type.replace('_', ' ')}</p>
+              <p className="text-sm text-gray-500">
+                {userProfile?.user_type === 'event_organizer'
+                  ? 'Opportunity Provider'
+                  : userProfile?.user_type.replace('_', ' ')}
+              </p>
             </div>
           </div>
         </div>
