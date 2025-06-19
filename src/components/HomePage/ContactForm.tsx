@@ -174,7 +174,7 @@ const ContactForm: React.FC<ContactFormProps> = ({ formData, setFormData, showTh
                 <option value="">Select one</option>
                 <option value="Brand">Brand</option>
                 <option value="Marketing Agency">Marketing Agency</option>
-                <option value="Event Organizer">Event Organizer</option>
+                <option value="Opportunity Provider">Opportunity Provider</option>
                 <option value="Influencer">Influencer</option>
               </select>
             </div>

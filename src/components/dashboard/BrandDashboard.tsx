@@ -817,6 +817,7 @@ export default function BrandDashboard({ onUpdateProfile }: BrandDashboardProps)
           rejectedMatches={rejectedMatches}
           setActiveTab={setActiveTab}
           generateGoogleCalendarLink={generateGoogleCalendarLink}
+          deductCredits={deductCredits}
         />
       )}
     </div>

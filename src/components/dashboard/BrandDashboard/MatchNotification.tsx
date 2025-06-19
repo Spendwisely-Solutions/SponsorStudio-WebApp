@@ -46,7 +46,7 @@ const MatchNotification: React.FC<MatchNotificationProps> = ({
               <>
                 <p>
                   You've expressed interest in "{matchedOpportunity?.title}". The
-                  event organizer has been notified and will contact you soon.
+                  Opportunity Provider has been notified and will contact you soon.
                 </p>
                 {matchedOpportunity?.calendly_link && (
                   <p className="mt-1 sm:mt-2">

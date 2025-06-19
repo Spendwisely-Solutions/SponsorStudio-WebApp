@@ -4,7 +4,7 @@ import { updateProfile } from '../../lib/auth';
 import { useAuth } from '../../contexts/AuthContext';
 import { supabase } from '../../lib/supabase';
 import type { Database } from '../../lib/database.types';
-import { Save, X, Camera, SquarePen, Crop, LogOut } from 'lucide-react';
+import { Save, X, Camera, SquarePen, Crop } from 'lucide-react';
 import Cropper from 'react-easy-crop';
 import { Area } from 'react-easy-crop/types';
 import { CustomModal } from '../../components/CustomModal';
@@ -15,6 +15,21 @@ type Profile = Database['public']['Tables']['profiles']['Row'];
 
 interface ProfileSettingsProps {
   profile: Profile | null;
+}
+
+interface SocialMedia {
+  linkedin: string;
+  twitter: string;
+  instagram: string;
+  facebook: string;
+}
+
+interface TargetAudience {
+  age_range: { min: number; max: number };
+  genders: string;
+  interests: string[];
+  locations: string[];
+  income_level: string;
 }
 
 export default function ProfileSettings({ profile }: ProfileSettingsProps) {
@@ -39,17 +54,19 @@ export default function ProfileSettings({ profile }: ProfileSettingsProps) {
       linkedin: '',
       twitter: '',
       instagram: '',
-      facebook: ''
+      facebook: '',
     },
     target_audience: profile?.target_audience || {
       age_range: { min: 18, max: 65 },
-      genders: Array.isArray(profile?.target_audience?.genders) ? profile?.target_audience?.genders[0] || '' : profile?.target_audience?.genders || '',
+      genders: Array.isArray(profile?.target_audience?.genders)
+        ? profile?.target_audience?.genders[0] || ''
+        : profile?.target_audience?.genders || '',
       interests: [],
       locations: [],
-      income_level: ''
+      income_level: '',
     },
     phone_number_verified: profile?.phone_number_verified || false,
-    email_verified: profile?.email_verified || false
+    email_verified: profile?.email_verified || false,
   });
   const [previewImage, setPreviewImage] = useState<string | null>(formData.profile_picture_url || null);
   const [loading, setLoading] = useState(false);
@@ -68,7 +85,6 @@ export default function ProfileSettings({ profile }: ProfileSettingsProps) {
   const [crop, setCrop] = useState({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
   const [croppedAreaPixels, setCroppedAreaPixels] = useState<Area | null>(null);
-  const [showLogoutModal, setShowLogoutModal] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const generateOtp = () => {
@@ -97,14 +113,14 @@ export default function ProfileSettings({ profile }: ProfileSettingsProps) {
 
       const templateParams = {
         to_email: formData.email,
-        otp: otp
+        otp,
       };
 
       await emailjs.send(
         import.meta.env.VITE_EMAILJS_SERVICE_ID_EMAIL_VERIFY,
         import.meta.env.VITE_EMAILJS_TEMPLATE_ID_EMAIL_VERIFY,
         templateParams,
-        import.meta.env.VITE_EMAILJS_PUBLIC_KEY_EMAIL_VERIFY
+        import.meta.env.VITE_EMAILJS_PUBLIC_KEY_EMAIL_VERIFY,
       );
 
       setShowEmailOtpPopup(true);
@@ -132,31 +148,35 @@ export default function ProfileSettings({ profile }: ProfileSettingsProps) {
         throw new Error('Invalid OTP');
       }
 
+      if (!user?.id) {
+        throw new Error('User not authenticated');
+      }
+
       const { error: updateError } = await supabase
         .from('profiles')
         .update({
           email_verified: true,
-          email: formData.email
+          email: formData.email,
         })
-        .eq('id', user?.id);
+        .eq('id', user.id);
 
       if (updateError) {
-        throw new Error('Failed to update profile: ' + updateError.message);
+        throw new Error(`Failed to update profile: ${updateError.message}`);
       }
 
       if (formData.email !== user?.email) {
         const { error: authError } = await supabase.auth.updateUser({
-          email: formData.email
+          email: formData.email,
         });
         if (authError) {
           throw new Error(`Failed to update authentication email: ${authError.message}`);
         }
       }
 
-      setFormData(prev => ({
+      setFormData((prev) => ({
         ...prev,
         email_verified: true,
-        email: formData.email
+        email: formData.email,
       }));
       setShowEmailOtpPopup(false);
       setEmailOtp('');
@@ -173,54 +193,40 @@ export default function ProfileSettings({ profile }: ProfileSettingsProps) {
     }
   };
 
-  const handleLogout = () => {
-    setShowLogoutModal(true);
-  };
-
-  const confirmLogout = async () => {
-    try {
-      const { error } = await supabase.auth.signOut();
-      if (error) throw error;
-      toast.success('Logged out successfully');
-      setShowLogoutModal(false);
-    } catch (err) {
-      console.error('Logout error:', err);
-      toast.error('Failed to log out');
-    }
-  };
-
-  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+  const handleInputChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>,
+  ) => {
     const { name, value } = e.target;
 
     if (name === 'annual_marketing_budget') {
       setFormData({
         ...formData,
-        [name]: value === '' ? '' : parseFloat(value)
+        [name]: value === '' ? '' : parseFloat(value),
       });
     } else if (name === 'min_age' || name === 'max_age') {
       setFormData({
         ...formData,
         target_audience: {
-          ...formData.target_audience as any,
+          ...formData.target_audience,
           age_range: {
-            ...(formData.target_audience as any).age_range,
-            [name === 'min_age' ? 'min' : 'max']: parseInt(value) || 0
-          }
-        }
+            ...formData.target_audience.age_range,
+            [name === 'min_age' ? 'min' : 'max']: parseInt(value) || 0,
+          },
+        },
       });
     } else if (name.startsWith('social_media_')) {
-      const platform = name.replace('social_media_', '');
+      const platform = name.replace('social_media_', '') as keyof SocialMedia;
       setFormData({
         ...formData,
         social_media: {
-          ...(formData.social_media as any),
-          [platform]: value
-        }
+          ...formData.social_media,
+          [platform]: value,
+        },
       });
     } else {
       setFormData({
         ...formData,
-        [name]: value
+        [name]: value,
       });
     }
   };
@@ -264,7 +270,7 @@ export default function ProfileSettings({ profile }: ProfileSettingsProps) {
     setCroppedAreaPixels(null);
   };
 
-  const handleCropComplete = useCallback((croppedArea: Area, croppedAreaPixels: Area) => {
+  const handleCropComplete = useCallback((_: Area, croppedAreaPixels: Area) => {
     setCroppedAreaPixels(croppedAreaPixels);
   }, []);
 
@@ -289,18 +295,22 @@ export default function ProfileSettings({ profile }: ProfileSettingsProps) {
       0,
       0,
       pixelCrop.width,
-      pixelCrop.height
+      pixelCrop.height,
     );
 
     return new Promise((resolve, reject) => {
-      canvas.toBlob((blob) => {
-        if (!blob) {
-          reject(new Error('Failed to create blob'));
-          return;
-        }
-        const file = new File([blob], `cropped_${Date.now()}.jpg`, { type: 'image/jpeg' });
-        resolve(file);
-      }, 'image/jpeg', 0.9);
+      canvas.toBlob(
+        (blob) => {
+          if (!blob) {
+            reject(new Error('Failed to create blob'));
+            return;
+          }
+          const file = new File([blob], `cropped_${Date.now()}.jpg`, { type: 'image/jpeg' });
+          resolve(file);
+        },
+        'image/jpeg',
+        0.9,
+      );
     });
   };
 
@@ -328,12 +338,12 @@ export default function ProfileSettings({ profile }: ProfileSettingsProps) {
 
       const fileBuffer = await croppedFile.arrayBuffer();
 
-      const { data, error: uploadError } = await supabase.storage
+      const { error: uploadError } = await supabase.storage
         .from('public')
         .upload(filePath, fileBuffer, {
           cacheControl: '3600',
           upsert: true,
-          contentType: croppedFile.type
+          contentType: croppedFile.type,
         });
 
       if (uploadError) {
@@ -345,11 +355,9 @@ export default function ProfileSettings({ profile }: ProfileSettingsProps) {
         throw new Error('Failed to generate public URL');
       }
 
-      console.log('New profile picture URL:', publicUrlData.publicUrl);
-
-      setFormData(prev => ({
+      setFormData((prev) => ({
         ...prev,
-        profile_picture_url: publicUrlData.publicUrl
+        profile_picture_url: publicUrlData.publicUrl,
       }));
 
       const { error: dbError } = await supabase
@@ -361,7 +369,6 @@ export default function ProfileSettings({ profile }: ProfileSettingsProps) {
         throw new Error(`Failed to update profile picture in database: ${dbError.message}`);
       }
 
-      console.log('Profile picture updated in database:', publicUrlData.publicUrl);
       toast.success('Profile picture updated successfully!');
       resetFileInput();
     } catch (err) {
@@ -376,10 +383,10 @@ export default function ProfileSettings({ profile }: ProfileSettingsProps) {
   };
 
   const handleArrayInputChange = (e: React.ChangeEvent<HTMLInputElement>, field: string) => {
-    const values = e.target.value.split(',').map(item => item.trim());
+    const values = e.target.value.split(',').map((item) => item.trim()).filter(Boolean);
     setFormData({
       ...formData,
-      [field]: values
+      [field]: values,
     });
   };
 
@@ -388,33 +395,31 @@ export default function ProfileSettings({ profile }: ProfileSettingsProps) {
     setFormData({
       ...formData,
       target_audience: {
-        ...formData.target_audience as any,
-        genders: value
-      }
+        ...formData.target_audience,
+        genders: value,
+      },
     });
   };
 
   const handleInterestsChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const interests = e.target.value.split(',').map(interest => interest.trim());
-
+    const interests = e.target.value.split(',').map((interest) => interest.trim()).filter(Boolean);
     setFormData({
       ...formData,
       target_audience: {
-        ...formData.target_audience as any,
-        interests
-      }
+        ...formData.target_audience,
+        interests,
+      },
     });
   };
 
   const handleLocationsChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const locations = e.target.value.split(',').map(location => location.trim());
-
+    const locations = e.target.value.split(',').map((location) => location.trim()).filter(Boolean);
     setFormData({
       ...formData,
       target_audience: {
-        ...formData.target_audience as any,
-        locations
-      }
+        ...formData.target_audience,
+        locations,
+      },
     });
   };
 
@@ -422,31 +427,34 @@ export default function ProfileSettings({ profile }: ProfileSettingsProps) {
     setFormData({
       ...formData,
       target_audience: {
-        ...formData.target_audience as any,
-        income_level: e.target.value
-      }
+        ...formData.target_audience,
+        income_level: e.target.value,
+      },
     });
   };
 
   const handlePreviousSponsorshipsChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    const value = e.target.value;
     try {
-      if (e.target.value.trim().startsWith('[')) {
-        const sponsorships = JSON.parse(e.target.value);
-        setFormData({
-          ...formData,
-          previous_sponsorships: sponsorships
-        });
+      if (value.trim().startsWith('[')) {
+        const sponsorships = JSON.parse(value);
+        if (Array.isArray(sponsorships)) {
+          setFormData({
+            ...formData,
+            previous_sponsorships: sponsorships,
+          });
+        }
       } else {
-        const sponsorships = e.target.value.split(',').map(s => s.trim());
+        const sponsorships = value.split(',').map((s) => s.trim()).filter(Boolean);
         setFormData({
           ...formData,
-          previous_sponsorships: sponsorships
+          previous_sponsorships: sponsorships,
         });
       }
     } catch (err) {
       setFormData({
         ...formData,
-        previous_sponsorships: e.target.value
+        previous_sponsorships: value,
       });
     }
   };
@@ -474,9 +482,11 @@ export default function ProfileSettings({ profile }: ProfileSettingsProps) {
       }
 
       setShowPhoneOtpPopup(true);
+      toast.success('OTP sent to your phone!');
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to send OTP');
-      toast.error(err instanceof Error ? err.message : 'Failed to send OTP');
+      const errorMessage = err instanceof Error ? err.message : 'Failed to send OTP';
+      setError(errorMessage);
+      toast.error(errorMessage);
     } finally {
       setPhoneOtpLoading(false);
     }
@@ -507,22 +517,26 @@ export default function ProfileSettings({ profile }: ProfileSettingsProps) {
         throw new Error('Invalid OTP');
       }
 
+      if (!user?.id) {
+        throw new Error('User not authenticated');
+      }
+
       const { error: updateError } = await supabase
         .from('profiles')
         .update({
           phone_number_verified: true,
-          contact_person_phone: formData.contact_person_phone
+          contact_person_phone: formData.contact_person_phone,
         })
-        .eq('id', user?.id);
+        .eq('id', user.id);
 
       if (updateError) {
-        throw new Error('Failed to update profile: ' + updateError.message);
+        throw new Error(`Failed to update profile: ${updateError.message}`);
       }
 
-      setFormData(prev => ({
+      setFormData((prev) => ({
         ...prev,
         phone_number_verified: true,
-        contact_person_phone: formData.contact_person_phone
+        contact_person_phone: formData.contact_person_phone,
       }));
       setShowPhoneOtpPopup(false);
       setPhoneOtp('');
@@ -530,8 +544,9 @@ export default function ProfileSettings({ profile }: ProfileSettingsProps) {
       toast.success('Phone number verified successfully!');
       setTimeout(() => setSuccess(false), 3000);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to verify OTP');
-      toast.error(err instanceof Error ? err.message : 'Failed to verify OTP');
+      const errorMessage = err instanceof Error ? err.message : 'Failed to verify OTP';
+      setError(errorMessage);
+      toast.error(errorMessage);
     } finally {
       setPhoneOtpLoading(false);
     }
@@ -549,17 +564,17 @@ export default function ProfileSettings({ profile }: ProfileSettingsProps) {
       if (emailChanged && !formData.email_verified) {
         await sendEmailOtp();
       } else {
-        console.log('Updating profile with full formData:', formData);
         await updateProfile(formData);
         setSuccess(true);
         setTimeout(() => setSuccess(false), 3000);
       }
     } catch (err: any) {
-      console.error('Submit error:', err);
-      const errorMessage = err.message.includes('Failed to update profile') && err.cause
+      const errorMessage = err.message?.includes('Failed to update profile') && err.cause
         ? `Failed to update profile: ${err.cause.message || 'Unknown error'}`
         : err.message || 'An error occurred while updating your profile';
       setError(errorMessage);
+      toast.error(errorMessage);
+      console.error('Submit error:', err);
     } finally {
       setLoading(false);
     }
@@ -567,37 +582,24 @@ export default function ProfileSettings({ profile }: ProfileSettingsProps) {
 
   const isBrand = profile?.user_type === 'brand' || profile?.user_type === 'agency';
 
-  // Animation variants for sections
   const sectionVariants = {
     hidden: { opacity: 0, y: 20 },
-    visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: 'easeOut' } }
+    visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: 'easeOut' } },
   };
 
-  // Animation variants for buttons
   const buttonVariants = {
     hover: { scale: 1.05, transition: { duration: 0.2 } },
-    tap: { scale: 0.95 }
+    tap: { scale: 0.95 },
   };
 
-  // Animation variants for modals
   const modalVariants = {
     hidden: { opacity: 0, scale: 0.8 },
     visible: { opacity: 1, scale: 1, transition: { duration: 0.3, ease: 'easeOut' } },
-    exit: { opacity: 0, scale: 0.8, transition: { duration: 0.2 } }
+    exit: { opacity: 0, scale: 0.8, transition: { duration: 0.2 } },
   };
 
   return (
     <div className="bg-white rounded-lg shadow-lg p-6 pb-14 sm:pb-6 relative w-full">
-      <motion.button
-        onClick={handleLogout}
-        className="block sm:hidden absolute top-2 right-2 p-2 bg-[#2B4B9B] text-white rounded-lg hover:bg-[#1a2f61] flex items-center"
-        variants={buttonVariants}
-        whileHover="hover"
-        whileTap="tap"
-      >
-        <LogOut className="w-4 h-4 mr-1" />
-        <span className="text-sm">Logout</span>
-      </motion.button>
       <motion.h2
         className="text-3xl font-bold text-gray-800 mb-8 border-b-2 border-[#2B4B9B] pb-2"
         initial={{ opacity: 0, y: -20 }}
@@ -656,10 +658,7 @@ export default function ProfileSettings({ profile }: ProfileSettingsProps) {
           animate={{ opacity: 1 }}
           transition={{ duration: 0.5 }}
         >
-          <motion.div
-            className="text-center relative"
-            whileHover={{ scale: 1.05 }}
-          >
+          <motion.div className="text-center relative" whileHover={{ scale: 1.05 }}>
             <label
               htmlFor="profile_picture"
               className="relative group cursor-pointer block"
@@ -667,11 +666,7 @@ export default function ProfileSettings({ profile }: ProfileSettingsProps) {
             >
               <div className="w-32 h-32 rounded-full overflow-hidden bg-gray-200 flex items-center justify-center">
                 {previewImage ? (
-                  <img
-                    src={previewImage}
-                    alt="Profile preview"
-                    className="w-full h-full object-cover"
-                  />
+                  <img src={previewImage} alt="Profile preview" className="w-full h-full object-cover" />
                 ) : (
                   <svg
                     className="w-12 h-12 text-gray-400"
@@ -757,7 +752,10 @@ export default function ProfileSettings({ profile }: ProfileSettingsProps) {
           initial="hidden"
           animate="visible"
         >
-          <motion.div className="bg-gray-50 p-6 rounded-lg shadow-sm" whileHover={{ boxShadow: '0 4px 20px rgba(0,0,0,0.1)' }}>
+          <motion.div
+            className="bg-gray-50 p-6 rounded-lg shadow-sm"
+            whileHover={{ boxShadow: '0 4px 20px rgba(0,0,0,0.1)' }}
+          >
             <motion.h3
               className="text-xl font-semibold text-gray-800 mb-4 border-l-4 border-[#2B4B9B] pl-3"
               initial={{ opacity: 0 }}
@@ -875,7 +873,10 @@ export default function ProfileSettings({ profile }: ProfileSettingsProps) {
             </div>
           </motion.div>
 
-          <motion.div className="bg-gray-50 p-6 rounded-lg shadow-sm" whileHover={{ boxShadow: '0 4px 20px rgba(0,0,0,0.1)' }}>
+          <motion.div
+            className="bg-gray-50 p-6 rounded-lg shadow-sm"
+            whileHover={{ boxShadow: '0 4px 20px rgba(0,0,0,0.1)' }}
+          >
             <motion.h3
               className="text-xl font-semibold text-gray-800 mb-4 border-l-4 border-[#2B4B9B] pl-3"
               initial={{ opacity: 0 }}
@@ -896,8 +897,8 @@ export default function ProfileSettings({ profile }: ProfileSettingsProps) {
                     name="email"
                     value={formData.email}
                     onChange={handleInputChange}
-                    disabled={true}
-                    className="flex-1 px-3 py-2 border border-gray-300 rounded-lg bg-gray-100 cursor-not-allowed transition-all"
+                    disabled={formData.email_verified}
+                    className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-[#2B4B9B] focus:border-[#2B4B9B] transition-all disabled:bg-gray-100 disabled:cursor-not-allowed"
                     whileFocus={{ scale: 1.02 }}
                   />
                   {!formData.email_verified && (
@@ -945,7 +946,8 @@ export default function ProfileSettings({ profile }: ProfileSettingsProps) {
               </div>
               <div className="relative">
                 <label htmlFor="contact_person_phone" className="block text-sm font-medium text-gray-700 mb-1">
-                  Phone Number {formData.phone_number_verified && <span className="text-green-600 text-xs">(Verified)</span>}
+                  Phone Number{' '}
+                  {formData.phone_number_verified && <span className="text-green-600 text-xs">(Verified)</span>}
                 </label>
                 <div className="flex items-center space-x-2">
                   <motion.input
@@ -954,7 +956,7 @@ export default function ProfileSettings({ profile }: ProfileSettingsProps) {
                     name="contact_person_phone"
                     value={formData.contact_person_phone}
                     onChange={handleInputChange}
-                    className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-[#2B4B9B] focus:border-[#2B4B9B] transition-all"
+                    className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:ring-[#2B4B9B] focus:border-[#2B4B9B] transition-all disabled:bg-gray-100 disabled:cursor-not-allowed"
                     placeholder="+1234567890"
                     disabled={formData.phone_number_verified}
                     whileFocus={{ scale: 1.02 }}
@@ -975,14 +977,12 @@ export default function ProfileSettings({ profile }: ProfileSettingsProps) {
                 </div>
               </div>
               <div className="relative">
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Social Media
-                </label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Social Media</label>
                 <div className="space-y-2">
                   <motion.input
                     type="url"
                     name="social_media_linkedin"
-                    value={(formData.social_media as any)?.linkedin || ''}
+                    value={formData.social_media.linkedin}
                     onChange={handleInputChange}
                     placeholder="LinkedIn URL"
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-[#2B4B9B] focus:border-[#2B4B9B] transition-all"
@@ -991,7 +991,7 @@ export default function ProfileSettings({ profile }: ProfileSettingsProps) {
                   <motion.input
                     type="url"
                     name="social_media_twitter"
-                    value={(formData.social_media as any)?.twitter || ''}
+                    value={formData.social_media.twitter}
                     onChange={handleInputChange}
                     placeholder="Twitter URL"
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-[#2B4B9B] focus:border-[#2B4B9B] transition-all"
@@ -1000,7 +1000,7 @@ export default function ProfileSettings({ profile }: ProfileSettingsProps) {
                   <motion.input
                     type="url"
                     name="social_media_instagram"
-                    value={(formData.social_media as any)?.instagram || ''}
+                    value={formData.social_media.instagram}
                     onChange={handleInputChange}
                     placeholder="Instagram URL"
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-[#2B4B9B] focus:border-[#2B4B9B] transition-all"
@@ -1009,7 +1009,7 @@ export default function ProfileSettings({ profile }: ProfileSettingsProps) {
                   <motion.input
                     type="url"
                     name="social_media_facebook"
-                    value={(formData.social_media as any)?.facebook || ''}
+                    value={formData.social_media.facebook}
                     onChange={handleInputChange}
                     placeholder="Facebook URL"
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-[#2B4B9B] focus:border-[#2B4B9B] transition-all"
@@ -1030,7 +1030,10 @@ export default function ProfileSettings({ profile }: ProfileSettingsProps) {
               initial="hidden"
               animate="visible"
             >
-              <motion.div className="bg-gray-50 p-6 rounded-lg shadow-sm" whileHover={{ boxShadow: '0 4px 20px rgba(0,0,0,0.1)' }}>
+              <motion.div
+                className="bg-gray-50 p-6 rounded-lg shadow-sm"
+                whileHover={{ boxShadow: '0 4px 20px rgba(0,0,0,0.1)' }}
+              >
                 <motion.h3
                   className="text-xl font-semibold text-gray-800 mb-4 border-l-4 border-[#2B4B9B] pl-3"
                   initial={{ opacity: 0 }}
@@ -1041,7 +1044,10 @@ export default function ProfileSettings({ profile }: ProfileSettingsProps) {
                 </motion.h3>
                 <div className="space-y-4">
                   <div className="relative">
-                    <label htmlFor="annual_marketing_budget" className="block text-sm font-medium text-gray-700 mb-1">
+                    <label
+                      htmlFor="annual_marketing_budget"
+                      className="block text-sm font-medium text-gray-700 mb-1"
+                    >
                       Annual Marketing Budget
                     </label>
                     <motion.input
@@ -1055,7 +1061,10 @@ export default function ProfileSettings({ profile }: ProfileSettingsProps) {
                     />
                   </div>
                   <div className="relative group">
-                    <label htmlFor="marketing_channels" className="block text-sm font-medium text-gray-700 mb-1">
+                    <label
+                      htmlFor="marketing_channels"
+                      className="block text-sm font-medium text-gray-700 mb-1"
+                    >
                       Marketing Channels (comma separated)
                     </label>
                     <motion.input
@@ -1072,12 +1081,19 @@ export default function ProfileSettings({ profile }: ProfileSettingsProps) {
                     </div>
                   </div>
                   <div className="relative group">
-                    <label htmlFor="previous_sponsorships" className="block text-sm font-medium text-gray-700 mb-1">
+                    <label
+                      htmlFor="previous_sponsorships"
+                      className="block text-sm font-medium text-gray-700 mb-1"
+                    >
                       Previous Sponsorships (comma separated)
                     </label>
                     <motion.textarea
                       id="previous_sponsorships"
-                      value={Array.isArray(formData.previous_sponsorships) ? formData.previous_sponsorships.join(', ') : formData.previous_sponsorships}
+                      value={
+                        Array.isArray(formData.previous_sponsorships)
+                          ? formData.previous_sponsorships.join(', ')
+                          : formData.previous_sponsorships
+                      }
                       onChange={handlePreviousSponsorshipsChange}
                       rows={3}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-[#2B4B9B] focus:border-[#2B4B9B] transition-all"
@@ -1089,7 +1105,10 @@ export default function ProfileSettings({ profile }: ProfileSettingsProps) {
                     </div>
                   </div>
                   <div className="relative group">
-                    <label htmlFor="sponsorship_goals" className="block text-sm font-medium text-gray-700 mb-1">
+                    <label
+                      htmlFor="sponsorship_goals"
+                      className="block text-sm font-medium text-gray-700 mb-1"
+                    >
                       Marketing Goals (comma separated)
                     </label>
                     <motion.input
@@ -1107,7 +1126,10 @@ export default function ProfileSettings({ profile }: ProfileSettingsProps) {
                   </div>
                 </div>
               </motion.div>
-              <motion.div className="bg-gray-50 p-6 rounded-lg shadow-sm" whileHover={{ boxShadow: '0 4px 20px rgba(0,0,0,0.1)' }}>
+              <motion.div
+                className="bg-gray-50 p-6 rounded-lg shadow-sm"
+                whileHover={{ boxShadow: '0 4px 20px rgba(0,0,0,0.1)' }}
+              >
                 <motion.h3
                   className="text-xl font-semibold text-gray-800 mb-4 border-l-4 border-[#2B4B9B] pl-3"
                   initial={{ opacity: 0 }}
@@ -1126,7 +1148,7 @@ export default function ProfileSettings({ profile }: ProfileSettingsProps) {
                         type="number"
                         id="min_age"
                         name="min_age"
-                        value={(formData.target_audience as any)?.age_range?.min || 18}
+                        value={formData.target_audience.age_range.min}
                         onChange={handleInputChange}
                         min="0"
                         max="100"
@@ -1142,7 +1164,7 @@ export default function ProfileSettings({ profile }: ProfileSettingsProps) {
                         type="number"
                         id="max_age"
                         name="max_age"
-                        value={(formData.target_audience as any)?.age_range?.max || 65}
+                        value={formData.target_audience.age_range.max}
                         onChange={handleInputChange}
                         min="0"
                         max="100"
@@ -1152,16 +1174,14 @@ export default function ProfileSettings({ profile }: ProfileSettingsProps) {
                     </div>
                   </div>
                   <div className="relative">
-                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                      Gender
-                    </label>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Gender</label>
                     <div className="flex space-x-4">
                       <label className="inline-flex items-center">
                         <motion.input
                           type="radio"
                           name="gender"
                           value="male"
-                          checked={(formData.target_audience as any)?.genders === 'male'}
+                          checked={formData.target_audience.genders === 'male'}
                           onChange={handleGenderChange}
                           className="mr-2"
                           whileHover={{ scale: 1.1 }}
@@ -1173,7 +1193,7 @@ export default function ProfileSettings({ profile }: ProfileSettingsProps) {
                           type="radio"
                           name="gender"
                           value="female"
-                          checked={(formData.target_audience as any)?.genders === 'female'}
+                          checked={formData.target_audience.genders === 'female'}
                           onChange={handleGenderChange}
                           className="mr-2"
                           whileHover={{ scale: 1.1 }}
@@ -1185,7 +1205,7 @@ export default function ProfileSettings({ profile }: ProfileSettingsProps) {
                           type="radio"
                           name="gender"
                           value="other"
-                          checked={(formData.target_audience as any)?.genders === 'other'}
+                          checked={formData.target_audience.genders === 'other'}
                           onChange={handleGenderChange}
                           className="mr-2"
                           whileHover={{ scale: 1.1 }}
@@ -1201,7 +1221,7 @@ export default function ProfileSettings({ profile }: ProfileSettingsProps) {
                     <motion.input
                       type="text"
                       id="interests"
-                      value={(formData.target_audience as any)?.interests?.join(', ') || ''}
+                      value={formData.target_audience.interests.join(', ')}
                       onChange={handleInterestsChange}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-[#2B4B9B] focus:border-[#2B4B9B] transition-all"
                       placeholder="Technology, Fashion, Sports, etc."
@@ -1218,7 +1238,7 @@ export default function ProfileSettings({ profile }: ProfileSettingsProps) {
                     <motion.input
                       type="text"
                       id="locations"
-                      value={(formData.target_audience as any)?.locations?.join(', ') || ''}
+                      value={formData.target_audience.locations.join(', ')}
                       onChange={handleLocationsChange}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-[#2B4B9B] focus:border-[#2B4B9B] transition-all"
                       placeholder="New York, London, Tokyo, etc."
@@ -1234,7 +1254,7 @@ export default function ProfileSettings({ profile }: ProfileSettingsProps) {
                     </label>
                     <motion.select
                       id="income_level"
-                      value={(formData.target_audience as any)?.income_level || ''}
+                      value={formData.target_audience.income_level}
                       onChange={handleIncomeLevelChange}
                       className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-[#2B4B9B] focus:border-[#2B4B9B] transition-all"
                       whileFocus={{ scale: 1.02 }}
@@ -1271,8 +1291,12 @@ export default function ProfileSettings({ profile }: ProfileSettingsProps) {
                   animate={{ rotate: 360 }}
                   transition={{ duration: 1, repeat: Infinity }}
                 >
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                  <path
+                    className="opacity-75"
+                    fill="currentColor"
+                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                  />
                 </motion.svg>
                 Saving...
               </>
@@ -1298,15 +1322,8 @@ export default function ProfileSettings({ profile }: ProfileSettingsProps) {
             title="Verify Email Address"
             customStyles={{ maxWidth: '28rem', height: '15.5rem', width: '90%' }}
           >
-            <motion.div
-              variants={modalVariants}
-              initial="hidden"
-              animate="visible"
-              exit="exit"
-            >
-              <p className="text-sm text-gray-600 mb-4">
-                An OTP has been sent to {formData.email}. Please enter it below.
-              </p>
+            <motion.div variants={modalVariants} initial="hidden" animate="visible" exit="exit">
+              <p className="text-sm text-gray-600 mb-4">An OTP has been sent to {formData.email}. Please enter it below.</p>
               <motion.input
                 type="text"
                 value={emailOtp}
@@ -1347,16 +1364,14 @@ export default function ProfileSettings({ profile }: ProfileSettingsProps) {
         {showPhoneOtpPopup && (
           <CustomModal
             isOpen={showPhoneOtpPopup}
-            onClose={() => setShowPhoneOtpPopup(false)}
+            onClose={() => {
+              setShowPhoneOtpPopup(false);
+              setPhoneOtp('');
+            }}
             title="Verify Phone Number"
             customStyles={{ maxWidth: '28rem', height: '15.5rem', width: '90%' }}
           >
-            <motion.div
-              variants={modalVariants}
-              initial="hidden"
-              animate="visible"
-              exit="exit"
-            >
+            <motion.div variants={modalVariants} initial="hidden" animate="visible" exit="exit">
               <p className="text-sm text-gray-600 mb-4">
                 An OTP has been sent to {formData.contact_person_phone}. Please enter it below.
               </p>
@@ -1370,7 +1385,10 @@ export default function ProfileSettings({ profile }: ProfileSettingsProps) {
               />
               <div className="flex justify-end space-x-2 mt-4">
                 <motion.button
-                  onClick={() => setShowPhoneOtpPopup(false)}
+                  onClick={() => {
+                    setShowPhoneOtpPopup(false);
+                    setPhoneOtp('');
+                  }}
                   className="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300"
                   variants={buttonVariants}
                   whileHover="hover"
@@ -1400,12 +1418,7 @@ export default function ProfileSettings({ profile }: ProfileSettingsProps) {
             title="Crop Profile Picture"
             customStyles={{ maxWidth: '32rem', height: 'auto', width: '90%' }}
           >
-            <motion.div
-              variants={modalVariants}
-              initial="hidden"
-              animate="visible"
-              exit="exit"
-            >
+            <motion.div variants={modalVariants} initial="hidden" animate="visible" exit="exit">
               <div className="relative w-full h-80">
                 <Cropper
                   image={imageSrc}
@@ -1460,8 +1473,19 @@ export default function ProfileSettings({ profile }: ProfileSettingsProps) {
                         animate={{ rotate: 360 }}
                         transition={{ duration: 1, repeat: Infinity }}
                       >
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        <circle
+                          className="opacity-25"
+                          cx="12"
+                          cy="12"
+                          r="10"
+                          stroke="currentColor"
+                          strokeWidth="4"
+                        />
+                        <path
+                          className="opacity-75"
+                          fill="currentColor"
+                          d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                        />
                       </motion.svg>
                       Uploading...
                     </>
@@ -1471,46 +1495,6 @@ export default function ProfileSettings({ profile }: ProfileSettingsProps) {
                       Crop & Upload
                     </>
                   )}
-                </motion.button>
-              </div>
-            </motion.div>
-          </CustomModal>
-        )}
-
-        {showLogoutModal && (
-          <CustomModal
-            isOpen={showLogoutModal}
-            onClose={() => setShowLogoutModal(false)}
-            title="Confirm Logout"
-            customStyles={{ maxWidth: '28rem', height: '11rem', width: '90%' }}
-          >
-            <motion.div
-              variants={modalVariants}
-              initial="hidden"
-              animate="visible"
-              exit="exit"
-            >
-              <p className="text-sm text-gray-600 mb-4">
-                Are you sure you want to log out?
-              </p>
-              <div className="flex justify-end space-x-3 mt-5">
-                <motion.button
-                  onClick={() => setShowLogoutModal(false)}
-                  className="px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300"
-                  variants={buttonVariants}
-                  whileHover="hover"
-                  whileTap="tap"
-                >
-                  Cancel
-                </motion.button>
-                <motion.button
-                  onClick={confirmLogout}
-                  className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
-                  variants={buttonVariants}
-                  whileHover="hover"
-                  whileTap="tap"
-                >
-                  Logout
                 </motion.button>
               </div>
             </motion.div>
