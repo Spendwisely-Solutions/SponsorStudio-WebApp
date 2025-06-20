@@ -1,8 +1,8 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { supabase } from '../../lib/supabase';
 import toast from 'react-hot-toast';
 import { format, parseISO, subDays } from 'date-fns';
-import { ExternalLink, File, Search, RefreshCw, Filter, Lock, Eye, Frown, Calendar } from 'lucide-react';
+import { Search, RefreshCw, Filter, Lock, Eye, Frown, Calendar, X, Plus } from 'lucide-react';
 import debounce from 'lodash.debounce';
 import type { Database } from '../../lib/database.types';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -10,14 +10,18 @@ import { Tooltip } from 'react-tooltip';
 import coinIcon from '../../assets/dashboard/coin.png';
 import { useAuth } from '../../contexts/AuthContext';
 
-// Type definitions for reports
+// Type definitions with all fields
 type GeneralReport = Database['public']['Tables']['reports']['Row'] & {
-  opportunity: { title?: string } | null;
+  opportunity: { title: string | null } | null;
+  signedUrl: string;
+  purchased: boolean;
+  filename: string | null;
 };
 
 type RiskAnalysisReport = Database['public']['Tables']['risk_analysis']['Row'] & {
-  opportunity: { title?: string } | null;
-  profile: { company_name?: string } | null;
+  opportunity: { title: string | null } | null;
+  profile: { company_name: string | null } | null;
+  report_url: string | null;
 };
 
 const PAGE_SIZE = 10;
@@ -38,12 +42,24 @@ export default function ReportsList() {
   const [totalPages, setTotalPages] = useState<{ general: number; risk_analysis: number }>({ general: 1, risk_analysis: 1 });
   const [credits, setCredits] = useState<number | null>(profile?.credits ?? null);
   const [shakeCredits, setShakeCredits] = useState<boolean>(false);
-  const [unlockedReports, setUnlockedReports] = useState<Set<string>>(new Set());
   const [unlockingReport, setUnlockingReport] = useState<string | null>(null);
+  const [showFilters, setShowFilters] = useState<boolean>(false);
+  const filterRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     setCredits(profile?.credits ?? null);
   }, [profile?.credits]);
+
+  // Close filters on outside click
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (filterRef.current && !filterRef.current.contains(event.target as Node)) {
+        setShowFilters(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
 
   const debouncedSearch = useCallback(
     debounce((query: string) => {
@@ -65,13 +81,13 @@ export default function ReportsList() {
         .select('credits, company_name')
         .eq('id', user.id)
         .single();
-      if (error) throw error;
+      if (error) throw new Error(`Failed to fetch profile: ${error.message}`);
       setCredits(data.credits ?? null);
-      console.log(`fetchProfile: Updated local credits to ${data.credits}`);
+      console.log(`fetchProfile: Updated credits to ${data.credits}`);
       return data;
-    } catch (error) {
-      console.error('fetchProfile: Error fetching profile:', error);
-      toast.error('Failed to fetch profile data. Please try again.', { duration: 4000, position: 'top-center' });
+    } catch (error: any) {
+      console.error('fetchProfile: Error:', error.message);
+      toast.error('Failed to fetch profile data.', { duration: 4000, position: 'top-center' });
       return null;
     }
   };
@@ -80,14 +96,12 @@ export default function ReportsList() {
     console.log('refreshToken: Attempting to refresh session');
     try {
       const { data, error } = await supabase.auth.refreshSession();
-      if (error) throw error;
-      if (!data.session?.access_token) {
-        throw new Error('No access token in refreshed session');
-      }
+      if (error) throw new Error(`Failed to refresh session: ${error.message}`);
+      if (!data.session?.access_token) throw new Error('No access token in refreshed session');
       console.log('refreshToken: Session refreshed successfully');
       return data.session.access_token;
-    } catch (error) {
-      console.error('refreshToken: Failed to refresh session:', error);
+    } catch (error: any) {
+      console.error('refreshToken: Error:', error.message);
       toast.error('Session refresh failed. Please log in again.', { duration: 4000, position: 'top-center' });
       throw error;
     }
@@ -109,21 +123,36 @@ export default function ReportsList() {
     if (credits === null || credits < 100) {
       console.log(`unlockReport: Insufficient credits, need 100, have ${credits}`);
       setShakeCredits(true);
-      toast.error('Insufficient credits! You need 100 credits to unlock this report.', {
-        duration: 4000,
-        position: 'top-center',
-      });
+      toast.error('Insufficient credits! Need 100 credits to unlock.', { duration: 4000, position: 'top-center' });
       setTimeout(() => setShakeCredits(false), 500);
       throw new Error('Insufficient credits');
     }
 
     const originalCredits = credits;
-    setCredits(prev => (prev ?? 0) - 100);
+    setCredits(prev => (prev !== null ? prev - 100 : null));
     setUnlockingReport(reportId);
-    console.log(`unlockReport: Optimistically updated credits to ${(credits ?? 0) - 100}`);
+    console.log(`unlockReport: Optimistically updated credits to ${credits - 100}`);
 
     try {
-      let accessToken = user.access_token || (await refreshToken());
+      const { data: reportCheck, error: checkError } = await supabase
+        .from('reports')
+        .select('unlocked_by')
+        .eq('id', reportId)
+        .single();
+
+      if (checkError) throw new Error(`Failed to check report: ${checkError.message}`);
+
+      const unlockedBy = reportCheck.unlocked_by || []; // Handle null or undefined
+      if (unlockedBy.includes(user.id)) {
+        console.log(`unlockReport: Report ${reportId} already purchased`);
+        toast.error('Report already purchased.', { duration: 4000, position: 'top-center' });
+        setCredits(originalCredits);
+        throw new Error('Report already purchased');
+      }
+
+      let accessToken = user.access_token;
+      if (!accessToken) accessToken = await refreshToken();
+
       const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/update-credits`, {
         method: 'POST',
         headers: {
@@ -139,7 +168,7 @@ export default function ReportsList() {
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
         if (response.status === 401 && errorData.message === 'Invalid JWT') {
-          console.log('unlockReport: Invalid JWT, retrying with refreshed token');
+          console.log('unlockReport: Invalid JWT, retrying');
           accessToken = await refreshToken();
           const retryResponse = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/update-credits`, {
             method: 'POST',
@@ -152,26 +181,33 @@ export default function ReportsList() {
               creditsToDeduct: 100,
             }),
           });
-          if (!retryResponse.ok) {
-            const retryErrorData = await retryResponse.json().catch(() => ({}));
-            throw new Error(`Retry failed: ${retryErrorData.message || retryResponse.statusText}`);
-          }
+          if (!retryResponse.ok) throw new Error(`Retry failed: ${retryResponse.statusText}`);
         } else {
           throw new Error(`Failed to deduct credits: ${errorData.message || response.statusText}`);
         }
       }
 
-      console.log('unlockReport: Credits deducted successfully');
-      setUnlockedReports(prev => new Set(prev).add(reportId));
+      const { error: updateError } = await supabase
+        .from('reports')
+        .update({ unlocked_by: [...unlockedBy, user.id] })
+        .eq('id', reportId);
+
+      if (updateError) {
+        console.error(`unlockReport: Failed to update report: ${updateError.message}`);
+        toast.error('Failed to unlock report. Credits deducted. Contact support.', { duration: 6000, position: 'top-center' });
+        throw new Error(`Failed to update report: ${updateError.message}`);
+      }
+
+      console.log('unlockReport: Report unlocked successfully');
+      await fetchReports();
       const serverProfile = await fetchProfile();
-      if (serverProfile && serverProfile.credits !== null && serverProfile.credits !== credits) {
-        console.log(`unlockReport: Syncing credits, server: ${serverProfile.credits}, local: ${credits}`);
+      if (serverProfile?.credits !== null && serverProfile.credits !== credits) {
         setCredits(serverProfile.credits);
       }
     } catch (error: any) {
       setCredits(originalCredits);
-      console.log(`unlockReport: Restored credits to ${originalCredits} due to error`);
-      toast.error('Failed to unlock report. Please try again.', { duration: 4000, position: 'top-center' });
+      console.error('unlockReport: Error:', error.message);
+      toast.error(error.message || 'Failed to unlock report.', { duration: 4000, position: 'top-center' });
       throw error;
     } finally {
       setUnlockingReport(null);
@@ -214,7 +250,11 @@ export default function ReportsList() {
           .from('reports')
           .select(
             `
-            *,
+            id,
+            created_at,
+            pdf_path,
+            filename,
+            unlocked_by,
             opportunity:opportunities(title)
           `,
             { count: 'exact' }
@@ -225,22 +265,22 @@ export default function ReportsList() {
           .order('created_at', { ascending: sortOrder === 'asc' })
           .range((currentPage.general - 1) * PAGE_SIZE, currentPage.general * PAGE_SIZE - 1);
 
-        if (searchQuery) {
-          generalQuery = generalQuery.ilike('opportunity.title', `%${searchQuery}%`);
-        }
+        if (searchQuery) generalQuery = generalQuery.ilike('opportunity.title', `%${searchQuery}%`);
 
         const { data: generalData, error: generalError, count: generalCount } = await generalQuery;
         if (generalError) throw new Error(`Failed to fetch general reports: ${generalError.message}`);
 
-        const generalReportsWithUrls = generalData?.map(report => ({
+        const generalReportsWithUrls = (generalData ?? []).map(report => ({
           ...report,
           signedUrl: supabase.storage.from('reports').getPublicUrl(report.pdf_path).data.publicUrl || '',
-        })) || [];
+          purchased: report.unlocked_by?.includes(user.id) || false,
+          filename: report.filename || 'Report',
+        }));
 
         setGeneralReports(generalReportsWithUrls);
         setTotalPages(prev => ({
           ...prev,
-          general: Math.ceil((generalCount ?? 0) / PAGE_SIZE),
+          general: Math.ceil((generalCount || 0) / PAGE_SIZE),
         }));
       }
 
@@ -248,7 +288,10 @@ export default function ReportsList() {
         .from('risk_analysis')
         .select(
           `
-          *,
+          id,
+          created_at,
+          status,
+          report_url,
           opportunity:opportunities(title),
           profile:profiles(company_name)
         `,
@@ -260,13 +303,8 @@ export default function ReportsList() {
         .order('created_at', { ascending: sortOrder === 'asc' })
         .range((currentPage.risk_analysis - 1) * PAGE_SIZE, currentPage.risk_analysis * PAGE_SIZE - 1);
 
-      if (searchQuery) {
-        riskQuery = riskQuery.or(`opportunity.title.ilike.%${searchQuery}%,profile.company_name.ilike.%${searchQuery}%`);
-      }
-
-      if (statusFilter !== 'all') {
-        riskQuery = riskQuery.eq('status', statusFilter);
-      }
+      if (searchQuery) riskQuery = riskQuery.or(`opportunity.title.ilike.%${searchQuery}%,profile.company_name.ilike.%${searchQuery}%`);
+      if (statusFilter !== 'all') riskQuery = riskQuery.eq('status', statusFilter);
 
       const { data: riskData, error: riskError, count: riskCount } = await riskQuery;
       if (riskError) throw new Error(`Failed to fetch risk analysis reports: ${riskError.message}`);
@@ -274,13 +312,12 @@ export default function ReportsList() {
       setRiskAnalysisReports(riskData || []);
       setTotalPages(prev => ({
         ...prev,
-        risk_analysis: Math.ceil((riskCount ?? 0) / PAGE_SIZE),
+        risk_analysis: Math.ceil((riskCount || 0) / PAGE_SIZE),
       }));
     } catch (err: any) {
-      console.error('fetchReports: Error fetching reports:', err);
-      const errorMessage = err.message || 'Failed to load reports. Please try again.';
-      setError(errorMessage);
-      toast.error(errorMessage, { duration: 4000, position: 'top-center' });
+      console.error('fetchReports: Error:', err.message);
+      setError(err.message || 'Failed to load reports.');
+      toast.error(err.message || 'Failed to load reports.', { duration: 4000, position: 'top-center' });
     } finally {
       setLoading(false);
     }
@@ -292,11 +329,6 @@ export default function ReportsList() {
 
   const handleSearch = (e: React.ChangeEvent<HTMLInputElement>) => {
     debouncedSearch(e.target.value);
-  };
-
-  const handlePageChange = (page: number) => {
-    if (page < 1 || page > totalPages[activeTab]) return;
-    setCurrentPage(prev => ({ ...prev, [activeTab]: page }));
   };
 
   const handleSortToggle = () => {
@@ -315,6 +347,7 @@ export default function ReportsList() {
     }
     setCurrentPage(prev => ({ ...prev, [activeTab]: 1 }));
     fetchReports();
+    setShowFilters(false);
   };
 
   const renderSkeleton = () => (
@@ -322,467 +355,492 @@ export default function ReportsList() {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.5 }}
-      className="space-y-3 p-3"
+      className="space-y-4 px-4"
     >
       {[...Array(5)].map((_, i) => (
-        <div key={i} className="bg-gray-100 h-20 rounded-lg animate-pulse" />
+        <div key={i} className="bg-gray-100 h-12 rounded animate-pulse" />
       ))}
     </motion.div>
   );
 
-  const filteredGeneralReports = generalReports.filter(
-    report =>
-      report.opportunity?.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      report.filename.toLowerCase().includes(searchQuery.toLowerCase())
-  );
-
-  const filteredRiskAnalysisReports = riskAnalysisReports.filter(
-    report =>
-      (report.opportunity?.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        report.profile?.company_name?.toLowerCase().includes(searchQuery.toLowerCase())) &&
-      (statusFilter === 'all' || report.status === statusFilter)
-  );
-
   const renderGeneralReports = () => {
-    if (filteredGeneralReports.length === 0 && !loading) {
+    if (generalReports.length === 0 && !loading) {
       return (
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
-          className="text-center py-10"
+          className="text-center py-12 px-4"
         >
-          <div className="flex justify-center space-x-3 mb-4">
-            <Calendar className="w-10 h-10 text-gray-400" />
-            <Frown className="w-10 h-10 text-gray-400" />
+          <div className="flex justify-center gap-4 mb-4">
+            <Calendar className="w-10 h-10 text-gray-300" />
+            <Frown className="w-10 h-10 text-gray-300" />
           </div>
-          <p className="text-gray-600 text-lg mb-4">No post-event reports found</p>
-          <p className="text-gray-500 text-sm">No accepted matches have associated reports. Contact your account manager.</p>
+          <p className="text-gray-800 text-base font-semibold mb-2">No Post-Event Reports Found</p>
+          <p className="text-gray-500 text-sm">Adjust filters or contact your account manager.</p>
         </motion.div>
       );
     }
 
     return (
       <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
+        className="space-y-3 px-4 pt-2"
       >
-        <div className="grid grid-cols-1 gap-3 p-3 sm:hidden">
-          <AnimatePresence>
-            {filteredGeneralReports.map((report, index) => (
-              <motion.div
-                key={report.id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: 20 }}
-                transition={{ duration: 0.3, delay: index * 0.1 }}
-                className="bg-white rounded-lg shadow-sm p-3 border border-gray-100 hover:shadow-md transition-shadow"
-                role="article"
-              >
-                <div className="space-y-2">
-                  <div>
-                    <span className="text-xs font-semibold text-gray-500 uppercase">Opportunity</span>
-                    <p className="text-sm font-medium text-gray-900 truncate">{report.opportunity?.title || 'N/A'}</p>
-                  </div>
-                  <div>
-                    <span className="text-xs font-semibold text-gray-500 uppercase">File</span>
-                    <div className="flex items-center mt-1">
-                      {unlockedReports.has(report.id) ? (
-                        <motion.button
-                          onClick={() => viewReport(report.signedUrl)}
-                          className="px-3 py-1.5 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-xs font-medium flex items-center transition-colors"
-                          whileHover={{ scale: 1.05 }}
-                          whileTap={{ scale: 0.95 }}
-                          aria-label={`View ${report.filename}`}
-                          data-tooltip-id={`view-tooltip-${report.id}`}
-                          data-tooltip-content="View report in new tab"
-                        >
-                          View Report
-                          <Eye size={12} className="ml-2" />
-                        </motion.button>
+        <AnimatePresence>
+          {generalReports.map((report, index) => (
+            <motion.div
+              key={report.id}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              transition={{ duration: 0.3, delay: index * 0.05 }}
+              className="bg-white rounded-lg shadow-sm p-4 border border-gray-100 hover:shadow-md transition-all"
+              role="article"
+            >
+              <div className="space-y-2">
+                <h3 className="text-base font-semibold text-gray-900 truncate" aria-label={`Opportunity: ${report.opportunity?.title || 'N/A'}`}>
+                  {report.opportunity?.title || 'N/A'}
+                </h3>
+                <p className="text-xs text-gray-500">Uploaded: {format(parseISO(report.created_at), 'MMM dd, yyyy')}</p>
+                <div className="flex justify-end">
+                  {report.purchased ? (
+                    <motion.button
+                      onClick={() => viewReport(report.signedUrl)}
+                      className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-semibold flex items-center gap-2 hover:bg-blue-700 transition-colors"
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                      aria-label={`View report ${report.filename || 'Report'}`}
+                      data-tooltip-id={`view-tooltip-${report.id}`}
+                      data-tooltip-content="View report in new tab"
+                    >
+                      View
+                      <Eye size={16} />
+                    </motion.button>
+                  ) : (
+                    <motion.button
+                      onClick={() => unlockReport(report.id, report.signedUrl)}
+                      disabled={unlockingReport === report.id}
+                      className={`px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-semibold flex items-center gap-2 hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
+                        unlockingReport === report.id ? 'animate-pulse' : ''
+                      }`}
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                      aria-label={`Unlock report ${report.filename || 'Report'} for 100 credits`}
+                      data-tooltip-id={`unlock-tooltip-${report.id}`}
+                      data-tooltip-content="Unlock costs 100 credits"
+                    >
+                      {unlockingReport === report.id ? (
+                        <>
+                          Unlocking
+                          <svg className="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                          </svg>
+                        </>
                       ) : (
-                        <motion.button
-                          onClick={() => unlockReport(report.id, report.signedUrl)}
-                          disabled={unlockingReport === report.id}
-                          className={`px-3 py-1.5 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-md text-xs font-medium flex items-center transition-all duration-200 hover:from-purple-700 hover:to-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed ${
-                            unlockingReport === report.id ? 'animate-pulse' : ''
-                          }`}
-                          whileHover={{ scale: 1.05 }}
-                          whileTap={{ scale: 0.95 }}
-                          aria-label={`Unlock ${report.filename} (100 credits)`}
-                          data-tooltip-id={`unlock-tooltip-${report.id}`}
-                          data-tooltip-content="Unlock costs 100 credits"
-                        >
-                          {unlockingReport === report.id ? (
-                            <>
-                              Unlocking
-                              <svg className="animate-spin ml-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                              </svg>
-                            </>
-                          ) : (
-                            <>
-                              Unlock Report
-                              <Lock size={12} className="ml-2" />
-                            </>
-                          )}
-                        </motion.button>
+                        <>
+                          Unlock
+                          <Lock size={16} />
+                        </>
                       )}
-                      <Tooltip id={`view-tooltip-${report.id}`} place="top" className="text-xs" />
-                      <Tooltip id={`unlock-tooltip-${report.id}`} place="top" className="text-xs" />
-                    </div>
-                  </div>
-                  <div>
-                    <span className="text-xs font-semibold text-gray-500 uppercase">Uploaded</span>
-                    <p className="text-xs text-gray-500">{format(parseISO(report.created_at), 'MMM dd, yyyy')}</p>
-                  </div>
+                    </motion.button>
+                  )}
+                  <Tooltip id={`view-tooltip-${report.id}`} place="top" className="text-xs z-50" />
+                  <Tooltip id={`unlock-tooltip-${report.id}`} place="top" className="text-xs z-50" />
                 </div>
-              </motion.div>
-            ))}
-          </AnimatePresence>
-        </div>
-        <div className="hidden sm:block overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200" role="grid">
-            <thead className="bg-gray-50 sticky top-0">
-              <tr>
-                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase" scope="col">
-                  Opportunity
-                </th>
-                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase" scope="col">File</th>
-                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase" scope="col">Uploaded</th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              <AnimatePresence>
-                {filteredGeneralReports.map((report, index) => (
-                  <motion.tr
-                    key={report.id}
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    exit={{ opacity: 0, x: 20 }}
-                    transition={{ duration: 0.3, delay: index * 0.1 }}
-                    className="hover:bg-gray-50"
-                    role="row"
-                  >
-                    <td className="px-4 py-3 text-sm font-medium text-gray-900" role="gridcell">
-                      {report.opportunity?.title || 'N/A'}
-                    </td>
-                    <td className="px-4 py-3 text-sm" role="gridcell">
-                      <div className="flex items-center">
-                        {unlockedReports.has(report.id) ? (
-                          <motion.button
-                            onClick={() => viewReport(report.signedUrl)}
-                            className="px-3 py-1.5 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-sm font-medium flex items-center transition-colors"
-                            whileHover={{ scale: 1.05 }}
-                            whileTap={{ scale: 0.95 }}
-                            aria-label={`View ${report.filename}`}
-                            data-tooltip-id={`view-tooltip-${report.id}`}
-                            data-tooltip-content="View report in new tab"
-                          >
-                            View Report
-                            <Eye size={14} className="ml-2" />
-                          </motion.button>
-                        ) : (
-                          <motion.button
-                            onClick={() => unlockReport(report.id, report.signedUrl)}
-                            disabled={unlockingReport === report.id}
-                            className={`px-3 py-1.5 bg-gradient-to-r from-purple-600 to-indigo-600 text-white rounded-md text-sm font-medium flex items-center transition-all duration-200 hover:from-purple-700 hover:to-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed ${
-                              unlockingReport === report.id ? 'animate-pulse' : ''
-                            }`}
-                            whileHover={{ scale: 1.05 }}
-                            whileTap={{ scale: 0.95 }}
-                            aria-label={`Unlock ${report.filename} (100 credits)`}
-                            data-tooltip-id={`unlock-tooltip-${report.id}`}
-                            data-tooltip-content="Unlock costs 100 credits"
-                          >
-                            {unlockingReport === report.id ? (
-                              <>
-                                Unlocking
-                                <svg className="animate-spin ml-2 h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                                </svg>
-                              </>
-                            ) : (
-                              <>
-                                Unlock Report
-                                <Lock size={14} className="ml-2" />
-                              </>
-                            )}
-                          </motion.button>
-                        )}
-                        <Tooltip id={`view-tooltip-${report.id}`} place="top" className="text-xs" />
-                        <Tooltip id={`unlock-tooltip-${report.id}`} place="top" className="text-xs" />
-                      </div>
-                    </td>
-                    <td className="px-4 py-3 text-sm text-gray-500" role="gridcell">
-                      {format(parseISO(report.created_at), 'MMM dd, yyyy')}
-                    </td>
-                  </motion.tr>
-                ))}
-              </AnimatePresence>
-            </tbody>
-          </table>
-        </div>
+              </div>
+            </motion.div>
+          ))}
+        </AnimatePresence>
+        {currentPage[activeTab] < totalPages[activeTab] && (
+          <motion.button
+            onClick={() => setCurrentPage(prev => ({ ...prev, [activeTab]: prev[activeTab] + 1 }))}
+            className="w-full px-4 py-2 bg-gray-100 text-gray-700 rounded-lg text-sm font-semibold hover:bg-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            disabled={loading}
+            aria-label="Load more reports"
+          >
+            {loading ? (
+              <div className="flex items-center justify-center gap-2">
+                Loading
+                <svg className="animate-spin h-4 w-4 text-gray-700" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+              </div>
+            ) : (
+              'Load More'
+            )}
+          </motion.button>
+        )}
       </motion.div>
     );
   };
 
   const renderRiskAnalysisReports = () => {
-    if (filteredRiskAnalysisReports.length === 0 && !loading) {
+    if (riskAnalysisReports.length === 0 && !loading) {
       return (
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
-          className="text-center py-10"
+          className="text-center py-12 px-4"
         >
-          <div className="flex justify-center space-x-3 mb-4">
-            <Calendar className="w-10 h-10 text-gray-400" />
-            <Frown className="w-10 h-10 text-gray-400" />
+          <div className="flex justify-center gap-4 mb-4">
+            <Calendar className="w-10 h-10 text-gray-300" />
+            <Frown className="w-10 h-10 text-gray-300" />
           </div>
-          <p className="text-gray-600 text-lg mb-4">No risk analysis reports found</p>
-          <p className="text-gray-500 text-sm">Request a risk analysis for your opportunities.</p>
+          <p className="text-gray-800 text-base font-semibold mb-2">No Risk Analysis Reports Found</p>
+          <p className="text-gray-500 text-sm">Request a risk analysis or adjust filters.</p>
         </motion.div>
       );
     }
 
     return (
       <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
+        className="space-y-3 px-4 pt-2"
       >
-        <div className="grid grid-cols-1 gap-3 p-3 sm:hidden">
-          <AnimatePresence>
-            {filteredRiskAnalysisReports.map((report, index) => (
-              <motion.div
-                key={report.id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: 20 }}
-                transition={{ duration: 0.3, delay: index * 0.1 }}
-                className="bg-white rounded-lg shadow-sm p-3 border border-gray-100 hover:shadow-md transition-shadow"
-                role="article"
-              >
-                <div className="space-y-2">
-                  <div>
-                    <span className="text-xs font-semibold text-gray-500 uppercase">Opportunity</span>
-                    <p className="text-sm font-medium text-gray-900 truncate">{report.opportunity?.title || 'N/A'}</p>
-                  </div>
-                  <div>
-                    <span className="text-xs font-semibold text-gray-500 uppercase">Company</span>
-                    <p className="text-sm text-gray-900 truncate">{report.profile?.company_name || 'N/A'}</p>
-                  </div>
-                  <div>
-                    <span className="text-xs font-semibold text-gray-500 uppercase">Status</span>
-                    <p className="text-sm">
-                      <span
-                        className={`px-1.5 py-0.5 rounded-full text-xs ${
-                          report.status === 'completed'
-                            ? 'bg-green-100 text-green-800'
-                            : report.status === 'in_progress'
-                            ? 'bg-yellow-100 text-yellow-800'
-                            : report.status === 'rejected'
-                            ? 'bg-red-100 text-red-800'
-                            : 'bg-gray-100 text-gray-800'
-                        }`}
-                      >
-                        {report.status ? report.status.charAt(0).toUpperCase() + report.status.slice(1) : 'N/A'}
-                      </span>
-                    </p>
-                  </div>
-                  <div>
-                    <span className="text-xs font-semibold text-gray-500 uppercase">File</span>
-                    <div className="flex items-center mt-1">
-                      {report.report_url ? (
-                        <>
-                          <motion.button
-                            onClick={() => viewReport(report.report_url)}
-                            className="px-3 py-1.5 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-xs font-medium flex items-center transition-colors"
-                            whileHover={{ scale: 1.05 }}
-                            whileTap={{ scale: 0.95 }}
-                            aria-label="View report"
-                            data-tooltip-id={`view-tooltip-${report.id}`}
-                            data-tooltip-content="View report in new tab"
-                          >
-                            View Report
-                            <Eye size={12} className="ml-2" />
-                          </motion.button>
-                          <Tooltip id={`view-tooltip-${report.id}`} place="top" className="text-xs" />
-                        </>
-                      ) : (
-                        <span className="text-gray-500 text-xs">No report uploaded</span>
-                      )}
-                    </div>
-                  </div>
-                  <div>
-                    <span className="text-xs font-semibold text-gray-500 uppercase">Requested</span>
-                    <p className="text-xs text-gray-500">
-                      {format(parseISO(report.created_at || new Date().toISOString()), 'MMM dd, yyyy')}
-                    </p>
-                  </div>
-                </div>
-              </motion.div>
-            ))}
-          </AnimatePresence>
-        </div>
-        <div className="hidden sm:block overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200" role="grid">
-            <thead className="bg-gray-50 sticky top-0">
-              <tr>
-                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase" scope="col">
-                  Opportunity
-                </th>
-                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase" scope="col">Company</th>
-                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase" scope="col">Status</th>
-                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase" scope="col">File</th>
-                <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase" scope="col">Requested</th>
-              </tr>
-            </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
-              <AnimatePresence>
-                {filteredRiskAnalysisReports.map((report, index) => (
-                  <motion.tr
-                    key={report.id}
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    exit={{ opacity: 0, x: 20 }}
-                    transition={{ duration: 0.3, delay: index * 0.1 }}
-                    className="hover:bg-gray-50"
-                    role="row"
+        <AnimatePresence>
+          {riskAnalysisReports.map((report, index) => (
+            <motion.div
+              key={report.id}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              transition={{ duration: 0.3, delay: index * 0.05 }}
+              className="bg-white rounded-lg shadow-sm p-4 border border-gray-100 hover:shadow-md transition-all"
+              role="article"
+            >
+              <div className="space-y-2">
+                <h3 className="text-base font-semibold text-gray-900 truncate" aria-label={`Opportunity: ${report.opportunity?.title || 'N/A'}`}>
+                  {report.opportunity?.title || 'N/A'}
+                </h3>
+                <div className="flex justify-between items-center">
+                  <span
+                    className={`px-2 py-1 rounded-full text-xs font-semibold ${
+                      report.status === 'completed'
+                        ? 'bg-green-100 text-green-800'
+                        : report.status === 'in_progress'
+                        ? 'bg-yellow-100 text-yellow-800'
+                        : report.status === 'rejected'
+                        ? 'bg-red-100 text-red-800'
+                        : 'bg-gray-100 text-gray-800'
+                    }`}
+                    aria-label={`Status: ${report.status ? report.status.charAt(0).toUpperCase() + report.status.slice(1) : 'N/A'}`}
                   >
-                    <td className="px-4 py-3 text-sm font-medium text-gray-900" role="gridcell">
-                      {report.opportunity?.title || 'N/A'}
-                    </td>
-                    <td className="px-4 py-3 text-sm text-gray-900" role="gridcell">
-                      {report.profile?.company_name || 'N/A'}
-                    </td>
-                    <td className="px-4 py-3 text-sm" role="gridcell">
-                      <span
-                        className={`px-2 py-1 rounded-full text-xs ${
-                          report.status === 'completed'
-                            ? 'bg-green-100 text-green-800'
-                            : report.status === 'in_progress'
-                            ? 'bg-yellow-100 text-yellow-800'
-                            : report.status === 'rejected'
-                            ? 'bg-red-100 text-red-800'
-                            : 'bg-gray-100 text-gray-800'
-                        }`}
-                      >
-                        {report.status ? report.status.charAt(0).toUpperCase() + report.status.slice(1) : 'N/A'}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3 text-sm" role="gridcell">
-                      {report.report_url ? (
-                        <div className="flex items-center">
-                          <motion.button
-                            onClick={() => viewReport(report.report_url)}
-                            className="px-3 py-1.5 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-sm font-medium flex items-center transition-colors"
-                            whileHover={{ scale: 1.05 }}
-                            whileTap={{ scale: 0.95 }}
-                            aria-label="View report"
-                            data-tooltip-id={`view-tooltip-${report.id}`}
-                            data-tooltip-content="View report in new tab"
-                          >
-                            View Report
-                            <Eye size={14} className="ml-2" />
-                          </motion.button>
-                          <Tooltip id={`view-tooltip-${report.id}`} place="top" className="text-xs" />
-                        </div>
-                      ) : (
-                        <span className="text-gray-600">No report</span>
-                      )}
-                    </td>
-                    <td className="px-4 py-3 text-sm text-gray-500" role="gridcell">
-                      {format(parseISO(report.created_at || new Date().toISOString()), 'MMM dd, yyyy')}
-                    </td>
-                  </motion.tr>
-                ))}
-              </AnimatePresence>
-            </tbody>
-          </table>
-        </div>
+                    {report.status ? report.status.charAt(0).toUpperCase() + report.status.slice(1) : 'N/A'}
+                  </span>
+                  {report.report_url ? (
+                    <motion.button
+                      onClick={() => viewReport(report.report_url!)}
+                      className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-semibold flex items-center gap-2 hover:bg-blue-700 transition-colors"
+                      whileHover={{ scale: 1.05 }}
+                      whileTap={{ scale: 0.95 }}
+                      aria-label="View risk analysis report"
+                      data-tooltip-id={`view-tooltip-${report.id}`}
+                      data-tooltip-content="View report in new tab"
+                    >
+                      View
+                      <Eye size={16} />
+                    </motion.button>
+                  ) : (
+                    <span className="text-gray-500 text-xs">Not available</span>
+                  )}
+                  <Tooltip id={`view-tooltip-${report.id}`} place="top" className="text-xs z-50" />
+                </div>
+              </div>
+            </motion.div>
+          ))}
+        </AnimatePresence>
+        {currentPage[activeTab] < totalPages[activeTab] && (
+          <motion.button
+            onClick={() => setCurrentPage(prev => ({ ...prev, [activeTab]: prev[activeTab] + 1 }))}
+            className="w-full px-4 py-2 bg-gray-100 text-gray-700 rounded-lg text-sm font-semibold hover:bg-gray-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            disabled={loading}
+            aria-label="Load more reports"
+          >
+            {loading ? (
+              <div className="flex items-center justify-center gap-2">
+                Loading
+                <svg className="animate-spin h-4 w-4 text-gray-700" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+              </div>
+            ) : (
+              'Load More'
+            )}
+          </motion.button>
+        )}
       </motion.div>
     );
   };
 
-  const renderPagination = () => {
-    const pages = totalPages[activeTab];
-    if (pages <= 1) return null;
-
-    return (
-      <div className="flex items-center justify-center gap-2 mt-4 px-3 flex-wrap">
-        <motion.button
-          onClick={() => handlePageChange(currentPage[activeTab] - 1)}
-          disabled={currentPage[activeTab] === 1}
-          className="px-3 py-1.5 rounded-lg bg-gray-100 text-gray-700 disabled:opacity-50 hover:bg-gray-200 text-sm font-medium transition-colors"
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-          aria-label="Previous page"
-        >
-          Previous
-        </motion.button>
-        {[...Array(pages)].map((_, i) => (
+  const renderMobileContent = () => (
+    <div className="pb-20 bg-gray-50 min-h-screen">
+      <motion.div
+        initial={{ y: -20, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ duration: 0.3 }}
+        className="sticky top-0 bg-white shadow-sm z-20 px-4 py-4"
+      >
+        <h1 className="text-xl font-bold text-gray-900 mb-3">Reports</h1>
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-2">
+            <motion.div
+              animate={shakeCredits ? { x: [0, -10, 10, -10, 10, 0] } : {}}
+              transition={{ duration: 0.5 }}
+              className="flex items-center gap-2"
+            >
+              <img src={coinIcon} alt="Credits" className="w-5 h-5" data-tooltip-id="credits-tooltip" data-tooltip-content="Available credits" />
+              <span className="text-sm font-semibold text-gray-800">{credits ?? 'N/A'}</span>
+              <Tooltip id="credits-tooltip" place="top" className="text-xs z-50" />
+            </motion.div>
+            <motion.button
+              onClick={() => window.location.assign('/purchase')}
+              className="p-2 bg-gray-100 rounded-lg text-gray-700 hover:bg-gray-200 transition-colors"
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              aria-label="Add credits"
+              data-tooltip-id="add-credits-tooltip"
+              data-tooltip-content="Add credits"
+            >
+              <Plus size={18} />
+            </motion.button>
+            <Tooltip id="add-credits-tooltip" place="top" className="text-xs z-50" />
+          </div>
           <motion.button
-            key={i}
-            onClick={() => handlePageChange(i + 1)}
-            className={`px-3 py-1.5 rounded-lg text-sm font-medium ${
-              currentPage[activeTab] === i + 1 ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-            } transition-colors`}
+            onClick={fetchReports}
+            className="p-2 bg-gray-100 rounded-lg text-gray-700 hover:bg-gray-200 transition-colors"
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
-            aria-current={currentPage[activeTab] === i + 1 ? 'page' : undefined}
+            aria-label="Refresh reports"
           >
-            {i + 1}
+            <RefreshCw size={18} />
           </motion.button>
-        ))}
-        <motion.button
-          onClick={() => handlePageChange(currentPage[activeTab] + 1)}
-          disabled={currentPage[activeTab] === pages}
-          className="px-3 py-1.5 rounded-lg bg-gray-100 text-gray-700 disabled:opacity-50 hover:bg-gray-200 text-sm font-medium transition-colors"
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-          aria-label="Next page"
-        >
-          Next
-        </motion.button>
-      </div>
-    );
-  };
-
-  const content = (
-    <>
-      <motion.div
-        className="mb-4 bg-gradient-to-r from-white to-gray-50 p-4 rounded-lg shadow-sm flex items-center justify-between transition-colors duration-200 hover:shadow-md"
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0, ...(shakeCredits ? { x: [0, -10, 10, -10, 10, 0] } : {}) }}
-        transition={{ duration: 0.5 }}
-      >
-        <div className="flex items-center space-x-2">
-          <img
-            src={coinIcon}
-            alt="Credits"
-            className="w-6 h-6"
-            data-tooltip-id="credits-tooltip"
-            data-tooltip-content="Available credits"
-          />
-          <span
-            className="text-sm font-semibold text-gray-800"
-            data-tooltip-id="credits-tooltip"
-            data-tooltip-content="Available credits"
-          >
-            {credits ?? 'N/A'}
-          </span>
-          <Tooltip id="credits-tooltip" place="top" className="text-xs" />
         </div>
+
+        <div className="flex gap-2 mb-3 overflow-x-auto">
+          <motion.button
+            onClick={() => {
+              setActiveTab('general');
+              setCurrentPage(prev => ({ ...prev, general: 1 }));
+            }}
+            className={`px-4 py-2 text-sm font-semibold rounded-lg transition-colors flex-shrink-0 ${
+              activeTab === 'general' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+            }`}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            aria-current={activeTab === 'general' ? 'page' : undefined}
+            aria-label="View post-event reports"
+          >
+            Post-Event
+          </motion.button>
+          <motion.button
+            onClick={() => {
+              setActiveTab('risk_analysis');
+              setCurrentPage(prev => ({ ...prev, risk_analysis: 1 }));
+            }}
+            className={`px-4 py-2 text-sm font-semibold rounded-lg transition-colors flex-shrink-0 ${
+              activeTab === 'risk_analysis' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+            }`}
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            aria-current={activeTab === 'risk_analysis' ? 'page' : undefined}
+            aria-label="View risk analysis reports"
+          >
+            Risk Analysis
+          </motion.button>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <div className="relative flex-1">
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
+              <Search size={18} />
+            </span>
+            <input
+              type="text"
+              placeholder="Search reports..."
+              onChange={handleSearch}
+              className="w-full pl-10 pr-4 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white shadow-sm"
+              aria-label="Search reports"
+            />
+          </div>
+          <motion.button
+            onClick={() => setShowFilters(true)}
+            className="p-2 bg-gray-100 rounded-lg text-gray-700 hover:bg-gray-200 transition-colors"
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            aria-label="Open filters"
+          >
+            <Filter size={18} />
+          </motion.button>
+        </div>
+      </motion.div>
+
+      <AnimatePresence>
+        {showFilters && (
+          <motion.div
+            initial={{ x: '100%' }}
+            animate={{ x: 0 }}
+            exit={{ x: '100%' }}
+            transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+            className="fixed inset-y-0 right-0 w-4/5 max-w-sm bg-white shadow-xl z-30 p-4"
+            ref={filterRef}
+            role="dialog"
+            aria-labelledby="filter-heading"
+          >
+            <div className="flex justify-between items-center mb-4">
+              <h2 id="filter-heading" className="text-lg font-semibold text-gray-900">Filters</h2>
+              <motion.button
+                onClick={() => setShowFilters(false)}
+                className="p-2 bg-gray-100 rounded-lg text-gray-700 hover:bg-gray-200 transition-colors"
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                aria-label="Close filters"
+              >
+                <X size={18} />
+              </motion.button>
+            </div>
+            <div className="space-y-4">
+              <div className="flex flex-col gap-2">
+                <label className="text-sm font-semibold text-gray-700" htmlFor="sort-order">Sort Order</label>
+                <motion.button
+                  id="sort-order"
+                  onClick={handleSortToggle}
+                  className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg text-sm font-semibold hover:bg-gray-200 transition-colors text-left"
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  aria-label={`Sort by date ${sortOrder === 'desc' ? 'oldest first' : 'newest first'}`}
+                >
+                  {sortOrder === 'desc' ? 'Newest First' : 'Oldest First'}
+                </motion.button>
+              </div>
+              {activeTab === 'risk_analysis' && (
+                <div className="flex flex-col gap-2">
+                  <label className="text-sm font-semibold text-gray-700" htmlFor="status-filter">Status</label>
+                  <select
+                    id="status-filter"
+                    value={statusFilter}
+                    onChange={e => {
+                      setStatusFilter(e.target.value as typeof statusFilter);
+                      setCurrentPage(prev => ({ ...prev, risk_analysis: 1 }));
+                    }}
+                    className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    aria-label="Filter by status"
+                  >
+                    <option value="all">All Statuses</option>
+                    <option value="requested">Requested</option>
+                    <option value="in_progress">In Progress</option>
+                    <option value="completed">Completed</option>
+                    <option value="rejected">Rejected</option>
+                  </select>
+                </div>
+              )}
+              <div className="flex flex-col gap-2">
+                <label className="text-sm font-semibold text-gray-700">Date Range</label>
+                <div className="flex flex-col gap-2">
+                  <input
+                    type="date"
+                    value={dateFrom}
+                    onChange={e => setDateFrom(e.target.value)}
+                    className="px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    aria-label="Filter by start date"
+                  />
+                  <input
+                    type="date"
+                    value={dateTo}
+                    onChange={e => setDateTo(e.target.value)}
+                    className="px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    aria-label="Filter by end date"
+                  />
+                </div>
+                <motion.button
+                  onClick={handleDateFilter}
+                  className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-semibold hover:bg-blue-700 transition-colors mt-2"
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  aria-label="Apply date filter"
+                >
+                  Apply
+                </motion.button>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {showFilters && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 0.5 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.2 }}
+          className="fixed inset-0 bg-black z-20"
+          onClick={() => setShowFilters(false)}
+          aria-hidden="true"
+        />
+      )}
+
+      {error && (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          className="mx-4 mt-4 p-3 bg-red-50 text-red-600 rounded-lg text-sm font-semibold text-center"
+          role="alert"
+        >
+          {error}
+        </motion.div>
+      )}
+
+      {loading ? renderSkeleton() : activeTab === 'general' ? renderGeneralReports() : renderRiskAnalysisReports()}
+    </div>
+  );
+
+  const renderDesktopContent = () => (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5 }}
+      className="p-6"
+    >
+      <motion.h1
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+        className="text-2xl font-bold text-gray-900 mb-6"
+      >
+        Reports
+      </motion.h1>
+
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, delay: 0.1 }}
+        className="mb-6 bg-white p-4 rounded-lg shadow-sm flex items-center justify-between"
+      >
+        <motion.div
+          animate={shakeCredits ? { x: [0, -10, 10, -10, 10, 0] } : {}}
+          transition={{ duration: 0.5 }}
+          className="flex items-center gap-2"
+        >
+          <img src={coinIcon} alt="Credits" className="w-6 h-6" data-tooltip-id="credits-tooltip" data-tooltip-content="Available credits" />
+          <span className="text-sm font-semibold text-gray-800">{credits ?? 'N/A'}</span>
+          <Tooltip id="credits-tooltip" place="top" className="text-xs z-50" />
+        </motion.div>
         <motion.button
-          className="px-3 py-1.5 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-sm font-medium transition-colors"
-          onClick={() => {
-            window.location.href = '/purchase';
-          }}
+          onClick={() => window.location.assign('/purchase')}
+          className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-semibold hover:bg-blue-700 transition-colors"
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
           aria-label="Add credits"
@@ -794,18 +852,17 @@ export default function ReportsList() {
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-        className="flex flex-col gap-2 mb-4"
+        transition={{ duration: 0.5, delay: 0.2 }}
+        className="flex flex-col gap-2 mb-6"
       >
-        <h2 className="text-xl font-semibold text-gray-900">Your Reports</h2>
-        <div className="flex flex-col sm:flex-row gap-3">
+        <div className="flex flex-col sm:flex-row gap-4">
           <div className="flex flex-wrap gap-2">
             <motion.button
               onClick={() => {
                 setActiveTab('general');
                 setCurrentPage(prev => ({ ...prev, general: 1 }));
               }}
-              className={`flex-1 px-3 py-2 text-sm font-medium rounded-md transition-colors duration-200 ${
+              className={`px-4 py-2 text-sm font-semibold rounded-lg transition-colors ${
                 activeTab === 'general' ? 'bg-blue-50 text-blue-700' : 'text-gray-600 hover:bg-gray-100'
               } min-w-[120px]`}
               whileHover={{ scale: 1.05 }}
@@ -819,7 +876,7 @@ export default function ReportsList() {
                 setActiveTab('risk_analysis');
                 setCurrentPage(prev => ({ ...prev, risk_analysis: 1 }));
               }}
-              className={`flex-1 px-3 py-2 text-sm font-medium rounded-md transition-colors duration-200 ${
+              className={`px-4 py-2 text-sm font-semibold rounded-lg transition-colors ${
                 activeTab === 'risk_analysis' ? 'bg-blue-50 text-blue-700' : 'text-gray-600 hover:bg-gray-100'
               } min-w-[120px]`}
               whileHover={{ scale: 1.05 }}
@@ -829,15 +886,15 @@ export default function ReportsList() {
               Risk Analysis
             </motion.button>
           </div>
-          <div className="relative w-full max-w-md flex items-center">
-            <span className="absolute left-2 top-1/2 -translate-y-1/2 flex items-center pointer-events-none">
-              <Search className="text-gray-400" size={16} />
+          <div className="relative w-full max-w-md">
+            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
+              <Search size={16} />
             </span>
             <input
               type="text"
               placeholder="Search by title or company..."
               onChange={handleSearch}
-              className="w-full pl-8 pr-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 transition-shadow"
+              className="w-full pl-10 pr-3 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
               aria-label="Search reports"
             />
           </div>
@@ -847,14 +904,14 @@ export default function ReportsList() {
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-        className="flex flex-col gap-3 mb-4"
+        transition={{ duration: 0.5, delay: 0.3 }}
+        className="flex flex-col gap-3 mb-6"
       >
         <div className="flex flex-col sm:flex-row gap-2 justify-between">
           <div className="flex flex-wrap items-center gap-2">
             <motion.button
               onClick={handleSortToggle}
-              className="px-3 py-1.5 bg-gray-100 rounded-md text-gray-700 hover:bg-gray-200 text-sm font-medium transition-colors"
+              className="px-4 py-2 bg-gray-100 rounded-lg text-gray-700 hover:bg-gray-200 text-sm font-semibold transition-colors"
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               aria-label={`Sort by date ${sortOrder === 'desc' ? 'oldest first' : 'newest first'}`}
@@ -869,16 +926,16 @@ export default function ReportsList() {
                     setStatusFilter(e.target.value as typeof statusFilter);
                     setCurrentPage(prev => ({ ...prev, risk_analysis: 1 }));
                   }}
-                  className="px-3 py-1.5 bg-gray-100 text-gray-700 rounded-md text-sm font-medium appearance-none pr-6 focus:outline-none focus:ring-2 focus:ring-blue-500 min-w-[120px]"
+                  className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg text-sm font-semibold appearance-none pr-8 focus:outline-none focus:ring-2 focus:ring-blue-500 min-w-[120px]"
                   aria-label="Filter by status"
                 >
                   <option value="all">All Statuses</option>
                   <option value="requested">Requested</option>
                   <option value="in_progress">In Progress</option>
-                  <option value="completed">Complete</option>
-                  <option value="rejected">Failed</option>
+                  <option value="completed">Completed</option>
+                  <option value="rejected">Rejected</option>
                 </select>
-                <Filter className="absolute right-2 top-1/2 transform -translate-y-1/2 text-gray-400" size={12} />
+                <Filter className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400" size={12} />
               </div>
             )}
           </div>
@@ -887,7 +944,7 @@ export default function ReportsList() {
               type="date"
               value={dateFrom}
               onChange={e => setDateFrom(e.target.value)}
-              className="px-2 py-1.5 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 max-w-[140px]"
+              className="px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 max-w-[140px]"
               aria-label="Filter by start date"
             />
             <span className="text-gray-600 text-sm">to</span>
@@ -895,12 +952,12 @@ export default function ReportsList() {
               type="date"
               value={dateTo}
               onChange={e => setDateTo(e.target.value)}
-              className="px-2 py-1.5 border border-gray-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 max-w-[140px]"
+              className="px-3 py-2 border border-gray-200 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 max-w-[140px]"
               aria-label="Filter by end date"
             />
             <motion.button
               onClick={handleDateFilter}
-              className="px-4 py-1.5 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-sm font-medium transition-colors"
+              className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-semibold hover:bg-blue-700 transition-colors"
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               aria-label="Apply date filter"
@@ -912,12 +969,12 @@ export default function ReportsList() {
         <div className="flex justify-end">
           <motion.button
             onClick={fetchReports}
-            className="px-4 py-1.5 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-sm font-medium flex items-center transition-colors"
+            className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-semibold hover:bg-blue-700 transition-colors flex items-center gap-2"
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
             aria-label="Refresh reports"
           >
-            <RefreshCw className="w-4 h-4 mr-2" />
+            <RefreshCw size={16} />
             Refresh
           </motion.button>
         </div>
@@ -927,35 +984,278 @@ export default function ReportsList() {
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-          className="p-3 bg-red-50 text-red-600 rounded-md text-center mb-4 text-sm"
+          transition={{ duration: 0.5, delay: 0.4 }}
+          className="p-4 bg-red-50 text-red-600 rounded-lg text-sm font-semibold text-center"
           role="alert"
         >
           {error}
         </motion.div>
       )}
-      {loading ? renderSkeleton() : activeTab === 'general' ? renderGeneralReports() : renderRiskAnalysisReports()}
-      {renderPagination()}
-    </>
+
+      {loading ? (
+        renderSkeleton()
+      ) : activeTab === 'general' ? (
+        generalReports.length === 0 ? (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.4 }}
+            className="text-center py-12"
+            role="alert"
+          >
+            <Frown className="mx-auto h-12 w-12 text-gray-400" />
+            <h3 className="mt-2 text-sm font-semibold text-gray-900">No Post-Event Reports Found</h3>
+            <p className="mt-1 text-sm text-gray-500">Adjust filters or contact your account manager.</p>
+          </motion.div>
+        ) : (
+          <motion.table
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.4 }}
+            className="min-w-full divide-y divide-gray-200"
+          >
+            <thead className="bg-gray-50">
+              <tr>
+                <th scope="col" className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                  Opportunity
+                </th>
+                <th scope="col" className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                  Uploaded
+                </th>
+                <th scope="col" className="px-6 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                  Actions
+                </th>
+              </tr>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-200">
+              {generalReports.map(report => (
+                <motion.tr
+                  key={report.id}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.3, delay: 0.05 * generalReports.indexOf(report) }}
+                  className="hover:bg-gray-50"
+                >
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="text-sm font-semibold text-gray-900 truncate max-w-xs">{report.opportunity?.title ?? 'N/A'}</div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="text-sm text-gray-500">{format(parseISO(report.created_at), 'MMM d, yyyy')}</div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-semibold">
+                    {report.purchased ? (
+                      <motion.button
+                        onClick={() => viewReport(report.signedUrl)}
+                        className="px-4 py-2 bg-blue-600 text-white rounded-lg flex items-center gap-2 hover:bg-blue-700 transition-colors text-sm"
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                        aria-label={`View report ${report.filename || 'Report'}`}
+                        data-tooltip-id={`view-tooltip-${report.id}`}
+                        data-tooltip-content="View report in new tab"
+                      >
+                        View
+                        <Eye size={16} />
+                      </motion.button>
+                    ) : (
+                      <motion.button
+                        onClick={() => unlockReport(report.id, report.signedUrl)}
+                        disabled={unlockingReport === report.id}
+                        className={`px-4 py-2 bg-blue-600 text-white rounded-lg flex items-center gap-2 text-sm font-semibold disabled:opacity-50 disabled:cursor-not-allowed ${
+                          unlockingReport === report.id ? 'animate-pulse' : ''
+                        }`}
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                        aria-label={`Unlock report ${report.filename || 'Report'} for 100 credits`}
+                        data-tooltip-id={`unlock-tooltip-${report.id}`}
+                        data-tooltip-content="Unlock costs 100 credits"
+                      >
+                        {unlockingReport === report.id ? (
+                          <>
+                            Unlocking
+                            <svg className="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                          </>
+                        ) : (
+                          <>
+                            Unlock
+                            <Lock size={16} />
+                          </>
+                        )}
+                      </motion.button>
+                    )}
+                    <Tooltip id={`view-tooltip-${report.id}`} place="top" className="text-xs z-50" />
+                    <Tooltip id={`unlock-tooltip-${report.id}`} place="top" className="text-xs z-50" />
+                  </td>
+                </motion.tr>
+              ))}
+            </tbody>
+          </motion.table>
+        )
+      ) : (
+        riskAnalysisReports.length === 0 ? (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.4 }}
+            className="text-center py-12"
+            role="alert"
+          >
+            <Frown className="mx-auto h-12 w-12 text-gray-400" />
+            <h3 className="mt-2 text-sm font-semibold text-gray-900">No Risk Analysis Reports Found</h3>
+            <p className="mt-1 text-sm text-gray-500">Request a risk analysis or adjust filters.</p>
+          </motion.div>
+        ) : (
+          <motion.table
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, delay: 0.4 }}
+            className="min-w-full divide-y divide-gray-200"
+          >
+            <thead className="bg-gray-50">
+              <tr>
+                <th scope="col" className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                  Opportunity
+                </th>
+                <th scope="col" className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                  Company
+                </th>
+                <th scope="col" className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                  Status
+                </th>
+                <th scope="col" className="px-6 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                  Created
+                </th>
+                <th scope="col" className="px-6 py-3 text-right text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                  Actions
+                </th>
+              </tr>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-200">
+              {riskAnalysisReports.map(report => (
+                <motion.tr
+                  key={report.id}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.3, delay: 0.05 * riskAnalysisReports.indexOf(report) }}
+                  className="hover:bg-gray-50"
+                >
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="text-sm font-semibold text-gray-900 truncate max-w-xs">{report.opportunity?.title ?? 'N/A'}</div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="text-sm font-semibold text-gray-700 truncate max-w-xs">{report.profile?.company_name ?? 'N/A'}</div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <span
+                      className={`inline-flex px-3 py-1 rounded-full text-xs font-semibold ${
+                        report.status === 'completed'
+                          ? 'bg-green-100 text-green-800'
+                          : report.status === 'in_progress'
+                          ? 'bg-yellow-100 text-yellow-800'
+                          : report.status === 'rejected'
+                          ? 'bg-red-100 text-red-800'
+                          : 'bg-gray-100 text-gray-800'
+                      }`}
+                      aria-label={`Status: ${report.status ? report.status.charAt(0).toUpperCase() + report.status.slice(1) : 'N/A'}`}
+                    >
+                      {report.status ? report.status.charAt(0).toUpperCase() + report.status.slice(1) : 'N/A'}
+                    </span>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="text-sm text-gray-500">{format(parseISO(report.created_at), 'MMM d, yyyy')}</div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-semibold">
+                    {report.report_url ? (
+                      <motion.button
+                        onClick={() => viewReport(report.report_url!)}
+                        className="px-4 py-2 bg-blue-600 text-white rounded-lg flex items-center gap-2 hover:bg-blue-700 transition-colors text-sm"
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                        aria-label="View risk analysis report"
+                        data-tooltip-id={`view-risk-tooltip-${report.id}`}
+                        data-tooltip-content="View report in new tab"
+                      >
+                        View
+                        <Eye size={16} />
+                      </motion.button>
+                    ) : (
+                      <span className="text-gray-500">N/A</span>
+                    )}
+                    <Tooltip id={`view-risk-tooltip-${report.id}`} place="top" className="text-xs z-50" />
+                  </td>
+                </motion.tr>
+              ))}
+            </tbody>
+          </motion.table>
+        )
+      )}
+      {totalPages[activeTab] > 1 && (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.5 }}
+          className="flex items-center justify-between gap-2 mt-6 px-4"
+        >
+          <motion.button
+            onClick={() => setCurrentPage(prev => ({ ...prev, [activeTab]: prev[activeTab] - 1 }))}
+            disabled={currentPage[activeTab] === 1 || loading}
+            className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg text-sm font-semibold hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed"
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            aria-label="Previous page"
+          >
+            Previous
+          </motion.button>
+          <div className="flex gap-1">
+            {[...Array(totalPages[activeTab])].map((_, i) => (
+              <motion.button
+                key={i}
+                onClick={() => setCurrentPage(prev => ({ ...prev, [activeTab]: i + 1 }))}
+                className={`px-3 py-2 rounded-lg text-sm font-semibold ${
+                  currentPage[activeTab] === i + 1 ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                aria-current={currentPage[activeTab] === i + 1 ? 'page' : undefined}
+              >
+                {i + 1}
+              </motion.button>
+            ))}
+          </div>
+          <motion.button
+            onClick={() => setCurrentPage(prev => ({ ...prev, [activeTab]: prev[activeTab] + 1 }))}
+            disabled={currentPage[activeTab] === totalPages[activeTab] || loading}
+            className="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg text-sm font-semibold hover:bg-gray-200 disabled:opacity-50 disabled:cursor-not-allowed"
+            whileHover={{ scale: 1.05 }}
+            whileTap={{ scale: 0.95 }}
+            aria-label="Next page"
+          >
+            Next
+          </motion.button>
+        </motion.div>
+      )}
+    </motion.div>
   );
 
   return (
     <>
       <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
         transition={{ duration: 0.5 }}
-        className="hidden sm:block bg-white rounded-xl shadow-lg p-6"
+        className="hidden sm:block bg-white rounded-xl shadow-lg"
       >
-        {content}
+        {renderDesktopContent()}
       </motion.div>
       <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
         transition={{ duration: 0.5 }}
-        className="block sm:hidden pb-16"
+        className="block sm:hidden"
       >
-        {content}
+        {renderMobileContent()}
       </motion.div>
     </>
   );
