@@ -196,7 +196,7 @@ const MatchesSection: React.FC<MatchesSectionProps> = ({
                           </p>
                         </div>
                         <div className="flex flex-wrap gap-2">
-                          {match.opportunities?.sponsorship_brochure_url && (
+                          {/* {match.opportunities?.sponsorship_brochure_url && (
                             <a
                               href={match.opportunities.sponsorship_brochure_url}
                               target="_blank"
@@ -207,7 +207,7 @@ const MatchesSection: React.FC<MatchesSectionProps> = ({
                               <FileText className="w-4 h-4 mr-1.5" />
                               View Brochure
                             </a>
-                          )}
+                          )} */}
                           <button
                             onClick={() => openRiskAnalysisModal(match.opportunity_id)}
                             disabled={requestedAnalyses.has(match.opportunity_id) || loadingRequests.has(match.opportunity_id)}
