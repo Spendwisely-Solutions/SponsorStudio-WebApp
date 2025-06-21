@@ -33,7 +33,6 @@ export default function BrandDashboard({ onUpdateProfile }: BrandDashboardProps)
   const [locationFilter, setLocationFilter] = useState<string>('');
   const [showFilters, setShowFilters] = useState(false);
   const [matches, setMatches] = useState<string[]>([]);
-  const [rejections, setRejections] = useState<string[]>([]);
   const [showMatchSuccess, setShowMatchSuccess] = useState(false);
   const [matchedOpportunity, setMatchedOpportunity] = useState<Opportunity | null>(null);
   const [activeTab, setActiveTab] = useState<'discover' | 'influencers' | 'matches'>('discover');
@@ -73,6 +72,7 @@ export default function BrandDashboard({ onUpdateProfile }: BrandDashboardProps)
       fetchCategories();
       fetchUserMatches();
       fetchPosts();
+      fetchOpportunities();
 
       return () => {
         clearTimeout(timer);
@@ -118,7 +118,9 @@ export default function BrandDashboard({ onUpdateProfile }: BrandDashboardProps)
         `)
         .eq('brand_id', user.id);
       if (error) throw error;
-      const matchedOpportunityIds = matchesData.map((match) => match.opportunity_id);
+      const matchedOpportunityIds = matchesData
+        .filter((match) => match.opportunity_id)
+        .map((match) => match.opportunity_id);
       setMatches(matchedOpportunityIds);
       setUserMatches(matchesData as Match[]);
       setStats({
@@ -142,6 +144,24 @@ export default function BrandDashboard({ onUpdateProfile }: BrandDashboardProps)
       `)
       .eq('status', 'active')
       .eq('verification_status', 'approved');
+
+    // Exclude disliked opportunities
+    if (user) {
+      const { data: profileData, error: profileError } = await supabase
+        .from('profiles')
+        .select('disliked_opportunities')
+        .eq('id', user.id)
+        .single();
+
+      if (profileError) {
+        console.error('fetchOpportunities: Error fetching profile data:', profileError);
+        return;
+      }
+
+      if (profileData?.disliked_opportunities?.length > 0) {
+        query = query.not('id', 'in', `(${profileData.disliked_opportunities.join(',')})`);
+      }
+    }
 
     if (selectedCategory) {
       query = query.eq('category_id', selectedCategory);
@@ -178,8 +198,7 @@ export default function BrandDashboard({ onUpdateProfile }: BrandDashboardProps)
             (match) =>
               match.opportunity_id === opp.id &&
               (match.status === 'pending' || match.status === 'accepted')
-          ) &&
-          !rejections.includes(opp.id)
+          )
       );
     setOpportunities(filteredOpportunities);
     setLoading(false);
@@ -191,6 +210,24 @@ export default function BrandDashboard({ onUpdateProfile }: BrandDashboardProps)
       .select('*, categories(*)')
       .eq('status', 'active')
       .eq('verification_status', 'approved');
+
+    // Exclude disliked posts
+    if (user) {
+      const { data: profileData, error: profileError } = await supabase
+        .from('profiles')
+        .select('disliked_posts')
+        .eq('id', user.id)
+        .single();
+
+      if (profileError) {
+        console.error('fetchPosts: Error fetching profile data:', profileError);
+        return;
+      }
+
+      if (profileData?.disliked_posts?.length > 0) {
+        query = query.not('id', 'in', `(${profileData.disliked_posts.join(',')})`);
+      }
+    }
 
     if (selectedCategory) {
       query = query.eq('category_id', selectedCategory);
@@ -214,8 +251,7 @@ export default function BrandDashboard({ onUpdateProfile }: BrandDashboardProps)
       return;
     }
 
-    const filteredPosts = data.filter((post) => !rejections.includes(post.id));
-    setPosts(filteredPosts);
+    setPosts(data);
     setLoading(false);
   };
 
@@ -517,17 +553,107 @@ export default function BrandDashboard({ onUpdateProfile }: BrandDashboardProps)
     }
   };
 
-  const handleReject = (id: string, type: 'opportunity' | 'post') => {
+  const handleReject = async (id: string, type: 'opportunity' | 'post') => {
     console.log(`handleReject: Rejecting ${type} with ID ${id}`);
-    const updatedRejections = [...rejections, id];
-    setRejections(updatedRejections);
+    if (!user) {
+      console.error('handleReject: User not available');
+      toast.error('Please log in to perform this action.', {
+        duration: 4000,
+        position: 'top-center',
+      });
+      return;
+    }
 
-    if (type === 'opportunity') {
-      const updatedOpportunities = opportunities.filter((opp) => opp.id !== id);
-      setOpportunities(updatedOpportunities);
-    } else {
-      const updatedPosts = posts.filter((post) => post.id !== id);
-      setPosts(updatedPosts);
+    try {
+      // Call server-side function to handle dislike
+      const { error } = await supabase.rpc('add_dislike', {
+        user_id: user.id,
+        item_id: id,
+        item_type: type,
+      });
+
+      if (error) {
+        console.error('handleReject: Error updating profile:', error);
+        throw error;
+      }
+
+      // Update local state to filter out the disliked item
+      if (type === 'opportunity') {
+        setOpportunities(opportunities.filter((opp) => opp.id !== id));
+      } else {
+        setPosts(posts.filter((post) => post.id !== id));
+      }
+      console.log(`handleReject: Successfully recorded dislike for ${type} with ID ${id}`);
+
+    } catch (error) {
+      console.error('handleReject: Error:', error);
+      toast.error('Failed to record dislike. Please try again.', {
+        duration: 4000,
+        position: 'top-center',
+      });
+    }
+  };
+
+  const handleResetDislikedOpportunities = async () => {
+    if (!user) {
+      console.error('handleResetDislikedOpportunities: User not available');
+      toast.error('Please log in to perform this action.', {
+        duration: 4000,
+        position: 'top-center',
+      });
+      return;
+    }
+
+    try {
+      // Deduct 300 credits before resetting
+      await deductCredits(300);
+
+      // Call server-side function to reset disliked_opportunities
+      const { error } = await supabase.rpc('reset_disliked_opportunities', {
+        user_id: user.id,
+      });
+
+      if (error) {
+        console.error('handleResetDislikedOpportunities: Error resetting disliked opportunities:', {
+          code: error.code,
+          message: error.message,
+          details: error.details,
+          hint: error.hint,
+        });
+        throw error;
+      }
+
+      // Refresh opportunities to include previously disliked items
+      await fetchOpportunities(true);
+      console.log('handleResetDislikedOpportunities: Successfully reset disliked opportunities');
+
+      // Show confirmation toast
+      toast.success('Disliked opportunities revived.', {
+        duration: 4000,
+        position: 'bottom-right',
+      });
+    } catch (error: any) {
+      console.error('handleResetDislikedOpportunities: Error:', {
+        code: error.code,
+        message: error.message,
+        details: error.details,
+        hint: error.hint,
+      });
+      if (error.code === 'PGRST202') {
+        toast.error('Reset function not found. Please contact support.', {
+          duration: 4000,
+          position: 'top-center',
+        });
+      } else if (error.message === 'Insufficient credits') {
+        // Error already handled by deductCredits with shake animation and toast
+      } else if (error.message === 'Invalid JWT') {
+        // Error already handled by deductCredits with session expired toast
+      } else {
+        toast.error('Failed to revive opportunities. Please try again.', {
+          duration: 4000,
+          position: 'top-center',
+        });
+      }
     }
   };
 
@@ -712,7 +838,11 @@ export default function BrandDashboard({ onUpdateProfile }: BrandDashboardProps)
       {activeTab === 'discover' && (
         <>
           {opportunities.length === 0 ? (
-            <NoResultsCard type="events" resetFilters={resetFilters} />
+            <NoResultsCard
+              type="events"
+              resetFilters={resetFilters}
+              resetDislikedEvents={handleResetDislikedOpportunities}
+            />
           ) : (
             <div className="min-h-[calc(100vh-150px)] sm:min-h-[calc(100vh-100px)]">
               <AnimatePresence>
