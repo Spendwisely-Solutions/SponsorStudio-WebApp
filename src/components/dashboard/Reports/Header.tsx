@@ -11,6 +11,7 @@ interface HeaderProps {
   setActiveTab: (tab: 'general' | 'risk_analysis') => void;
   setCurrentPage: React.Dispatch<React.SetStateAction<{ general: number; risk_analysis: number }>>;
   setSearchTerm: React.Dispatch<React.SetStateAction<string>>;
+  onRefresh: () => void;
   isMobile?: boolean;
 }
 
@@ -21,9 +22,10 @@ export default function Header({
   setActiveTab,
   setCurrentPage,
   setSearchTerm,
+  onRefresh,
   isMobile = false,
 }: HeaderProps) {
-  const refreshReports = () => window.location.reload();
+  const refreshReports = () => onRefresh();
 
   return (
     <motion.div
@@ -58,23 +60,14 @@ export default function Header({
                 <Tooltip id="add-credits-tooltip" place="top" content="Add credits" className="text-xs z-50" />
               </motion.button>
             </div>
-            <motion.button
-              onClick={refreshReports}
-              className="p-2 bg-gray-100 rounded-lg text-gray-700 hover:bg-gray-200 transition-colors"
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              aria-label="Refresh reports"
-            >
-              <RefreshCw size={18} />
-            </motion.button>
           </div>
-          <div className="flex gap-2 mb-3 overflow-x-auto">
+          <div className="flex gap-2 mb-3">
             <motion.button
               onClick={() => {
                 setActiveTab('general');
                 setCurrentPage(prev => ({ ...prev, general: 1 }));
               }}
-              className={`px-4 py-2 text-sm font-semibold rounded-lg transition-colors flex-shrink-0 ${
+              className={`flex-1 px-3 py-3 text-xs font-medium rounded-lg transition-colors ${
                 activeTab === 'general' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
               }`}
               whileHover={{ scale: 1.05 }}
@@ -88,7 +81,7 @@ export default function Header({
                 setActiveTab('risk_analysis');
                 setCurrentPage(prev => ({ ...prev, risk_analysis: 1 }));
               }}
-              className={`px-4 py-2 text-sm font-semibold rounded-lg transition-colors flex-shrink-0 ${
+              className={`flex-1 px-3 py-3 text-xs font-medium rounded-lg transition-colors ${
                 activeTab === 'risk_analysis' ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
               }`}
               whileHover={{ scale: 1.05 }}
@@ -98,17 +91,28 @@ export default function Header({
               Risk Analysis
             </motion.button>
           </div>
-          <div className="relative flex-1">
-            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
-              <Search size={18} />
-            </span>
-            <input
-              type="text"
-              placeholder="Search reports..."
-              onChange={e => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white shadow-sm"
-              aria-label="Search reports"
-            />
+          <div className="flex items-center gap-2">
+            <div className="relative flex-1">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
+                <Search size={16} />
+              </span>
+              <input
+                type="text"
+                placeholder="Search reports..."
+                onChange={e => setSearchTerm(e.target.value)}
+                className="w-full pl-9 pr-3 py-1 h-10 text-xs border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white shadow-sm"
+                aria-label="Search reports"
+              />
+            </div>
+            <motion.button
+              onClick={refreshReports}
+              className="p-2 bg-gray-100 rounded-lg text-gray-700 hover:bg-gray-200 transition-colors"
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              aria-label="Refresh reports"
+            >
+              <RefreshCw size={16} />
+            </motion.button>
           </div>
         </>
       ) : (
