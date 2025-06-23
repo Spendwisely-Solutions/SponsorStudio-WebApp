@@ -114,13 +114,13 @@ const HeroSection: React.FC<HeroSectionProps> = ({ user, setShowAuthForm }) => {
         </p>
         <div className="mt-8">
           {user ? (
-            <Link
+            <a
               ref={buttonRef as React.RefObject<HTMLAnchorElement>}
-              to="/dashboard"
+              href="/dashboard"
               className="inline-flex items-center px-6 py-3 bg-[#2B4B9B] text-white text-lg sm:text-base rounded-full hover:bg-[#1F3A7A] will-change-transform"
             >
               Get Started <ArrowRight className="ml-2 h-5 w-5" />
-            </Link>
+            </a>
           ) : (
             <button
               ref={buttonRef as React.RefObject<HTMLButtonElement>}
