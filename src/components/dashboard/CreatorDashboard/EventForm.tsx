@@ -60,18 +60,31 @@ export default function EventForm({
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
   ) => {
     const { name, value } = e.target;
-    if (name === 'price_min' || name === 'price_max') {
+    if (name === 'price_min') {
       setFormData({
         ...formData,
         price_range: {
           ...formData.price_range,
-          [name === 'price_min' ? 'min' : 'max']: value === '' ? undefined : parseInt(value),
+          min: value === '' ? undefined : parseInt(value),
+        },
+      });
+    } else if (name === 'price_max') {
+      setFormData({
+        ...formData,
+        price_range: {
+          ...formData.price_range,
+          max: value === '' ? undefined : parseInt(value),
         },
       });
     } else if (name === 'reach') {
       setFormData({
         ...formData,
         [name]: value === '' ? undefined : parseInt(value),
+      });
+    } else if (name === 'start_date' || name === 'end_date') {
+      setFormData({
+        ...formData,
+        [name]: value === '' ? null : value,
       });
     } else {
       setFormData({
@@ -105,12 +118,13 @@ export default function EventForm({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSubmit(formData);
-  };
-
-  const isVideoUrl = (url: string): boolean => {
-    const videoExtensions = ['.mp4', '.webm', '.ogg', '.mov', '.avi', '.mkv'];
-    return videoExtensions.some((ext) => url.toLowerCase().endsWith(ext));
+    // Normalize date fields to ensure empty strings are converted to null
+    const normalizedFormData = {
+      ...formData,
+      start_date: formData.start_date === '' ? null : formData.start_date,
+      end_date: formData.end_date === '' ? null : formData.end_date,
+    };
+    onSubmit(normalizedFormData);
   };
 
   // Check if selected category is an advertising category
@@ -137,7 +151,7 @@ export default function EventForm({
               <input
                 type="text"
                 name="title"
-                value={formData.title}
+                value={formData.title ?? ''}
                 onChange={handleInputChange}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-[#2B4B9B] focus:border-[#2B4B9B]"
                 required
@@ -147,7 +161,7 @@ export default function EventForm({
               <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
               <select
                 name="category_id"
-                value={formData.category_id}
+                value={formData.category_id ?? ''}
                 onChange={handleInputChange}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-[#2B4B9B] focus:border-[#2B4B9B]"
                 required
@@ -165,153 +179,38 @@ export default function EventForm({
             <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
             <textarea
               name="description"
-              value={formData.description}
+              value={formData.description ?? ''}
               onChange={handleInputChange}
               rows={4}
               className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-[#2B4B9B] focus:border-[#2B4B9B]"
               required
             ></textarea>
           </div>
-          {isAdvertisingCategory ? (
-            <>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Location</label>
-                  <input
-                    type="text"
-                    name="location"
-                    value={formData.location}
-                    onChange={handleInputChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-[#2B4B9B] focus:border-[#2B4B9B]"
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Start Date</label>
-                  <input
-                    type="date"
-                    name="start_date"
-                    value={formData.start_date}
-                    onChange={handleInputChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-[#2B4B9B] focus:border-[#2B4B9B]"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">End Date</label>
-                  <input
-                    type="date"
-                    name="end_date"
-                    value={formData.end_date}
-                    onChange={handleInputChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-[#2B4B9B] focus:border-[#2B4B9B]"
-                  />
-                </div>
-              </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">Location</label>
+              <input
+                type="text"
+                name="location"
+                value={formData.location ?? ''}
+                onChange={handleInputChange}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-[#2B4B9B] focus:border-[#2B4B9B]"
+                required
+              />
+            </div>
+            {isAdvertisingCategory ? (
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Upload Media Files (Images/Videos)
-                </label>
+                <label className="block text-sm font-medium text-gray-700 mb-1">Price (₹)</label>
                 <input
-                  type="file"
-                  multiple
-                  accept="image/*,video/*"
-                  onChange={(e) => handleFileChange(e, 'media_files')}
+                  type="number"
+                  name="price_min"
+                  value={formData.price_range?.min ?? ''}
+                  onChange={handleInputChange}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-[#2B4B9B] focus:border-[#2B4B9B]"
                 />
-                <p className="text-xs text-gray-500 mt-1">
-                  Upload images or videos that showcase your Opportunity (max 5 files, up to 10MB each)
-                </p>
-                {formData.media_files && formData.media_files.length > 0 && (
-                  <div className="mt-2">
-                    <p className="text-sm text-gray-600">Selected files:</p>
-                    <ul className="list-disc list-inside text-sm text-gray-700">
-                      {formData.media_files.map((file, index) => (
-                        <li key={index}>{file.name}</li>
-                      ))}
-                    </ul>
-                    <div className="mt-4 grid grid-cols-2 sm:grid-cols-4 gap-4">
-                      {mediaPreviews.map((preview, index) => (
-                        <div key={index} className="relative">
-                          {formData.media_files![index].type.startsWith('image/') ? (
-                            <img
-                              src={preview}
-                              alt={`Media preview ${index + 1}`}
-                              className="w-full h-32 object-cover rounded-lg"
-                            />
-                          ) : formData.media_files![index].type.startsWith('video/') ? (
-                            <video
-                              src={preview}
-                              controls
-                              className="w-full h-32 object-cover rounded-lg"
-                            />
-                          ) : (
-                            <div className="w-full h-32 bg-gray-200 rounded-lg flex items-center justify-center">
-                              <span className="text-gray-500">Unsupported file type</span>
-                            </div>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                    {isSubmitting && (
-                      <div className="mt-2">
-                        <div className="w-full bg-gray-200 rounded-full h-2.5 overflow-hidden">
-                          <div className="bg-[#2B4B9B] h-2.5 rounded-full animate-indeterminate"></div>
-                        </div>
-                        <p className="text-sm text-gray-600">Uploading...</p>
-                      </div>
-                    )}
-                  </div>
-                )}
               </div>
-            </>
-          ) : (
-            <>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Location</label>
-                  <input
-                    type="text"
-                    name="location"
-                    value={formData.location}
-                    onChange={handleInputChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-[#2B4b9B] focus:border-[#2B4b9B]"
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Start Date</label>
-                  <input
-                    type="date"
-                    name="start_date"
-                    value={formData.start_date}
-                    onChange={handleInputChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-[#2B4B9B] focus:border-[#2B4B9B]"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">End Date</label>
-                  <input
-                    type="date"
-                    name="end_date"
-                    value={formData.end_date}
-                    onChange={handleInputChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-[#2B4B9B] focus:border-[#2B4B9B]"
-                  />
-                </div>
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">
-                    Reach (Audience Size)
-                  </label>
-                  <input
-                    type="number"
-                    name="reach"
-                    value={formData.reach ?? ''}
-                    onChange={handleInputChange}
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-[#2B4B9B] focus:border-[#2B4B9B]"
-                  />
-                </div>
+            ) : (
+              <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Min Price (₹)</label>
                   <input
@@ -333,11 +232,47 @@ export default function EventForm({
                   />
                 </div>
               </div>
+            )}
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Reach (Audience Size)</label>
+            <input
+              type="number"
+              name="reach"
+              value={formData.reach ?? ''}
+              onChange={handleInputChange}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-[#2B4B9B] focus:border-[#2B4B9B]"
+            />
+          </div>
+          {!isAdvertisingCategory && (
+            <>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Start Date</label>
+                  <input
+                    type="date"
+                    name="start_date"
+                    value={formData.start_date ?? ''}
+                    onChange={handleInputChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-[#2B4B9B] focus:border-[#2B4B9B]"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">End Date</label>
+                  <input
+                    type="date"
+                    name="end_date"
+                    value={formData.end_date ?? ''}
+                    onChange={handleInputChange}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-[#2B4B9B] focus:border-[#2B4B9B]"
+                  />
+                </div>
+              </div>
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Requirements</label>
                 <textarea
                   name="requirements"
-                  value={formData.requirements}
+                  value={formData.requirements ?? ''}
                   onChange={handleInputChange}
                   rows={2}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-[#2B4B9B] focus:border-[#2B4B9B]"
@@ -347,113 +282,99 @@ export default function EventForm({
                 <label className="block text-sm font-medium text-gray-700 mb-1">Benefits</label>
                 <textarea
                   name="benefits"
-                  value={formData.benefits}
+                  value={formData.benefits ?? ''}
                   onChange={handleInputChange}
                   rows={2}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-[#2B4B9B] focus:border-[#2B4B9B]"
                 ></textarea>
               </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Upload Media Files (Images/Videos)
-                </label>
-                <input
-                  type="file"
-                  multiple
-                  accept="image/*,video/*"
-                  onChange={(e) => handleFileChange(e, 'media_files')}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-[#2B4B9B] focus:border-[#2B4B9B]"
-                />
-                <p className="text-xs text-gray-500 mt-1">
-                  Upload images or videos that showcase your Opportunity (max 5 files, up to 10MB each)
-                </p>
-                {formData.media_files && formData.media_files.length > 0 && (
-                  <div className="mt-2">
-                    <p className="text-sm text-gray-600">Selected files:</p>
-                    <ul className="list-disc list-inside text-sm text-gray-700">
-                      {formData.media_files.map((file, index) => (
-                        <li key={index}>{file.name}</li>
-                      ))}
-                    </ul>
-                    <div className="mt-4 grid grid-cols-2 sm:grid-cols-4 gap-4">
-                      {mediaPreviews.map((preview, index) => (
-                        <div key={index} className="relative">
-                          {formData.media_files![index].type.startsWith('image/') ? (
-                            <img
-                              src={preview}
-                              alt={`Media preview ${index + 1}`}
-                              className="w-full h-32 object-cover rounded-lg"
-                            />
-                          ) : formData.media_files![index].type.startsWith('video/') ? (
-                            <video
-                              src={preview}
-                              controls
-                              className="w-full h-32 object-cover rounded-lg"
-                            />
-                          ) : (
-                            <div className="w-full h-32 bg-gray-200 rounded-lg flex items-center justify-center">
-                              <span className="text-gray-500">Unsupported file type</span>
-                            </div>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                    {isSubmitting && (
-                      <div className="mt-2">
-                        <div className="w-full bg-gray-200 rounded-full h-2.5 overflow-hidden">
-                          <div className="bg-[#2B4B9B] h-2.5 rounded-full animate-indeterminate"></div>
-                        </div>
-                        <p className="text-sm text-gray-600 mt-1">Uploading...</p>
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
-              <div style={{ display: 'none' }}>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Calendly Link</label>
-                <input
-                  type="url"
-                  name="calendly_link"
-                  value={formData.calendly_link}
-                  onChange={handleInputChange}
-                  placeholder="https://calendly.com/your-link"
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-[#2B4B9B] focus:border-[#2B4B9B]"
-                />
-                <p className="text-xs text-gray-500 mt-1">
-                  Add your Calendly link for brands to schedule meetings with you
-                </p>
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Upload Sponsorship Brochure (PDF)
-                </label>
-                <input
-                  type="file"
-                  accept="application/pdf"
-                  onChange={(e) => handleFileChange(e, 'sponsorship_brochure_file')}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-[#2B4B9B] focus:border-[#2B4B9B]"
-                />
-                <p className="text-xs text-gray-500 mt-1">
-                  Upload a PDF of your sponsorship brochure (up to 10MB)
-                </p>
-                {formData.sponsorship_brochure_file && (
-                  <div className="mt-2">
-                    <p className="text-sm text-gray-600">
-                      Selected brochure: {formData.sponsorship_brochure_file.name}
-                    </p>
-                    {isSubmitting && (
-                      <div className="mt-2">
-                        <div className="w-full bg-gray-200 rounded-full h-2.5 overflow-hidden">
-                          <div className="bg-[#2B4B9B] h-2.5 rounded-full animate-indeterminate"></div>
-                        </div>
-                        <p className="text-sm text-gray-600 mt-1">Uploading...</p>
-                      </div>
-                    )}
-                  </div>
-                )}
-              </div>
             </>
           )}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Upload Media Files (Images/Videos)
+            </label>
+            <input
+              type="file"
+              multiple
+              accept="image/*,video/*"
+              onChange={(e) => handleFileChange(e, 'media_files')}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-[#2B4B9B] focus:border-[#2B4B9B]"
+            />
+            <p className="text-xs text-gray-500 mt-1">
+              Upload images or videos that showcase your Opportunity (max 5 files, up to 10MB each)
+            </p>
+            {formData.media_files && formData.media_files.length > 0 && (
+              <div className="mt-2">
+                <p className="text-sm text-gray-600">Selected files:</p>
+                <ul className="list-disc list-inside text-sm text-gray-700">
+                  {formData.media_files.map((file, index) => (
+                    <li key={index}>{file.name}</li>
+                  ))}
+                </ul>
+                <div className="mt-4 grid grid-cols-2 sm:grid-cols-4 gap-4">
+                  {mediaPreviews.map((preview, index) => (
+                    <div key={index} className="relative">
+                      {formData.media_files![index].type.startsWith('image/') ? (
+                        <img
+                          src={preview}
+                          alt={`Media preview ${index + 1}`}
+                          className="w-full h-32 object-cover rounded-lg"
+                        />
+                      ) : formData.media_files![index].type.startsWith('video/') ? (
+                        <video
+                          src={preview}
+                          controls
+                          className="w-full h-32 object-cover rounded-lg"
+                        />
+                      ) : (
+                        <div className="w-full h-32 bg-gray-200 rounded-lg flex items-center justify-center">
+                          <span className="text-gray-500">Unsupported file type</span>
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+                {isSubmitting && (
+                  <div className="mt-2">
+                    <div className="w-full bg-gray-200 rounded-full h-2.5 overflow-hidden">
+                      <div className="bg-[#2B4B9B] h-2.5 rounded-full animate-indeterminate"></div>
+                    </div>
+                    <p className="text-sm text-gray-600 mt-1">Uploading...</p>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              {isAdvertisingCategory ? 'Upload Brochure (PDF)' : 'Upload Sponsorship Brochure (PDF)'}
+            </label>
+            <input
+              type="file"
+              accept="application/pdf"
+              onChange={(e) => handleFileChange(e, 'sponsorship_brochure_file')}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-[#2B4B9B] focus:border-[#2B4B9B]"
+            />
+            <p className="text-xs text-gray-500 mt-1">
+              Upload a PDF of your {isAdvertisingCategory ? 'brochure' : 'sponsorship brochure'} (up to 10MB)
+            </p>
+            {formData.sponsorship_brochure_file && (
+              <div className="mt-2">
+                <p className="text-sm text-gray-600">
+                  Selected {isAdvertisingCategory ? 'brochure' : 'sponsorship brochure'}: {formData.sponsorship_brochure_file.name}
+                </p>
+                {isSubmitting && (
+                  <div className="mt-2">
+                    <div className="w-full bg-gray-200 rounded-full h-2.5 overflow-hidden">
+                      <div className="bg-[#2B4B9B] h-2.5 rounded-full animate-indeterminate"></div>
+                    </div>
+                    <p className="text-sm text-gray-600 mt-1">Uploading...</p>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
           <div className="flex justify-end space-x-2 mt-6">
             <button
               type="button"

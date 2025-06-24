@@ -370,29 +370,35 @@ export default function EventCard({
               </span>
             </motion.div>
           )}
-          {opportunity.price_range && (
-            <motion.div
-              className="flex items-center group"
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: 0.8 }}
-            >
-              <DollarSign
-                className={`w-4 h-4 mr-2 flex-shrink-0 ${
-                  hasImageBackground ? 'text-gray-300' : 'text-gray-500'
-                } group-hover:text-indigo-500 transition-colors`}
-              />
-              <span
-                className={`text-sm truncate ${
-                  hasImageBackground ? 'text-gray-200' : 'text-gray-700'
-                }`}
-              >
-                {typeof opportunity.price_range === 'object'
-                  ? `₹${opportunity.price_range.min} - ₹${opportunity.price_range.max}`
-                  : 'Contact for pricing'}
-              </span>
-            </motion.div>
-          )}
+       {opportunity.price_range && (
+  <motion.div
+    className="flex items-center group"
+    initial={{ opacity: 0, x: -20 }}
+    animate={{ opacity: 1, x: 0 }}
+    transition={{ delay: 0.8 }}
+  >
+    <DollarSign
+      className={`w-4 h-4 mr-2 flex-shrink-0 ${
+        hasImageBackground ? 'text-gray-300' : 'text-gray-500'
+      } group-hover:text-indigo-500 transition-colors`}
+    />
+    <span
+      className={`text-sm truncate ${
+        hasImageBackground ? 'text-gray-200' : 'text-gray-700'
+      }`}
+    >
+      {typeof opportunity.price_range === 'object'
+        ? opportunity.price_range.min && opportunity.price_range.max
+          ? `₹${opportunity.price_range.min} - ₹${opportunity.price_range.max}`
+          : opportunity.price_range.min
+            ? `₹${opportunity.price_range.min}`
+            : opportunity.price_range.max
+              ? `₹${opportunity.price_range.max}`
+              : 'Contact for pricing'
+        : 'Contact for pricing'}
+    </span>
+  </motion.div>
+)}
         </motion.div>
 
         {/* Links */}
@@ -435,7 +441,7 @@ export default function EventCard({
               transition={{ delay: 1.1 }}
             >
               <LinkIcon className="w-4 h-4 mr-1" />
-              View Sponsorship Brochure
+              View Brochure
             </motion.a>
           )}
         </motion.div>
