@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { useRazorpay } from 'react-razorpay';
 import axios from 'axios';
 import { supabase } from '../lib/supabase';
@@ -15,6 +16,7 @@ const PurchaseCredits: React.FC = () => {
   const [loading, setLoading] = useState<Record<number, boolean>>({});
   const [error, setError] = useState<string | null>(null);
   const { Razorpay } = useRazorpay();
+  const navigate = useNavigate();
 
   const handlePurchase = async (pack: typeof creditPacks[0], index: number) => {
     try {
@@ -232,7 +234,7 @@ const PurchaseCredits: React.FC = () => {
   };
 
   const buttonVariants = {
-    hover: { scale: 1.05 },
+    hover: { scale: 1.05, boxShadow: '0px 4px 12px rgba(0, 0, 0, 0.1)' },
     tap: { scale: 0.95 },
   };
 
@@ -244,6 +246,20 @@ const PurchaseCredits: React.FC = () => {
         animate={{ opacity: 1 }}
         transition={{ duration: 0.5 }}
       >
+        <div className="mb-6">
+          <motion.button
+            onClick={() => navigate('/dashboard')}
+            className="inline-flex items-center px-4 py-2 bg-white text-indigo-600 font-semibold rounded-lg border border-indigo-200 hover:bg-indigo-50 hover:text-indigo-800 transition-colors duration-200"
+            variants={buttonVariants}
+            whileHover="hover"
+            whileTap="tap"
+          >
+            <svg className="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
+            Back
+          </motion.button>
+        </div>
         <h1 className="text-3xl font-bold text-gray-900 text-center mb-8">Purchase Credits</h1>
         {error && (
           <motion.div
