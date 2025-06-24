@@ -384,70 +384,94 @@ const OpportunityCard: React.FC<OpportunityCardProps> = memo(
 
     const detailCards = [
       {
-        icon: <DollarSign className="w-5 h-5 sm:w-6 sm:h-6 text-gray-700" />,
-        label: 'Budget',
-        value: opportunity.price_range
-          ? `₹${opportunity.price_range.min} - ₹${opportunity.price_range.max}`
-          : 'N/A',
+      icon: <DollarSign className="w-5 h-5 sm:w-6 sm:h-6 text-gray-700" />,
+      label: (() => {
+        const pr = opportunity.price_range;
+        if (pr) {
+        const { min, max } = pr;
+        // If max is not set (0 or undefined/null), show "Price"
+        if (!max) {
+          return 'Price';
+        }
+        return 'Budget';
+        }
+        return 'Budget';
+      })(),
+      value: (() => {
+        const pr = opportunity.price_range;
+        if (pr) {
+        const { min, max } = pr;
+        if (min > 0 && max > 0) {
+          return `₹${min} - ₹${max}`;
+        } else if (min > 0 && !max) {
+          return `₹${min}`;
+        } else if (max > 0 && !min) {
+          return `₹${max}`;
+        } else {
+          return 'Contact for price';
+        }
+        }
+        return 'N/A';
+      })(),
       },
       {
-        icon: <FileText className="w-5 h-5 sm:w-6 sm:h-6 text-gray-700" />,
-        label: 'Brochure',
-        value: opportunity.sponsorship_brochure_url ? (
-          <div className="flex flex-col space-y-1">
-            {isBrochureUnlocked ? (
-              <a
-                href={opportunity.sponsorship_brochure_url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="flex items-center text-blue-600 hover:text-blue-800"
-                aria-label="View sponsorship brochure"
-              >
-                <LinkIcon className="w-4 h-4 mr-1" />
-                View Brochure
-              </a>
-            ) : (
-              <button
-                onClick={handleUnlockBrochure}
-                disabled={credits < 100 || isUnlocking}
-                className={`flex items-center px-2 py-1 rounded-md transition-colors duration-200 ${
-                  credits < 100 || isUnlocking
-                    ? 'bg-gray-400/80 text-gray-600 cursor-not-allowed'
-                    : 'bg-blue-600/80 text-white hover:bg-blue-700/90'
-                }`}
-                aria-label="Unlock sponsorship brochure, costs 100 credits"
-              >
-                {isUnlocking ? (
-                  <span className="flex items-center">
-                    <span className="inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-1"></span>
-                    Unlocking...
-                  </span>
-                ) : (
-                  <>
-                    <Unlock className="w-4 h-4 mr-1" />
-                    Unlock Brochure
-                  </>
-                )}
-              </button>
-            )}
-            <p className="text-xs text-gray-500">Costs 100 credits to view</p>
-          </div>
-        ) : 'Not Available',
+      icon: <FileText className="w-5 h-5 sm:w-6 sm:h-6 text-gray-700" />,
+      label: 'Brochure',
+      value: opportunity.sponsorship_brochure_url ? (
+        <div className="flex flex-col space-y-1">
+        {isBrochureUnlocked ? (
+          <a
+          href={opportunity.sponsorship_brochure_url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex items-center text-blue-600 hover:text-blue-800"
+          aria-label="View sponsorship brochure"
+          >
+          <LinkIcon className="w-4 h-4 mr-1" />
+          View Brochure
+          </a>
+        ) : (
+          <button
+          onClick={handleUnlockBrochure}
+          disabled={credits < 100 || isUnlocking}
+          className={`flex items-center px-2 py-1 rounded-md transition-colors duration-200 ${
+            credits < 100 || isUnlocking
+            ? 'bg-gray-400/80 text-gray-600 cursor-not-allowed'
+            : 'bg-blue-600/80 text-white hover:bg-blue-700/90'
+          }`}
+          aria-label="Unlock sponsorship brochure, costs 100 credits"
+          >
+          {isUnlocking ? (
+            <span className="flex items-center">
+            <span className="inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-1"></span>
+            Unlocking...
+            </span>
+          ) : (
+            <>
+            <Unlock className="w-4 h-4 mr-1" />
+            Unlock Brochure
+            </>
+          )}
+          </button>
+        )}
+        <p className="text-xs text-gray-500">Costs 100 credits to view</p>
+        </div>
+      ) : 'Not Available',
       },
       {
-        icon: <Tag className="w-5 h-5 sm:w-6 sm:h-6 text-gray-700" />,
-        label: 'Category',
-        value: opportunity.category_name || 'N/A',
+      icon: <Tag className="w-5 h-5 sm:w-6 sm:h-6 text-gray-700" />,
+      label: 'Category',
+      value: opportunity.category_name || 'N/A',
       },
       {
-        icon: <Tag className="w-5 h-5 sm:w-6 sm:h-6 text-gray-700" />,
-        label: 'Ad Type',
-        value: opportunity.ad_type || 'N/A',
+      icon: <Tag className="w-5 h-5 sm:w-6 sm:h-6 text-gray-700" />,
+      label: 'Ad Type',
+      value: opportunity.ad_type || 'N/A',
       },
       {
-        icon: <User className="w-5 h-5 sm:w-6 sm:h-6 text-gray-700" />,
-        label: 'Creator',
-        value: opportunity.creator_name || 'N/A',
+      icon: <User className="w-5 h-5 sm:w-6 sm:h-6 text-gray-700" />,
+      label: 'Creator',
+      value: opportunity.creator_name || 'N/A',
       },
     ].filter(card => card.value !== 'N/A' || card.label === 'Brochure');
 
@@ -591,18 +615,22 @@ const OpportunityCard: React.FC<OpportunityCardProps> = memo(
         </div>
         <div className="bg-gray-100">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div className="bg-white rounded-lg p-3 shadow-md">
+            {opportunity.requirements && opportunity.requirements.trim() !== '' && (
+              <div className="bg-white rounded-lg p-3 shadow-md">
               <p className="text-xs sm:text-sm text-gray-600">Requirements</p>
               <p className="text-base sm:text-lg text-gray-900 text-justify">
-                {opportunity.requirements || 'Not specified'}
+                {opportunity.requirements}
               </p>
-            </div>
-            <div className="bg-white rounded-lg p-3 shadow-md">
+              </div>
+            )}
+            {opportunity.benefits && opportunity.benefits.trim() !== '' && (
+              <div className="bg-white rounded-lg p-3 shadow-md">
               <p className="text-xs sm:text-sm text-gray-600">Benefits</p>
               <p className="text-base sm:text-lg text-gray-900 text-justify">
-                {opportunity.benefits || 'Not specified'}
+                {opportunity.benefits}
               </p>
-            </div>
+              </div>
+            )}
           </div>
         </div>
         <div className="bg-gray-100 py-4 sm:py-6">
