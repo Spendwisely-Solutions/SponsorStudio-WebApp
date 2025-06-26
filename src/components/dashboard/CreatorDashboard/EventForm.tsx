@@ -1,10 +1,12 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   PlusCircle,
   X,
   RefreshCw,
+  FileText,
 } from 'lucide-react';
 import type { Database } from '../../../lib/database.types';
+import MouSignComponent from './MouSignComponent'; // Import the MouSignComponent
 
 type Opportunity = Database['public']['Tables']['opportunities']['Row'];
 type Category = Database['public']['Tables']['categories']['Row'];
@@ -56,6 +58,9 @@ export default function EventForm({
   onSubmit,
   onClose,
 }: EventFormProps) {
+  const [isMOUAgreed, setIsMOUAgreed] = useState(!!formData.mou_id); // Initialize based on existing mou_id
+  const [isMOUSignModalOpen, setIsMOUSignModalOpen] = useState(false);
+
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
   ) => {
@@ -116,9 +121,21 @@ export default function EventForm({
     }
   };
 
+  const handleMouSigned = (mouId: string) => {
+    setFormData((prev) => ({
+      ...prev,
+      mou_id: mouId,
+    }));
+    setIsMOUAgreed(true);
+    setIsMOUSignModalOpen(false);
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    // Normalize date fields to ensure empty strings are converted to null
+    if (!isMOUAgreed || !formData.mou_id) {
+      alert('You must sign the Memorandum of Understanding to proceed.');
+      return;
+    }
     const normalizedFormData = {
       ...formData,
       start_date: formData.start_date === '' ? null : formData.start_date,
@@ -127,7 +144,6 @@ export default function EventForm({
     onSubmit(normalizedFormData);
   };
 
-  // Check if selected category is an advertising category
   const selectedCategory = categories.find(cat => cat.id === formData.category_id);
   const isAdvertisingCategory = selectedCategory && advertisingCategories.includes(selectedCategory.name);
 
@@ -291,6 +307,46 @@ export default function EventForm({
             </>
           )}
           <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Organization Name</label>
+            <input
+              type="text"
+              name="organization_name"
+              value={formData.organization_name ?? ''}
+              onChange={handleInputChange}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-[#2B4B9B] focus:border-[#2B4B9B]"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Organization Address</label>
+            <input
+              type="text"
+              name="organization_address"
+              value={formData.organization_address ?? ''}
+              onChange={handleInputChange}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-[#2B4B9B] focus:border-[#2B4B9B]"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Point of Contact Name</label>
+            <input
+              type="text"
+              name="poc_name"
+              value={formData.poc_name ?? ''}
+              onChange={handleInputChange}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-[#2B4B9B] focus:border-[#2B4B9B]"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">Point of Contact Position</label>
+            <input
+              type="text"
+              name="poc_position"
+              value={formData.poc_position ?? ''}
+              onChange={handleInputChange}
+              className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-[#2B4B9B] focus:border-[#2B4B9B]"
+            />
+          </div>
+          <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">
               Upload Media Files (Images/Videos)
             </label>
@@ -375,6 +431,33 @@ export default function EventForm({
               </div>
             )}
           </div>
+          {/* MOU Section */}
+          <div className="mt-4">
+            <div className="flex items-center space-x-2">
+              <input
+                type="checkbox"
+                id="mou-agreement"
+                checked={isMOUAgreed}
+                onChange={(e) => setIsMOUAgreed(e.target.checked)}
+                className="h-4 w-4 text-[#2B4B9B] focus:ring-[#2B4B9B] border-gray-300 rounded"
+                disabled
+              />
+              <label htmlFor="mou-agreement" className="text-sm text-gray-700">
+                I have signed the{' '}
+                <button
+                  type="button"
+                  onClick={() => setIsMOUSignModalOpen(true)}
+                  className="text-[#2B4B9B] underline hover:text-[#1a2f61] flex items-center"
+                >
+                  Memorandum of Understanding
+                  <FileText className="w-4 h-4 ml-1" />
+                </button>
+              </label>
+            </div>
+            <p className="text-xs text-gray-500 mt-1">
+              You must sign the MOU to enable submission. Click the link above to review and sign.
+            </p>
+          </div>
           <div className="flex justify-end space-x-2 mt-6">
             <button
               type="button"
@@ -386,9 +469,9 @@ export default function EventForm({
             <button
               type="submit"
               className={`px-4 py-2 ${
-                isSubmitting ? 'bg-gray-400' : 'bg-[#2B4B9B]'
-              } text-white rounded-lg hover:${isSubmitting ? '' : 'bg-[#1a2f61]'}`}
-              disabled={isSubmitting}
+                isSubmitting || !isMOUAgreed ? 'bg-gray-400 cursor-not-allowed' : 'bg-[#2B4B9B]'
+              } text-white rounded-lg hover:${isSubmitting || !isMOUAgreed ? '' : 'bg-[#1a2f61]'}`}
+              disabled={isSubmitting || !isMOUAgreed}
             >
               {isSubmitting ? (
                 <span className="flex items-center">
@@ -404,6 +487,15 @@ export default function EventForm({
           </div>
         </form>
       </div>
+
+      {/* MOU Sign Modal */}
+      {isMOUSignModalOpen && (
+        <MouSignComponent
+          formData={formData}
+          onMouSigned={handleMouSigned}
+          onCancel={() => setIsMOUSignModalOpen(false)}
+        />
+      )}
     </div>
   );
 }

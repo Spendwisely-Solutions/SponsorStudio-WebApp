@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom'; // Added useNavigate import
 import { supabase } from '../../lib/supabase';
 import toast from 'react-hot-toast';
 import Modal from '../../components/Modal';
@@ -42,6 +43,7 @@ type Opportunity = Database['public']['Tables']['opportunities']['Row'] & {
   categories: Database['public']['Tables']['categories']['Row'] | null;
   type: 'opportunity';
   report: Database['public']['Tables']['reports']['Row'] | null;
+  mou_id: string | null; // Added mou_id to type
 };
 
 type Post = Database['public']['Tables']['posts']['Row'] & {
@@ -70,6 +72,7 @@ interface OpportunitiesProps {
 }
 
 export default function Opportunities({ searchTerm, setSearchTerm, stats, setStats }: OpportunitiesProps) {
+  const navigate = useNavigate(); // Initialize navigate hook
   const [items, setItems] = useState<CombinedItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [expandedItem, setExpandedItem] = useState<string | null>(null);
@@ -93,7 +96,7 @@ export default function Opportunities({ searchTerm, setSearchTerm, stats, setSta
     try {
       setLoading(true);
 
-      // Fetch opportunities with reports
+      // Fetch opportunities with reports and mou_id
       const { data: opportunitiesData, error: opportunitiesError } = await supabase
         .from('opportunities')
         .select(`
@@ -111,7 +114,8 @@ export default function Opportunities({ searchTerm, setSearchTerm, stats, setSta
         ...opp,
         verification_status: opp.verification_status?.trim().toLowerCase() ?? 'pending',
         type: 'opportunity' as const,
-        report: opp.report || null
+        report: opp.report || null,
+        mou_id: opp.mou_id || null // Ensure mou_id is included
       }));
 
       // Fetch posts
@@ -461,105 +465,105 @@ export default function Opportunities({ searchTerm, setSearchTerm, stats, setSta
     }
   };
 
- const handleCreateReport = async () => {
-  if (!reportFile || !reportOpportunityId) {
-    toast.error('Please select a PDF file');
-    return;
-  }
-
-  // Validate file type
-  if (reportFile.type !== 'application/pdf') {
-    toast.error('Please upload a valid PDF file');
-    return;
-  }
-
-  // Validate file size (max 10MB)
-  if (reportFile.size > 10 * 1024 * 1024) {
-    toast.error('File size must be less than 10MB');
-    return;
-  }
-
-  try {
-    setProcessingAction(reportOpportunityId);
-
-    // Check for existing report
-    const { data: existingReport, error: fetchError } = await supabase
-      .from('reports')
-      .select('id, pdf_path')
-      .eq('opportunity_id', reportOpportunityId)
-      .maybeSingle();
-
-    if (fetchError && fetchError.code !== 'PGRST116') {
-      throw new Error(`Failed to check existing report: ${fetchError.message}`);
+  const handleCreateReport = async () => {
+    if (!reportFile || !reportOpportunityId) {
+      toast.error('Please select a PDF file');
+      return;
     }
 
-    // Delete existing report if it exists
-    if (existingReport?.id) {
-      const { error: storageError } = await supabase.storage
-        .from('reports')
-        .remove([existingReport.pdf_path]);
+    // Validate file type
+    if (reportFile.type !== 'application/pdf') {
+      toast.error('Please upload a valid PDF file');
+      return;
+    }
 
-      if (storageError) {
-        throw new Error(`Failed to delete existing report file: ${storageError.message}`);
+    // Validate file size (max 10MB)
+    if (reportFile.size > 10 * 1024 * 1024) {
+      toast.error('File size must be less than 10MB');
+      return;
+    }
+
+    try {
+      setProcessingAction(reportOpportunityId);
+
+      // Check for existing report
+      const { data: existingReport, error: fetchError } = await supabase
+        .from('reports')
+        .select('id, pdf_path')
+        .eq('opportunity_id', reportOpportunityId)
+        .maybeSingle();
+
+      if (fetchError && fetchError.code !== 'PGRST116') {
+        throw new Error(`Failed to check existing report: ${fetchError.message}`);
       }
 
-      const { error: deleteError } = await supabase
-        .from('reports')
-        .delete()
-        .eq('id', existingReport.id);
+      // Delete existing report if it exists
+      if (existingReport?.id) {
+        const { error: storageError } = await supabase.storage
+          .from('reports')
+          .remove([existingReport.pdf_path]);
 
-      if (deleteError) {
-        throw new Error(`Failed to delete existing report record: ${deleteError.message}`);
+        if (storageError) {
+          throw new Error(`Failed to delete existing report file: ${storageError.message}`);
+        }
+
+        const { error: deleteError } = await supabase
+          .from('reports')
+          .delete()
+          .eq('id', existingReport.id);
+
+        if (deleteError) {
+          throw new Error(`Failed to delete existing report record: ${deleteError.message}`);
+        }
       }
+
+      // Generate file path
+      const fileName = `${reportOpportunityId}_${Date.now()}.pdf`;
+      const filePath = `${reportOpportunityId}/${fileName}`;
+
+      // Read file as binary data
+      const arrayBuffer = await reportFile.arrayBuffer();
+      const fileData = new Uint8Array(arrayBuffer);
+
+      // Upload file
+      const { error: uploadError } = await supabase.storage
+        .from('reports')
+        .upload(filePath, fileData, {
+          cacheControl: '3600',
+          upsert: false,
+          contentType: 'application/pdf',
+        });
+
+      if (uploadError) {
+        throw new Error(`Failed to upload report: ${uploadError.message}`);
+      }
+
+      // Insert report record
+      const { error: insertError } = await supabase
+        .from('reports')
+        .insert({
+          opportunity_id: reportOpportunityId,
+          pdf_path: filePath,
+          filename: reportFile.name,
+        });
+
+      if (insertError) {
+        throw new Error(`Failed to insert report record: ${insertError.message}`);
+      }
+
+      toast.success(`Report ${isUpdateReport ? 'updated' : 'created'} successfully`);
+      await fetchItems();
+    } catch (error) {
+      console.error('Error handling report:', String(error));
+      toast.error(`Failed to ${isUpdateReport ? 'update' : 'create'} report. Please try again.`);
+    } finally {
+      setProcessingAction(null);
+      setIsReportModalOpen(false);
+      setReportFile(null);
+      setReportOpportunityId(null);
+      setIsUpdateReport(false);
     }
-
-    // Generate file path
-    const fileName = `${reportOpportunityId}_${Date.now()}.pdf`;
-    const filePath = `${reportOpportunityId}/${fileName}`;
-
-    // Read file as binary data
-    const arrayBuffer = await reportFile.arrayBuffer();
-    const fileData = new Uint8Array(arrayBuffer);
-
-    // Upload file
-    const { error: uploadError } = await supabase.storage
-      .from('reports')
-      .upload(filePath, fileData, {
-        cacheControl: '3600',
-        upsert: false,
-        contentType: 'application/pdf', // Explicit MIME type
-      });
-
-    if (uploadError) {
-      throw new Error(`Failed to upload report: ${uploadError.message}`);
-    }
-
-    // Insert report record
-    const { error: insertError } = await supabase
-      .from('reports')
-      .insert({
-        opportunity_id: reportOpportunityId,
-        pdf_path: filePath,
-        filename: reportFile.name,
-      });
-
-    if (insertError) {
-      throw new Error(`Failed to insert report record: ${insertError.message}`);
-    }
-
-    toast.success(`Report ${isUpdateReport ? 'updated' : 'created'} successfully`);
-    await fetchItems();
-  } catch (error) {
-    console.error('Error handling report:', String(error));
-    toast.error(`Failed to ${isUpdateReport ? 'update' : 'create'} report. Please try again.`);
-  } finally {
-    setProcessingAction(null);
-    setIsReportModalOpen(false);
-    setReportFile(null);
-    setReportOpportunityId(null);
-    setIsUpdateReport(false);
-  }
-};
+  };
 
   const openReportModal = async (opportunityId: string) => {
     try {
@@ -870,6 +874,18 @@ export default function Opportunities({ searchTerm, setSearchTerm, stats, setSta
                               </span>
                             </div>
                           )}
+                          {isOpportunity && (item as Opportunity).mou_id && (
+                            <div className="flex items-center text-sm text-blue-600">
+                              <FileText size={16} className="mr-2 flex-shrink-0" />
+                              <button
+                                onClick={() => navigate('/view-mou', { state: { mouId: (item as Opportunity).mou_id } })}
+                                className="hover:underline flex items-center"
+                              >
+                                View MOU
+                                <ExternalLink size={12} className="ml-1" />
+                              </button>
+                            </div>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -1071,7 +1087,7 @@ export default function Opportunities({ searchTerm, setSearchTerm, stats, setSta
                                 type="text"
                                 className="flex-1 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                                 value={sheetLinkInput[item.id] || item.sheetlink || ''}
-                                onChange={(e) => setSheetLinkInput(prev => ({ ...prev, [id]: e.target.value }))}
+                                onChange={(e) => setSheetLinkInput(prev => ({ ...prev, [item.id]: e.target.value }))}
                                 placeholder="Enter spreadsheet link..."
                               />
                               <button
@@ -1111,6 +1127,16 @@ export default function Opportunities({ searchTerm, setSearchTerm, stats, setSta
                                 >
                                   <Upload size={16} className="mr-2" />
                                   {(item as Opportunity).report ? 'Update Report' : 'Create Report'}
+                                </button>
+                              )}
+                              {isOpportunity && (item as Opportunity).mou_id && (
+                                <button
+                                  onClick={() => navigate('/view-mou', { state: { mouId: (item as Opportunity).mou_id } })}
+                                  disabled={processingAction === item.id}
+                                  className="flex items-center px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-50"
+                                >
+                                  <FileText size={16} className="mr-2" />
+                                  View MOU
                                 </button>
                               )}
                             </div>

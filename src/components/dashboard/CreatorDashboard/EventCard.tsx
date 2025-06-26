@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   MapPin,
   Calendar,
@@ -13,11 +13,16 @@ import {
   Link as LinkIcon,
   ChevronDown,
   ChevronUp,
+  FileText,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
+import { supabase } from '../../../lib/supabase';
 import type { Database } from '../../../lib/database.types';
 
-type Opportunity = Database['public']['Tables']['opportunities']['Row'];
+type Opportunity = Database['public']['Tables']['opportunities']['Row'] & {
+  price_range?: { min?: number | null; max?: number | null } | null;
+};
 type Category = Database['public']['Tables']['categories']['Row'];
 type Match = Database['public']['Tables']['matches']['Row'] & {
   profiles: Database['public']['Tables']['profiles']['Row'];
@@ -34,7 +39,7 @@ interface EventCardProps {
   onViewAnalytics: () => void;
 }
 
-function getVerificationStatusBadge(status: string) {
+function getVerificationStatusBadge(status: string | null) {
   switch (status) {
     case 'pending':
       return (
@@ -69,15 +74,45 @@ export default function EventCard({
   onViewAnalytics,
 }: EventCardProps) {
   const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false);
+  const [mouId, setMouId] = useState<string | null>(null);
+  const [loadingMou, setLoadingMou] = useState(true);
+  const navigate = useNavigate();
+
+  // Fetch MOU ID from opportunity.mou_id
+  useEffect(() => {
+    const fetchMouId = async () => {
+      try {
+        if (opportunity.mou_id) {
+          setMouId(opportunity.mou_id);
+        } else {
+          console.log('No mou_id found for opportunity:', opportunity.id);
+          setMouId(null);
+        }
+      } catch (err) {
+        console.error('Unexpected error fetching MOU ID:', err);
+        setMouId(null);
+      } finally {
+        setLoadingMou(false);
+      }
+    };
+
+    fetchMouId();
+  }, [opportunity.mou_id, opportunity.id]);
 
   const getCategoryName = (categoryId: string) => {
     const category = categories.find((cat) => cat.id === categoryId);
-    return category ? category.name : 'Unknown Category';
+    return category?.name ?? 'Unknown Category';
   };
 
   const isVideoUrl = (url: string): boolean => {
     const videoExtensions = ['.mp4', '.webm', '.ogg', '.mov', '.avi', '.mkv'];
     return videoExtensions.some((ext) => url.toLowerCase().endsWith(ext));
+  };
+
+  const handleViewMou = () => {
+    if (mouId) {
+      navigate('/view-mou', { state: { mouId } });
+    }
   };
 
   // Background logic
@@ -136,7 +171,7 @@ export default function EventCard({
                   hasImageBackground ? 'text-white' : 'text-gray-900'
                 }`}
               >
-                {opportunity.title}
+                {opportunity.title ?? 'Untitled'}
               </h3>
               <div className="flex gap-2">
                 <span
@@ -148,7 +183,7 @@ export default function EventCard({
                 >
                   {opportunity.status === 'active' ? 'Active' : 'Paused'}
                 </span>
-                <span>{getVerificationStatusBadge(opportunity.verification_status)}</span>
+                {getVerificationStatusBadge(opportunity.verification_status)}
               </div>
             </div>
             <p
@@ -190,13 +225,29 @@ export default function EventCard({
           animate={{ opacity: 1, x: 0 }}
           transition={{ delay: 0.3 }}
         >
+          {mouId && !loadingMou && (
+            <motion.button
+              onClick={handleViewMou}
+              className={`p-2 rounded-full transition-all duration-300 ${
+                hasImageBackground
+                  ? 'text-gray-200 hover:text-white hover:bg-blue-500/50'
+                  : 'text-gray-600 hover:text-white hover:bg-blue-600'
+              }`}
+              title="View MOU"
+              variants={buttonVariants}
+              whileHover="hover"
+              whileTap="tap"
+            >
+              <FileText className="w-5 h-5" />
+            </motion.button>
+          )}
           <motion.button
             onClick={onViewAnalytics}
             className={`p-2 rounded-full transition-all duration-300 ${
               hasImageBackground
                 ? 'text-gray-200 hover:text-white hover:bg-indigo-500/50'
                 : 'text-gray-600 hover:text-white hover:bg-indigo-600'
-            }`}
+              }`}
             title="View Analytics"
             variants={buttonVariants}
             whileHover="hover"
@@ -210,7 +261,7 @@ export default function EventCard({
               hasImageBackground
                 ? 'text-gray-200 hover:text-white hover:bg-indigo-500/50'
                 : 'text-gray-600 hover:text-white hover:bg-indigo-600'
-            }`}
+              }`}
             title={opportunity.status === 'active' ? 'Pause Opportunity' : 'Activate Opportunity'}
             disabled={opportunity.verification_status !== 'approved'}
             variants={buttonVariants}
@@ -229,7 +280,7 @@ export default function EventCard({
               hasImageBackground
                 ? 'text-gray-200 hover:text-white hover:bg-indigo-500/50'
                 : 'text-gray-600 hover:text-white hover:bg-indigo-600'
-            }`}
+              }`}
             title="Edit Opportunity"
             variants={buttonVariants}
             whileHover="hover"
@@ -243,7 +294,7 @@ export default function EventCard({
               hasImageBackground
                 ? 'text-gray-200 hover:text-white hover:bg-red-500/50'
                 : 'text-gray-600 hover:text-white hover:bg-red-600'
-            }`}
+              }`}
             title="Delete Opportunity"
             variants={buttonVariants}
             whileHover="hover"
@@ -317,7 +368,7 @@ export default function EventCard({
                 hasImageBackground ? 'text-gray-200' : 'text-gray-700'
               }`}
             >
-              {opportunity.location}
+              {opportunity.location ?? 'Unknown Location'}
             </span>
           </motion.div>
           {opportunity.start_date && (
@@ -340,10 +391,10 @@ export default function EventCard({
                 {opportunity.end_date &&
                 new Date(opportunity.start_date).toDateString() ===
                   new Date(opportunity.end_date).toDateString()
-                  ? new Date(opportunity.start_date).toLocaleDateString()
-                  : `${new Date(opportunity.start_date).toLocaleDateString()}${
+                  ? new Date(opportunity.start_date).toLocaleDateString('en-IN')
+                  : `${new Date(opportunity.start_date).toLocaleDateString('en-IN')}${
                       opportunity.end_date
-                        ? ` - ${new Date(opportunity.end_date).toLocaleDateString()}`
+                        ? ` - ${new Date(opportunity.end_date).toLocaleDateString('en-IN')}`
                         : ''
                     }`}
               </span>
@@ -366,39 +417,39 @@ export default function EventCard({
                   hasImageBackground ? 'text-gray-200' : 'text-gray-700'
                 }`}
               >
-                {opportunity.reach.toLocaleString()} reach
+                {opportunity.reach.toLocaleString('en-IN')} reach
               </span>
             </motion.div>
           )}
-       {opportunity.price_range && (
-  <motion.div
-    className="flex items-center group"
-    initial={{ opacity: 0, x: -20 }}
-    animate={{ opacity: 1, x: 0 }}
-    transition={{ delay: 0.8 }}
-  >
-    <DollarSign
-      className={`w-4 h-4 mr-2 flex-shrink-0 ${
-        hasImageBackground ? 'text-gray-300' : 'text-gray-500'
-      } group-hover:text-indigo-500 transition-colors`}
-    />
-    <span
-      className={`text-sm truncate ${
-        hasImageBackground ? 'text-gray-200' : 'text-gray-700'
-      }`}
-    >
-      {typeof opportunity.price_range === 'object'
-        ? opportunity.price_range.min && opportunity.price_range.max
-          ? `₹${opportunity.price_range.min} - ₹${opportunity.price_range.max}`
-          : opportunity.price_range.min
-            ? `₹${opportunity.price_range.min}`
-            : opportunity.price_range.max
-              ? `₹${opportunity.price_range.max}`
-              : 'Contact for pricing'
-        : 'Contact for pricing'}
-    </span>
-  </motion.div>
-)}
+          {opportunity.price_range && (
+            <motion.div
+              className="flex items-center group"
+              initial={{ opacity: 0, x: -20 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.8 }}
+            >
+              <DollarSign
+                className={`w-4 h-4 mr-2 flex-shrink-0 ${
+                  hasImageBackground ? 'text-gray-300' : 'text-gray-500'
+                } group-hover:text-indigo-500 transition-colors`}
+              />
+              <span
+                className={`text-sm truncate ${
+                  hasImageBackground ? 'text-gray-200' : 'text-gray-700'
+                }`}
+              >
+                {typeof opportunity.price_range === 'object' &&
+                opportunity.price_range &&
+                (opportunity.price_range.min || opportunity.price_range.max)
+                  ? opportunity.price_range.min && opportunity.price_range.max
+                    ? `₹${opportunity.price_range.min.toLocaleString('en-IN')} - ₹${opportunity.price_range.max.toLocaleString('en-IN')}`
+                    : opportunity.price_range.min
+                    ? `₹${opportunity.price_range.min.toLocaleString('en-IN')}`
+                    : `₹${opportunity.price_range.max!.toLocaleString('en-IN')}`
+                  : 'Contact for pricing'}
+              </span>
+            </motion.div>
+          )}
         </motion.div>
 
         {/* Links */}
@@ -468,7 +519,7 @@ export default function EventCard({
                   className="relative overflow-hidden rounded-lg"
                   initial={{ opacity: 0, scale: 0.9 }}
                   animate={{ opacity: 1, scale: 1 }}
-                  transition={{ delay: 1.3 + index * 0.1 }}
+                  transition={{ duration: 0.3, delay: 1.3 + index * 0.1 }}
                   whileHover={{ scale: 1.05, boxShadow: '0 8px 16px rgba(0,0,0,0.2)' }}
                 >
                   {isVideoUrl(url) ? (

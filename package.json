@@ -21,6 +21,8 @@
     "file-saver": "^2.0.5",
     "framer-motion": "^12.11.0",
     "gsap": "^3.13.0",
+    "html2canvas": "^1.4.1",
+    "jspdf": "^3.0.1",
     "lodash": "^4.17.21",
     "lucide-react": "0.344.0",
     "pdfjs-dist": "^5.3.31",
@@ -34,10 +36,13 @@
     "react-phone-number-input": "^3.4.12",
     "react-razorpay": "^3.0.1",
     "react-router-dom": "6.22.2",
+    "react-signature-canvas": "^1.1.0-alpha.2",
     "react-swipeable": "^7.0.2",
+    "react-to-print": "^3.1.0",
     "react-tooltip": "^5.28.1",
     "twilio": "^5.5.2",
-    "typescript": "5.2.2"
+    "typescript": "5.2.2",
+    "uuid": "^11.1.0"
   },
   "devDependencies": {
     "@types/react": "18.2.56",
