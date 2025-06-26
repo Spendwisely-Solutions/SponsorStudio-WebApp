@@ -16,6 +16,7 @@ import Logout from './components/Logout';
 import SuccessPage from './components/dashboard/CreatorDashboard/Success';
 import Pricing from './components/Pricing';
 import PurchaseCredits from './components/PurchaseCredits';
+import ViewMou from './components/ViewMou';
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
@@ -31,6 +32,8 @@ createRoot(document.getElementById('root')!).render(
           <Route path="/success" element={<SuccessPage />} />
           <Route path='/pricing' element={<Pricing />} />
           <Route path='/purchase' element={<PurchaseCredits />} />
+          <Route path='/view-mou' element={<ViewMou />} />
+          
 
           <Route 
             path="/admin/*" 
