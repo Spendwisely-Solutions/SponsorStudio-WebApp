@@ -3,7 +3,7 @@ import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
 import { AnimatePresence, motion } from 'framer-motion';
 import { sendMatchNotification } from '../../lib/email';
-import { Search } from 'lucide-react';
+import { Search, Info, Heart, FileText, RotateCcw, ShieldCheck, Calendar } from 'lucide-react';
 import Skeleton from 'react-loading-skeleton';
 import 'react-loading-skeleton/dist/skeleton.css';
 import { Tooltip } from 'react-tooltip';
@@ -775,34 +775,134 @@ export default function BrandDashboard({ onUpdateProfile }: BrandDashboardProps)
   return (
     <div className="max-w-full overflow-x-hidden">
       <motion.div
-        className="mb-4 bg-gradient-to-r from-white to-gray-50 p-4 rounded-xl shadow-md flex items-center justify-between transition-all duration-300 hover:shadow-lg"
+        className="mb-4 bg-gradient-to-r from-white to-gray-50 p-4 rounded-xl shadow-md flex items-center justify-between transition-all duration-300 hover:shadow-lg border border-gray-100"
         animate={shakeCredits ? { x: [0, -10, 10, -10, 10, 0], transition: { duration: 0.5 } } : {}}
       >
-        <div className="flex items-center space-x-2">
-          <img
-            src={coinIcon}
-            alt="Credits"
-            className="w-6 h-6"
-            data-tooltip-id="credits-tooltip"
-            data-tooltip-content="Available Credits"
-          />
-          <span
-            className="text-sm sm:text-base font-semibold text-gray-800"
-            data-tooltip-id="credits-tooltip"
-            data-tooltip-content="Available Credits"
+        <div className="flex items-center space-x-3">
+          <div className="relative">
+            <img
+              src={coinIcon}
+              alt="Credits"
+              className="w-7 h-7 drop-shadow-sm"
+            />
+            <div className="absolute -top-1 -right-1 w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
+          </div>
+          <div className="flex flex-col">
+            <span
+              className="text-lg font-bold text-gray-800"
+              data-tooltip-id="credits-info-tooltip"
+            >
+              {credits ?? 'N/A'}
+            </span>
+            <span className="text-xs text-gray-500 font-medium">Available Credits</span>
+          </div>
+          <button
+            className="ml-2 p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-full transition-all duration-200"
+            data-tooltip-id="credits-info-tooltip"
           >
-            {credits ?? 'N/A'}
-          </span>
-          <Tooltip id="credits-tooltip" place="top" className="text-xs" />
+            <Info className="w-4 h-4" />
+          </button>
+          <Tooltip 
+            id="credits-info-tooltip" 
+            place="bottom" 
+            className="!bg-white !text-gray-800 !shadow-xl !border !border-gray-200 !rounded-xl !p-0 !opacity-100"
+            style={{ 
+              backgroundColor: '#ffffff',
+              color: '#1f2937',
+              borderRadius: '12px',
+              padding: '0',
+              fontSize: '13px',
+              maxWidth: '320px',
+              zIndex: 1000,
+              boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)'
+            }}
+            html={`
+              <div class="p-4">
+                <div class="flex items-center gap-2 mb-3 pb-2 border-b border-gray-100">
+                  <div class="w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center">
+                    <svg class="w-3 h-3 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
+                      <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"></path>
+                    </svg>
+                  </div>
+                  <span class="font-semibold text-gray-800">Credit Usage Guide</span>
+                </div>
+                <div class="space-y-2.5">
+                  <div class="flex items-center justify-between p-2 bg-red-50 rounded-lg border border-red-100">
+                    <div class="flex items-center gap-2">
+                      <div class="w-4 h-4 bg-red-100 rounded-full flex items-center justify-center">
+                        <svg class="w-2.5 h-2.5 text-red-600" fill="currentColor" viewBox="0 0 20 20">
+                          <path fill-rule="evenodd" d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" clip-rule="evenodd"></path>
+                        </svg>
+                      </div>
+                      <span class="text-gray-700 text-sm font-medium">Like/Interest</span>
+                    </div>
+                    <span class="font-bold text-red-600 text-sm">50 credits</span>
+                  </div>
+                  <div class="flex items-center justify-between p-2 bg-blue-50 rounded-lg border border-blue-100">
+                    <div class="flex items-center gap-2">
+                      <div class="w-4 h-4 bg-blue-100 rounded-full flex items-center justify-center">
+                        <svg class="w-2.5 h-2.5 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
+                          <path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clip-rule="evenodd"></path>
+                        </svg>
+                      </div>
+                      <span class="text-gray-700 text-sm font-medium">Unlock Brochure</span>
+                    </div>
+                    <span class="font-bold text-blue-600 text-sm">100 credits</span>
+                  </div>
+                  <div class="flex items-center justify-between p-2 bg-green-50 rounded-lg border border-green-100">
+                    <div class="flex items-center gap-2">
+                      <div class="w-4 h-4 bg-green-100 rounded-full flex items-center justify-center">
+                        <svg class="w-2.5 h-2.5 text-green-600" fill="currentColor" viewBox="0 0 20 20">
+                          <path fill-rule="evenodd" d="M6 2a2 2 0 00-2 2v12a2 2 0 002 2h8a2 2 0 002-2V7.414A2 2 0 0015.414 6L12 2.586A2 2 0 0010.586 2H6zm5 6a1 1 0 10-2 0v3.586l-1.293-1.293a1 1 0 10-1.414 1.414l3 3a1 1 0 001.414 0l3-3a1 1 0 00-1.414-1.414L11 11.586V8z" clip-rule="evenodd"></path>
+                        </svg>
+                      </div>
+                      <span class="text-gray-700 text-sm font-medium">Post Event Report</span>
+                    </div>
+                    <span class="font-bold text-green-600 text-sm">100 credits</span>
+                  </div>
+                  <div class="flex items-center justify-between p-2 bg-orange-50 rounded-lg border border-orange-100">
+                    <div class="flex items-center gap-2">
+                      <div class="w-4 h-4 bg-orange-100 rounded-full flex items-center justify-center">
+                        <svg class="w-2.5 h-2.5 text-orange-600" fill="currentColor" viewBox="0 0 20 20">
+                          <path fill-rule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clip-rule="evenodd"></path>
+                        </svg>
+                      </div>
+                      <span class="text-gray-700 text-sm font-medium">Revive Opportunities</span>
+                    </div>
+                    <span class="font-bold text-orange-600 text-sm">300 credits</span>
+                  </div>
+                  <div class="flex items-center justify-between p-2 bg-purple-50 rounded-lg border border-purple-100">
+                    <div class="flex items-center gap-2">
+                      <div class="w-4 h-4 bg-purple-100 rounded-full flex items-center justify-center">
+                        <svg class="w-2.5 h-2.5 text-purple-600" fill="currentColor" viewBox="0 0 20 20">
+                          <path fill-rule="evenodd" d="M2.166 4.999A11.954 11.954 0 0010 1.944 11.954 11.954 0 0017.834 5c.11.65.166 1.32.166 2.001 0 5.225-3.34 9.67-8 11.317C5.34 16.67 2 12.225 2 7c0-.682.057-1.35.166-2.001zm11.541 3.708a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
+                        </svg>
+                      </div>
+                      <span class="text-gray-700 text-sm font-medium">Risk Analysis Report</span>
+                    </div>
+                    <span class="font-bold text-purple-600 text-sm">500 credits</span>
+                  </div>
+                </div>
+                <div class="mt-3 pt-2 border-t border-gray-100">
+                  <p class="text-xs text-gray-500 text-center">💡 Credits are deducted when actions are completed</p>
+                </div>
+              </div>
+            `}
+          />
         </div>
-        <button
-          className="px-4 py-2 bg-[#2B4B9B] text-white rounded-lg hover:bg-[#1a2f61] transition-colors duration-200 text-xs sm:text-sm font-medium"
-          onClick={() => {
-            window.location.href = '/purchase';
-          }}
-        >
-          Add Credits
-        </button>
+        <div className="flex items-center space-x-2">
+          <button
+            className="px-4 py-2 bg-[#2B4B9B] text-white rounded-lg hover:bg-[#1a2f61] transition-all duration-200 text-sm font-medium shadow-sm hover:shadow-md transform hover:scale-105"
+            onClick={() => {
+              window.location.href = '/purchase';
+            }}
+          >
+            <span className="flex items-center gap-2">
+              <span>Add Credits</span>
+              <span className="text-xs bg-white/20 px-1.5 py-0.5 rounded">+</span>
+            </span>
+          </button>
+        </div>
       </motion.div>
 
       <ProfileAlert companyName={profile?.company_name} onUpdateProfile={onUpdateProfile} />
