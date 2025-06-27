@@ -794,14 +794,19 @@ export default function BrandDashboard({ onUpdateProfile }: BrandDashboardProps)
             >
               {credits ?? 'N/A'}
             </span>
-            <span className="text-xs text-gray-500 font-medium">Available Credits</span>
+            {/* <span className="text-xs text-gray-500 font-medium">Available Credits</span> */}
           </div>
-          <button
-            className="ml-2 p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-full transition-all duration-200"
-            data-tooltip-id="credits-info-tooltip"
-          >
-            <Info className="w-4 h-4" />
-          </button>
+          <div className="flex flex-col items-center ml-2">
+            <button
+              className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-full transition-all duration-200"
+              data-tooltip-id="credits-info-tooltip"
+            >
+              <Info className="w-4 h-4" />
+            </button>
+            <span className="text-[10px] text-gray-400 mt-1 leading-tight text-center">
+              How credits work
+            </span>
+          </div>
           <Tooltip 
             id="credits-info-tooltip" 
             place="bottom" 
