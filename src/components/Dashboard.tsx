@@ -306,6 +306,7 @@ export default function Dashboard() {
                 className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg ${
                   activeTab === 'messages' ? 'bg-blue-50 text-[#2B4B9B]' : 'text-gray-700 hover:bg-gray-100'
                 }`}
+                style={{display:'none'}}
               >
                 <MessageSquare className="w-5 h-5" />
                 <span>Messages</span>
@@ -415,6 +416,7 @@ export default function Dashboard() {
                 className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg ${
                   activeTab === 'messages' ? 'bg-blue-50 text-[#2B4B9B]' : 'text-gray-700 hover:bg-gray-100'
                 }`}
+                style={{display:'none'}}
               >
                 <MessageSquare className="w-5 h-5" />
                 <span>Messages</span>
@@ -488,6 +490,7 @@ export default function Dashboard() {
             <button
               onClick={() => setActiveTab('messages')}
               className={`p-2 rounded-lg ${activeTab === 'messages' ? 'text-[#2B4B9B]' : 'text-gray-500'}`}
+              style={{display:'none'}}
             >
               <MessageSquare className="w-6 h-6 mx-auto" />
             </button>
