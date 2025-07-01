@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { X, Upload, Pen, Image as ImageIcon, Trash2 } from 'lucide-react';
 import type { Database } from '../../../lib/database.types';
 import { supabase } from '../../../lib/supabase';
+import { toast } from 'react-hot-toast';
 
 import sreeSign from "../../../assets/Mou/sreehari-sign.png"
 
@@ -48,18 +49,15 @@ const MouSignComponent: React.FC<MouSignComponentProps> = ({ formData, onMouSign
     if (file) {
       // Validate file type
       if (!file.type.startsWith('image/')) {
-        alert('Please select an image file for your signature.');
+        toast.error('Please select an image file for your signature.');
         return;
       }
-      
       // Validate file size (max 2MB)
       if (file.size > 2 * 1024 * 1024) {
-        alert('Signature image must be less than 2MB.');
+        toast.error('Signature image must be less than 2MB.');
         return;
       }
-
       setSignatureFile(file);
-      
       // Create preview
       if (signaturePreview) {
         URL.revokeObjectURL(signaturePreview);
@@ -138,13 +136,11 @@ const MouSignComponent: React.FC<MouSignComponentProps> = ({ formData, onMouSign
       return;
     }
     if (!formData.organization_name || !formData.organization_address || !formData.poc_name || !formData.poc_position) {
-      alert('Please ensure all required MOU fields (Organization Name, Address, POC Name, POC Position) are filled in the form.');
+      toast.error('Please ensure all required MOU fields (Organization Name, Address, POC Name, POC Position) are filled in the form.');
       return;
     }
-    
     setIsProcessing(true);
     setHasProcessed(true);
-
     try {
       // Step 1: Authenticate user
       console.log('Authenticating user...');
@@ -153,7 +149,6 @@ const MouSignComponent: React.FC<MouSignComponentProps> = ({ formData, onMouSign
         throw new Error('User not authenticated. Please log in.');
       }
       console.log('Authenticated user:', user.id);
-
       // Step 2: Upload signature if provided
       let signatureUrl = null;
       if (signatureFile) {
@@ -169,7 +164,6 @@ const MouSignComponent: React.FC<MouSignComponentProps> = ({ formData, onMouSign
           setUploadingSignature(false);
         }
       }
-
       // Step 3: Insert MOU details
       console.log('Inserting MOU metadata...');
       const mouId = crypto.randomUUID();
@@ -195,13 +189,12 @@ const MouSignComponent: React.FC<MouSignComponentProps> = ({ formData, onMouSign
         throw new Error(`Failed to save MOU details: ${mouInsertError?.message || 'No data returned'}`);
       }
       console.log('MOU metadata saved, ID:', mou.id);
-
       // Step 4: Trigger callback
       console.log('Calling onMouSigned with mouId:', mou.id);
       onMouSigned(mou.id);
     } catch (error: any) {
       console.error('MOU saving failed:', error);
-      alert(`Failed to save MOU details: ${error?.message || 'Unknown error occurred'}`);
+      toast.error(`Failed to save MOU details: ${error?.message || 'Unknown error occurred'}`);
       setHasProcessed(false);
       setIsProcessing(false);
     }
@@ -397,13 +390,14 @@ const MouSignComponent: React.FC<MouSignComponentProps> = ({ formData, onMouSign
 
   return (
     <div
-      className="absolute top-0 left-0 w-full h-full bg-gray-800/60 backdrop-blur-sm flex items-center justify-center z-[1000] p-4 pointer-events-none"
+      className="fixed inset-0 bg-gray-800/60 backdrop-blur-sm flex items-center justify-center z-[9999] p-4"
       ref={modalRef}
       tabIndex={-1}
       role="dialog"
       aria-labelledby="mou-modal-title"
+      style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0 }}
     >
-      <div className="bg-white p-6 rounded-lg shadow-xl w-full max-w-3xl sm:max-w-4xl max-h-[90vh] flex flex-col mx-auto pointer-events-auto will-change-transform">
+      <div className="bg-white p-6 rounded-lg shadow-xl w-full max-w-3xl sm:max-w-4xl max-h-[90vh] flex flex-col mx-auto will-change-transform relative">
         <div className="flex justify-between items-center mb-4">
           <h2 id="mou-modal-title" className="text-xl font-bold text-gray-800">
             Memorandum of Understanding
