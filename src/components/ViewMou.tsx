@@ -43,17 +43,9 @@ const ViewMou: React.FC = () => {
 
         setMouData(data);
 
-        // Fetch signature public URL from storage
+        // signature_url already contains the complete public URL
         if (data.signature_url) {
-          const { data: urlData } = supabase.storage
-            .from('mou-documents')
-            .getPublicUrl(data.signature_url);
-
-          if (urlData?.publicUrl) {
-            setSignatureUrl(urlData.publicUrl);
-          } else {
-            console.warn('No public URL for signature');
-          }
+          setSignatureUrl(data.signature_url);
         }
 
         setLoading(false);
@@ -233,7 +225,7 @@ const ViewMou: React.FC = () => {
                   <img
                     src={signatureUrl}
                     alt="Signature"
-                    style={{ width: '80px', height: 'auto',opacity:'0' }}
+                    style={{ width: '80px', height: 'auto' }}
                   />
                 </div>
               )}
