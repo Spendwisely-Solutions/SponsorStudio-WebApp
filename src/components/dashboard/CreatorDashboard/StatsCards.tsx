@@ -89,7 +89,7 @@ export default function StatsCards({
       bgColor: 'bg-emerald-50',
       borderColor: 'border-emerald-100',
       hoverColor: 'hover:border-emerald-200',
-      trend: acceptedMatches.length > 0 ? { type: 'up', value: `${completionRate}% success rate` } : null,
+      trend: null,
     },
     {
       title: 'Rejected Matches',
