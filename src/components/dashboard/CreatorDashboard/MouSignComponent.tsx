@@ -1,7 +1,10 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { X } from 'lucide-react';
+import { X, Upload, Pen, Image as ImageIcon, Trash2 } from 'lucide-react';
 import type { Database } from '../../../lib/database.types';
 import { supabase } from '../../../lib/supabase';
+import { toast } from 'react-hot-toast';
+
+import sreeSign from "../../../assets/Mou/sreehari-sign.png"
 
 type Opportunity = Database['public']['Tables']['opportunities']['Row'];
 
@@ -21,7 +24,11 @@ interface MouSignComponentProps {
 const MouSignComponent: React.FC<MouSignComponentProps> = ({ formData, onMouSigned, onCancel }) => {
   const [isProcessing, setIsProcessing] = useState(false);
   const [hasProcessed, setHasProcessed] = useState(false);
+  const [signatureFile, setSignatureFile] = useState<File | null>(null);
+  const [signaturePreview, setSignaturePreview] = useState<string | null>(null);
+  const [uploadingSignature, setUploadingSignature] = useState(false);
   const modalRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const submitCount = useRef(0);
 
   // Lock scroll when modal is active
@@ -30,8 +37,74 @@ const MouSignComponent: React.FC<MouSignComponentProps> = ({ formData, onMouSign
     modalRef.current?.focus();
     return () => {
       document.body.style.overflow = '';
+      // Clean up preview URL
+      if (signaturePreview) {
+        URL.revokeObjectURL(signaturePreview);
+      }
     };
-  }, []);
+  }, [signaturePreview]);
+
+  const handleSignatureUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      // Validate file type
+      if (!file.type.startsWith('image/')) {
+        toast.error('Please select an image file for your signature.');
+        return;
+      }
+      // Validate file size (max 2MB)
+      if (file.size > 2 * 1024 * 1024) {
+        toast.error('Signature image must be less than 2MB.');
+        return;
+      }
+      setSignatureFile(file);
+      // Create preview
+      if (signaturePreview) {
+        URL.revokeObjectURL(signaturePreview);
+      }
+      const preview = URL.createObjectURL(file);
+      setSignaturePreview(preview);
+    }
+  };
+
+  const removeSignature = () => {
+    setSignatureFile(null);
+    if (signaturePreview) {
+      URL.revokeObjectURL(signaturePreview);
+      setSignaturePreview(null);
+    }
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
+  const uploadSignatureToSupabase = async (file: File): Promise<string> => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error('User not authenticated');
+
+    const fileExt = file.name.split('.').pop();
+    const fileName = `${user.id}-${Date.now()}.${fileExt}`;
+    const filePath = `signatures/${fileName}`;
+
+    // Convert file to ArrayBuffer like other successful uploads in the codebase
+    const fileBuffer = await file.arrayBuffer();
+
+    const { data, error } = await supabase.storage
+      .from('mou-documents')
+      .upload(filePath, fileBuffer, {
+        cacheControl: '3600',
+        upsert: false,
+        contentType: file.type, // Explicitly set the content type
+      });
+
+    if (error) throw error;
+
+    const { data: urlData } = supabase.storage
+      .from('mou-documents')
+      .getPublicUrl(data.path);
+
+    return urlData.publicUrl;
+  };
 
   const timeout = (promise: Promise<any>, ms: number) =>
     Promise.race([
@@ -63,12 +136,11 @@ const MouSignComponent: React.FC<MouSignComponentProps> = ({ formData, onMouSign
       return;
     }
     if (!formData.organization_name || !formData.organization_address || !formData.poc_name || !formData.poc_position) {
-      alert('Please ensure all required MOU fields (Organization Name, Address, POC Name, POC Position) are filled in the form.');
+      toast.error('Please ensure all required MOU fields (Organization Name, Address, POC Name, POC Position) are filled in the form.');
       return;
     }
     setIsProcessing(true);
     setHasProcessed(true);
-
     try {
       // Step 1: Authenticate user
       console.log('Authenticating user...');
@@ -77,8 +149,22 @@ const MouSignComponent: React.FC<MouSignComponentProps> = ({ formData, onMouSign
         throw new Error('User not authenticated. Please log in.');
       }
       console.log('Authenticated user:', user.id);
-
-      // Step 2: Insert MOU details
+      // Step 2: Upload signature if provided
+      let signatureUrl = null;
+      if (signatureFile) {
+        console.log('Uploading signature...');
+        setUploadingSignature(true);
+        try {
+          signatureUrl = await uploadSignatureToSupabase(signatureFile);
+          console.log('Signature uploaded:', signatureUrl);
+        } catch (signatureError) {
+          console.error('Signature upload failed:', signatureError);
+          // Continue without signature if upload fails
+        } finally {
+          setUploadingSignature(false);
+        }
+      }
+      // Step 3: Insert MOU details
       console.log('Inserting MOU metadata...');
       const mouId = crypto.randomUUID();
       const mouData = {
@@ -87,32 +173,32 @@ const MouSignComponent: React.FC<MouSignComponentProps> = ({ formData, onMouSign
         organization_address: formData.organization_address,
         poc_name: formData.poc_name,
         poc_position: formData.poc_position,
-        signature_url: null, // No signature required
+        signature_url: signatureUrl,
         title: formData.title,
         location: formData.location,
         start_date: formData.start_date,
         end_date: formData.end_date,
         signed_at: new Date().toISOString(),
       };
-      const { data: mou, error: mouInsertError } = await timeout(
-        supabase.from('mou_documents').insert(mouData).select('id').single(),
-        10000
-      );
+      const { data: mou, error: mouInsertError } = await supabase
+        .from('mou_documents')
+        .insert(mouData)
+        .select('id')
+        .single();
       if (mouInsertError || !mou) {
         throw new Error(`Failed to save MOU details: ${mouInsertError?.message || 'No data returned'}`);
       }
       console.log('MOU metadata saved, ID:', mou.id);
-
-      // Step 3: Trigger callback
+      // Step 4: Trigger callback
       console.log('Calling onMouSigned with mouId:', mou.id);
       onMouSigned(mou.id);
-    } catch (error) {
+    } catch (error: any) {
       console.error('MOU saving failed:', error);
-      alert(`Failed to save MOU details: ${error.message}`);
+      toast.error(`Failed to save MOU details: ${error?.message || 'Unknown error occurred'}`);
       setHasProcessed(false);
       setIsProcessing(false);
     }
-  }, [formData, onMouSigned]);
+  }, [formData, onMouSigned, signatureFile, hasProcessed, uploadSignatureToSupabase]);
 
   const debouncedAgreeAndSave = debounce(handleAgreeAndSave, 1000);
 
@@ -258,6 +344,14 @@ const MouSignComponent: React.FC<MouSignComponentProps> = ({ formData, onMouSign
             <strong>Sreehari Sreekumar</strong>
             <br />Founder
             <br />Sponsor Studio
+            <br />
+            <div style={{ marginTop: '20px' }}>
+              <img
+                src={sreeSign}
+                alt="Sreehari Signature"
+                style={{ maxWidth: '150px', maxHeight: '60px' }}
+              />
+            </div>
           </td>
           <td style={{ border: '1px solid #000', padding: '10px', width: '50%' }}>
             <strong>{formData.poc_name || '[POC Name]'}</strong>
@@ -265,6 +359,26 @@ const MouSignComponent: React.FC<MouSignComponentProps> = ({ formData, onMouSign
             {formData.poc_position || '[POC Position]'}
             <br />
             {formData.organization_name || '[Organization Name]'}
+            <br />
+            <div style={{ marginTop: '20px', minHeight: '60px' }}>
+              {signaturePreview ? (
+                <img
+                  src={signaturePreview}
+                  alt="POC Signature"
+                  style={{ maxWidth: '150px', maxHeight: '60px', objectFit: 'contain' }}
+                />
+              ) : (
+                <div style={{ 
+                  border: '2px dashed #ccc', 
+                  padding: '10px', 
+                  textAlign: 'center', 
+                  color: '#666',
+                  fontSize: '10px'
+                }}>
+                  Digital Signature
+                </div>
+              )}
+            </div>
           </td>
         </tr>
       </table>
@@ -276,13 +390,14 @@ const MouSignComponent: React.FC<MouSignComponentProps> = ({ formData, onMouSign
 
   return (
     <div
-      className="absolute top-0 left-0 w-full h-full bg-gray-800/60 backdrop-blur-sm flex items-center justify-center z-[1000] p-4 pointer-events-none"
+      className="fixed inset-0 bg-gray-800/60 backdrop-blur-sm flex items-center justify-center z-[9999] p-4"
       ref={modalRef}
       tabIndex={-1}
       role="dialog"
       aria-labelledby="mou-modal-title"
+      style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0 }}
     >
-      <div className="bg-white p-6 rounded-lg shadow-xl w-full max-w-3xl sm:max-w-4xl max-h-[90vh] flex flex-col mx-auto pointer-events-auto will-change-transform">
+      <div className="bg-white p-6 rounded-lg shadow-xl w-full max-w-3xl sm:max-w-4xl max-h-[90vh] flex flex-col mx-auto will-change-transform relative">
         <div className="flex justify-between items-center mb-4">
           <h2 id="mou-modal-title" className="text-xl font-bold text-gray-800">
             Memorandum of Understanding
@@ -301,10 +416,106 @@ const MouSignComponent: React.FC<MouSignComponentProps> = ({ formData, onMouSign
           </button>
         </div>
         <div className="flex-1 overflow-y-auto mb-4 pr-2">
-          <p className="text-sm text-gray-700 mb-4">
-            Please review the MOU below and click "Agree" to proceed.
+          <p className="text-sm text-gray-700 mb-6">
+            Please review the MOU below and upload your signature to proceed.
           </p>
+          
           {renderMouContent()}
+          
+          {/* Signature Upload Section - Moved to bottom with enhanced UI */}
+          <div className="mt-8 p-6 bg-gradient-to-br from-blue-50 to-indigo-50 border-2 border-blue-200 rounded-xl shadow-sm">
+            <div className="flex items-center justify-between mb-4">
+              <div className="flex items-center">
+                <div className="w-10 h-10 bg-blue-600 rounded-full flex items-center justify-center mr-3">
+                  <Pen className="w-5 h-5 text-white" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-semibold text-gray-800">Digital Signature</h3>
+                  <p className="text-sm text-gray-600">Upload your signature to complete the MOU</p>
+                </div>
+              </div>
+              {signaturePreview && (
+                <div className="text-green-600 flex items-center">
+                  <div className="w-2 h-2 bg-green-500 rounded-full mr-2"></div>
+                  <span className="text-sm font-medium">Ready</span>
+                </div>
+              )}
+            </div>
+            
+            {!signaturePreview ? (
+              <div className="space-y-4">
+                <div className="border-2 border-dashed border-blue-300 rounded-lg p-6 text-center bg-white/50 hover:bg-white/70 transition-colors">
+                  <div className="flex flex-col items-center space-y-3">
+                    <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center">
+                      <Upload className="w-6 h-6 text-blue-600" />
+                    </div>
+                    <div>
+                      <button
+                        onClick={() => fileInputRef.current?.click()}
+                        className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium shadow-sm"
+                        disabled={uploadingSignature}
+                      >
+                        {uploadingSignature ? (
+                          <span className="flex items-center">
+                            <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent mr-2"></div>
+                            Uploading...
+                          </span>
+                        ) : (
+                          'Choose Signature Image'
+                        )}
+                      </button>
+                      <p className="text-sm text-gray-500 mt-2">or drag and drop your signature here</p>
+                    </div>
+                  </div>
+                </div>
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handleSignatureUpload}
+                  className="hidden"
+                />
+                <div className="flex items-center justify-center space-x-6 text-xs text-gray-500">
+                  <div className="flex items-center">
+                    <ImageIcon className="w-4 h-4 mr-1" />
+                    JPG, PNG, GIF
+                  </div>
+                  <div className="w-1 h-1 bg-gray-400 rounded-full"></div>
+                  <div>Max 2MB</div>
+                  <div className="w-1 h-1 bg-gray-400 rounded-full"></div>
+                  <div className="text-blue-600">Optional</div>
+                </div>
+              </div>
+            ) : (
+              <div className="bg-white rounded-lg p-4 border border-blue-200">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center space-x-4">
+                    <div className="relative">
+                      <img
+                        src={signaturePreview}
+                        alt="Signature Preview"
+                        className="w-24 h-12 object-contain border border-gray-200 rounded bg-white shadow-sm"
+                      />
+                      <div className="absolute -top-2 -right-2 w-5 h-5 bg-green-500 rounded-full flex items-center justify-center">
+                        <span className="text-white text-xs">✓</span>
+                      </div>
+                    </div>
+                    <div>
+                      <p className="text-sm font-medium text-gray-800">Signature Ready</p>
+                      <p className="text-xs text-gray-500">Your signature will appear in the MOU document</p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={removeSignature}
+                    className="flex items-center px-3 py-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors text-sm"
+                  >
+                    <Trash2 className="w-4 h-4 mr-1" />
+                    Remove
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
         <div className="flex justify-end space-x-2">
           <button
