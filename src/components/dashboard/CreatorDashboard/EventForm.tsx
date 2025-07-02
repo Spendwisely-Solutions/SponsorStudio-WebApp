@@ -451,7 +451,7 @@ export default function EventForm({
                       onChange={handleInputChange}
                       rows={3}
                       className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors resize-none"
-                      placeholder="List your requirements"
+                      placeholder="Specify your guidelines or requirements for brands"
                     />
                   </div>
                   <div className="space-y-2">
@@ -832,14 +832,16 @@ export default function EventForm({
                       You must sign the Memorandum of Understanding (MOU) before submitting your opportunity. This agreement outlines the terms and responsibilities for both parties.
                     </p>
                     <div className="mt-3 flex flex-col sm:flex-row sm:items-center sm:space-x-4 space-y-2 sm:space-y-0">
-                      <button
-                        type="button"
-                        onClick={() => setIsMOUSignModalOpen(true)}
-                        className={`inline-flex items-center px-4 py-2 rounded-lg font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 ${isMOUAgreed ? 'bg-green-600 text-white hover:bg-green-700' : 'bg-red-600 text-white hover:bg-red-700'}`}
-                      >
-                        {isMOUAgreed ? 'View Signed MOU' : 'Review & Sign MOU'}
-                        <FileText className="w-4 h-4 ml-2" />
-                      </button>
+                        {!isMOUAgreed && (
+                        <button
+                          type="button"
+                          onClick={() => setIsMOUSignModalOpen(true)}
+                          className="inline-flex items-center px-4 py-2 rounded-lg font-medium transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 bg-red-600 text-white hover:bg-red-700"
+                        >
+                          Review & Sign MOU
+                          <FileText className="w-4 h-4 ml-2" />
+                        </button>
+                        )}
                       {!isMOUAgreed && (
                         <span className="text-xs text-red-600 font-medium mt-2 sm:mt-0">
                           ⚠️ MOU not signed. Please sign to enable submission.
