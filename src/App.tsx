@@ -6,6 +6,8 @@ import ProfileCompletionDialog from './components/ProfileCompletionDialog';
 import { useAuth } from './contexts/AuthContext';
 import NavBar from './components/HomePage/NavBar';
 import HeroSection from './components/HomePage/HeroSection';
+import HeroSectionNew from './components/HomePage/HeroSectionNew';
+
 import HowWeWorkSection from './components/HomePage/HowWeWorkSection';
 import ClientsSection from './components/HomePage/ClientsSection';
 import PricingSectionStatic from './components/HomePage/PricingStatic';
@@ -192,6 +194,7 @@ const App: React.FC = () => {
         setMobileMenuOpen={setMobileMenuOpen}
       />
       <HeroSection user={user} setShowAuthForm={setShowAuthForm} />
+      {/* <HeroSectionNew user={user} setShowAuthForm={setShowAuthForm} /> */}
       <HowWeWorkSection />
       <ClientsSection loading={loading} clientLogos={clientLogos} />
       {/* <PricingSectionStatic /> */}
