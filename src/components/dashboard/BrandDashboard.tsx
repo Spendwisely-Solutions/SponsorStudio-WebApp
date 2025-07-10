@@ -58,6 +58,7 @@ export default function BrandDashboard({ onUpdateProfile }: BrandDashboardProps)
   const loadStartTime = useRef(Date.now());
 
   useEffect(() => {
+    console.log('BrandDashboard: user:', user, 'profile:', profile, 'activeTab:', activeTab);
     if (user) {
       const isNewUser = !profile?.company_name;
 
@@ -82,6 +83,10 @@ export default function BrandDashboard({ onUpdateProfile }: BrandDashboardProps)
   }, [user, profile]);
 
   useEffect(() => {
+    console.log('BrandDashboard: posts updated:', posts);
+  }, [posts]);
+
+  useEffect(() => {
     setCredits(profile?.credits ?? null);
   }, [profile?.credits]);
 
@@ -96,11 +101,13 @@ export default function BrandDashboard({ onUpdateProfile }: BrandDashboardProps)
   }, []);
 
   const fetchCategories = async () => {
-    const { data, error } = await supabase.from('categories').select('*');
+    const { data, error } = await supabase.from('post_categories').select('id, name');
     if (error) {
       console.error('Error fetching categories:', error);
+      toast.error('Failed to load categories.');
       return;
     }
+    console.log('fetchCategories: Categories:', data);
     setCategories(data || []);
   };
 
@@ -131,6 +138,7 @@ export default function BrandDashboard({ onUpdateProfile }: BrandDashboardProps)
       });
     } catch (error) {
       console.error('Error fetching user matches:', error);
+      toast.error('Failed to load matches.');
     }
   };
 
@@ -145,7 +153,6 @@ export default function BrandDashboard({ onUpdateProfile }: BrandDashboardProps)
       .eq('status', 'active')
       .eq('verification_status', 'approved');
 
-    // Exclude disliked opportunities
     if (user) {
       const { data: profileData, error: profileError } = await supabase
         .from('profiles')
@@ -155,6 +162,7 @@ export default function BrandDashboard({ onUpdateProfile }: BrandDashboardProps)
 
       if (profileError) {
         console.error('fetchOpportunities: Error fetching profile data:', profileError);
+        toast.error('Failed to load profile data.');
         return;
       }
 
@@ -183,6 +191,7 @@ export default function BrandDashboard({ onUpdateProfile }: BrandDashboardProps)
     const { data, error } = await query;
     if (error) {
       console.error('Error fetching opportunities:', error);
+      toast.error('Failed to load opportunities.');
       return;
     }
 
@@ -205,57 +214,79 @@ export default function BrandDashboard({ onUpdateProfile }: BrandDashboardProps)
   };
 
   const fetchPosts = async (resetIndex: boolean = false) => {
-    let query = supabase
-      .from('posts')
-      .select('*, categories(*)')
-      .eq('status', 'active')
-      .eq('verification_status', 'approved');
+    setLoading(true);
+    try {
+      let query = supabase
+        .from('posts')
+        .select(`
+          *,
+          post_categories:category_id (id, name)
+        `)
+        .eq('status', 'active')
+        .eq('verification_status', 'approved');
 
-    // Exclude disliked posts
-    if (user) {
-      const { data: profileData, error: profileError } = await supabase
-        .from('profiles')
-        .select('disliked_posts')
-        .eq('id', user.id)
-        .single();
+      if (user) {
+        const { data: profileData, error: profileError } = await supabase
+          .from('profiles')
+          .select('disliked_posts')
+          .eq('id', user.id)
+          .single();
 
-      if (profileError) {
-        console.error('fetchPosts: Error fetching profile data:', profileError);
+        if (profileError) {
+          console.error('fetchPosts: Error fetching profile data:', profileError);
+          toast.error('Failed to load profile data.');
+          return;
+        }
+
+        console.log('fetchPosts: Disliked posts:', profileData?.disliked_posts);
+        if (profileData?.disliked_posts?.length > 0) {
+          query = query.not('id', 'in', `(${profileData.disliked_posts.join(',')})`);
+        }
+      }
+
+      console.log('fetchPosts: Filters:', { selectedCategory, priceRangeFilter, locationSearch, searchQuery });
+      if (selectedCategory) {
+        query = query.eq('category_id', selectedCategory);
+      }
+      if (priceRangeFilter) {
+        const [min, max] = priceRangeFilter.split('-').map(Number);
+        query = query.contains('price_range', { min, max });
+      }
+      if (locationSearch) {
+        query = query.ilike('location', `%${locationSearch}%`);
+      }
+      if (searchQuery) {
+        query = query.or(
+          `title.ilike.%${searchQuery}%,description.ilike.%${searchQuery}%,hashtags.ilike.%${searchQuery}%`
+        );
+      }
+
+      const { data, error } = await query;
+      console.log('fetchPosts: Raw data:', data, 'Error:', error);
+      if (error) {
+        console.error('fetchPosts: Error fetching posts:', error);
+        toast.error('Failed to load posts: ' + error.message);
         return;
       }
 
-      if (profileData?.disliked_posts?.length > 0) {
-        query = query.not('id', 'in', `(${profileData.disliked_posts.join(',')})`);
-      }
-    }
+      // Transform data to include category
+      const transformedPosts = data.map((post) => ({
+        ...post,
+        category: post.post_categories || null,
+      }));
 
-    if (selectedCategory) {
-      query = query.eq('category_id', selectedCategory);
+      console.log('fetchPosts: Transformed posts:', transformedPosts);
+      setPosts(transformedPosts || []);
+    } catch (error) {
+      console.error('fetchPosts: Unexpected error:', error);
+      toast.error('An unexpected error occurred while loading posts.');
+    } finally {
+      setLoading(false);
     }
-    if (priceRangeFilter) {
-      const [min, max] = priceRangeFilter.split('-').map(Number);
-      query = query.contains('price_range', { min, max });
-    }
-    if (locationSearch) {
-      query = query.ilike('location', `%${locationSearch}%`);
-    }
-    if (searchQuery) {
-      query = query.or(
-        `title.ilike.%${searchQuery}%,description.ilike.%${searchQuery}%,hashtags.ilike.%${searchQuery}%`
-      );
-    }
-
-    const { data, error } = await query;
-    if (error) {
-      console.error('Error fetching posts:', error);
-      return;
-    }
-
-    setPosts(data);
-    setLoading(false);
   };
 
   useEffect(() => {
+    console.log('useEffect: activeTab:', activeTab);
     if (user) {
       if (activeTab === 'discover') {
         fetchOpportunities(true);
@@ -279,6 +310,7 @@ export default function BrandDashboard({ onUpdateProfile }: BrandDashboardProps)
       return data;
     } catch (error) {
       console.error('Error fetching profile:', error);
+      toast.error('Failed to load profile.');
       return null;
     }
   };
@@ -565,7 +597,6 @@ export default function BrandDashboard({ onUpdateProfile }: BrandDashboardProps)
     }
 
     try {
-      // Call server-side function to handle dislike
       const { error } = await supabase.rpc('add_dislike', {
         user_id: user.id,
         item_id: id,
@@ -577,14 +608,12 @@ export default function BrandDashboard({ onUpdateProfile }: BrandDashboardProps)
         throw error;
       }
 
-      // Update local state to filter out the disliked item
       if (type === 'opportunity') {
         setOpportunities(opportunities.filter((opp) => opp.id !== id));
       } else {
         setPosts(posts.filter((post) => post.id !== id));
       }
       console.log(`handleReject: Successfully recorded dislike for ${type} with ID ${id}`);
-
     } catch (error) {
       console.error('handleReject: Error:', error);
       toast.error('Failed to record dislike. Please try again.', {
@@ -605,51 +634,72 @@ export default function BrandDashboard({ onUpdateProfile }: BrandDashboardProps)
     }
 
     try {
-      // Deduct 300 credits before resetting
       await deductCredits(300);
-
-      // Call server-side function to reset disliked_opportunities
       const { error } = await supabase.rpc('reset_disliked_opportunities', {
         user_id: user.id,
       });
 
       if (error) {
-        console.error('handleResetDislikedOpportunities: Error resetting disliked opportunities:', {
-          code: error.code,
-          message: error.message,
-          details: error.details,
-          hint: error.hint,
-        });
+        console.error('handleResetDislikedOpportunities: Error resetting disliked opportunities:', error);
         throw error;
       }
 
-      // Refresh opportunities to include previously disliked items
       await fetchOpportunities(true);
       console.log('handleResetDislikedOpportunities: Successfully reset disliked opportunities');
-
-      // Show confirmation toast
       toast.success('Disliked opportunities revived.', {
         duration: 4000,
         position: 'bottom-right',
       });
     } catch (error: any) {
-      console.error('handleResetDislikedOpportunities: Error:', {
-        code: error.code,
-        message: error.message,
-        details: error.details,
-        hint: error.hint,
-      });
-      if (error.code === 'PGRST202') {
-        toast.error('Reset function not found. Please contact support.', {
+      console.error('handleResetDislikedOpportunities: Error:', error);
+      if (error.message === 'Insufficient credits') {
+        // Handled by deductCredits
+      } else if (error.message === 'Invalid JWT') {
+        // Handled by deductCredits
+      } else {
+        toast.error('Failed to revive opportunities. Please try again.', {
           duration: 4000,
           position: 'top-center',
         });
-      } else if (error.message === 'Insufficient credits') {
-        // Error already handled by deductCredits with shake animation and toast
+      }
+    }
+  };
+
+  const handleResetDislikedPosts = async () => {
+    if (!user) {
+      console.error('handleResetDislikedPosts: User not available');
+      toast.error('Please log in to perform this action.', {
+        duration: 4000,
+        position: 'top-center',
+      });
+      return;
+    }
+
+    try {
+      await deductCredits(300);
+      const { error } = await supabase.rpc('reset_disliked_posts', {
+        user_id: user.id,
+      });
+
+      if (error) {
+        console.error('handleResetDislikedPosts: Error resetting disliked posts:', error);
+        throw error;
+      }
+
+      await fetchPosts(true);
+      console.log('handleResetDislikedPosts: Successfully reset disliked posts');
+      toast.success('Disliked posts revived.', {
+        duration: 4000,
+        position: 'bottom-right',
+      });
+    } catch (error: any) {
+      console.error('handleResetDislikedPosts: Error:', error);
+      if (error.message === 'Insufficient credits') {
+        // Handled by deductCredits
       } else if (error.message === 'Invalid JWT') {
-        // Error already handled by deductCredits with session expired toast
+        // Handled by deductCredits
       } else {
-        toast.error('Failed to revive opportunities. Please try again.', {
+        toast.error('Failed to revive posts. Please try again.', {
           duration: 4000,
           position: 'top-center',
         });
@@ -668,6 +718,7 @@ export default function BrandDashboard({ onUpdateProfile }: BrandDashboardProps)
   };
 
   const handleAnimationComplete = (id: string) => {
+    console.log('handleAnimationComplete: ID:', id);
     setSwipeActions((prev) => ({ ...prev, [id]: null }));
   };
 
@@ -703,7 +754,7 @@ export default function BrandDashboard({ onUpdateProfile }: BrandDashboardProps)
     return `${baseUrl}?${params.join('&')}`;
   };
 
-  if (loading) {
+  if (loading && activeTab !== 'influencers') {
     return (
       <div className="max-w-full overflow-x-hidden">
         <div className="mb-4 flex items-center space-x-2">
@@ -780,21 +831,13 @@ export default function BrandDashboard({ onUpdateProfile }: BrandDashboardProps)
       >
         <div className="flex items-center space-x-3">
           <div className="relative">
-            <img
-              src={coinIcon}
-              alt="Credits"
-              className="w-7 h-7 drop-shadow-sm"
-            />
+            <img src={coinIcon} alt="Credits" className="w-7 h-7 drop-shadow-sm" />
             <div className="absolute -top-1 -right-1 w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
           </div>
           <div className="flex flex-col">
-            <span
-              className="text-lg font-bold text-gray-800"
-              data-tooltip-id="credits-info-tooltip"
-            >
+            <span className="text-lg font-bold text-gray-800" data-tooltip-id="credits-info-tooltip">
               {credits ?? 'N/A'}
             </span>
-            {/* <span className="text-xs text-gray-500 font-medium">Available Credits</span> */}
           </div>
           <div className="flex flex-col items-center ml-2">
             <button
@@ -807,11 +850,11 @@ export default function BrandDashboard({ onUpdateProfile }: BrandDashboardProps)
               How credits work
             </span>
           </div>
-          <Tooltip 
-            id="credits-info-tooltip" 
-            place="bottom" 
+          <Tooltip
+            id="credits-info-tooltip"
+            place="bottom"
             className="!bg-white !text-gray-800 !shadow-xl !border !border-gray-200 !rounded-xl !p-0 !opacity-100"
-            style={{ 
+            style={{
               backgroundColor: '#ffffff',
               color: '#1f2937',
               borderRadius: '12px',
@@ -819,7 +862,7 @@ export default function BrandDashboard({ onUpdateProfile }: BrandDashboardProps)
               fontSize: '13px',
               maxWidth: '320px',
               zIndex: 1000,
-              boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)'
+              boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
             }}
             html={`
               <div class="p-4">
@@ -902,14 +945,12 @@ export default function BrandDashboard({ onUpdateProfile }: BrandDashboardProps)
               window.location.href = '/purchase';
             }}
           >
-            {/* Animated background shimmer */}
             <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
-            
             <span className="relative flex items-center gap-2.5">
-              <svg 
-                className="w-4 h-4 transition-transform duration-300 group-hover:rotate-90" 
-                fill="none" 
-                stroke="currentColor" 
+              <svg
+                className="w-4 h-4 transition-transform duration-300 group-hover:rotate-90"
+                fill="none"
+                stroke="currentColor"
                 viewBox="0 0 24 24"
               >
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
@@ -959,7 +1000,7 @@ export default function BrandDashboard({ onUpdateProfile }: BrandDashboardProps)
               resetDislikedEvents={handleResetDislikedOpportunities}
             />
           ) : (
-            <div className="min-h-[calc(100vh-150px)] sm:min-h-[calc(100vh-100px)]">
+            <div className="min-h-screen">
               <AnimatePresence>
                 {opportunities
                   .filter((opportunity) => opportunity.id !== pendingLikeId)
@@ -986,7 +1027,7 @@ export default function BrandDashboard({ onUpdateProfile }: BrandDashboardProps)
                   ))}
               </AnimatePresence>
               {opportunities.length === 1 && !pendingLikeId && (
-                <div className="w-full min-h-[calc(100vh-150px)] sm:min-h-[calc(100vh-100px)] flex items-center justify-center">
+                <div className="w-full min-h-screen flex items-center justify-center">
                   <div className="text-center p-6">
                     <Search className="w-10 h-10 sm:w-12 sm:h-12 text-gray-400 mx-auto mb-3 sm:mb-4" />
                     <h3 className="text-base sm:text-xl font-medium text-gray-700 mb-2">
@@ -1010,10 +1051,20 @@ export default function BrandDashboard({ onUpdateProfile }: BrandDashboardProps)
       )}
       {activeTab === 'influencers' && (
         <>
-          {posts.length === 0 ? (
-            <NoResultsCard type="influencer posts" resetFilters={resetFilters} />
+          {loading ? (
+            <div className="min-h-screen flex items-center justify-center">
+              <div className="text-center">
+                <p className="text-gray-500 text-sm">Loading posts...</p>
+              </div>
+            </div>
+          ) : posts.length === 0 ? (
+            <NoResultsCard
+              type="influencer posts"
+              resetFilters={resetFilters}
+              resetDislikedPosts={handleResetDislikedPosts}
+            />
           ) : (
-            <div className="h-[calc(100vh-150px)] sm:h-[calc(100vh-100px)] overflow-y-auto snap-y snap-mandatory">
+            <div className="min-h-screen overflow-y-auto">
               <AnimatePresence>
                 {posts.map((post) => (
                   <InfluencerPostCard
@@ -1033,7 +1084,7 @@ export default function BrandDashboard({ onUpdateProfile }: BrandDashboardProps)
                   />
                 ))}
               </AnimatePresence>
-              <div className="snap-center flex-shrink-0 w-full h-[calc(100vh-150px)] sm:h-[calc(100vh-100px)] flex items-center justify-center">
+              <div className="w-full min-h-screen flex items-center justify-center">
                 <div className="text-center p-6">
                   <Search className="w-10 h-10 sm:w-12 sm:h-12 text-gray-400 mx-auto mb-3 sm:mb-4" />
                   <h3 className="text-base sm:text-xl font-medium text-gray-700 mb-2">
