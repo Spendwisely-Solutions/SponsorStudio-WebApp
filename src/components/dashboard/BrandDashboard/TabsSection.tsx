@@ -36,7 +36,7 @@ const TabsSection: React.FC<TabsSectionProps> = ({
               ? 'text-[#2B4B9B] font-semibold'
               : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50'
           } max-[400px]:flex-col max-[400px]:items-center max-[400px]:space-x-0 min-w-fit`}
-          style={{ display:'none' }}
+          
         >
           <span className="truncate">Discover Influencers</span>
           <span className="truncate max-[400px]:mt-0.5"></span>

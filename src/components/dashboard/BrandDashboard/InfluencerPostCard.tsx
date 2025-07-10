@@ -9,6 +9,7 @@ interface InfluencerPostCardProps {
   onReject: (id: string) => void;
   swipeAction: 'like' | 'dislike' | null;
   onAnimationComplete: (id: string) => void;
+  credits: number;
 }
 
 const useSwipeAnimation = (
@@ -37,7 +38,7 @@ const useSwipeAnimation = (
         x.set(0, {
           type: 'spring',
           stiffness: 300,
-          damping: 30
+          damping: 30,
         });
       }
     } catch (error) {
@@ -51,13 +52,14 @@ const useSwipeAnimation = (
 
 const InfluencerPostCard: React.FC<InfluencerPostCardProps> = memo(
   ({ post, onLike, onReject, swipeAction, onAnimationComplete }) => {
+    console.log('InfluencerPostCard: Rendering post:', post);
     const { x, rotate, likeOpacity, dislikeOpacity, handleDragEnd } = useSwipeAnimation(
       () => onLike(post.id),
       () => onReject(post.id)
     );
 
     const [showFullDescription, setShowFullDescription] = useState(false);
-    const [isMuted, setIsMuted] = useState(false);
+    const [isMuted, setIsMuted] = useState(true);
     const [showMuteIndicator, setShowMuteIndicator] = useState(false);
     const videoRef = useRef<HTMLVideoElement>(null);
 
@@ -131,58 +133,40 @@ const InfluencerPostCard: React.FC<InfluencerPostCardProps> = memo(
     return (
       <motion.div
         key={post.id}
-        className="snap-center flex-shrink-0 w-full h-[calc(100vh-150px)] sm:h-[calc(100vh-100px)] flex flex-col bg-black rounded-lg overflow-hidden"
+        className="w-full min-h-[400px] flex flex-col bg-black rounded-lg overflow-hidden mb-4"
         drag="x"
         dragConstraints={{ left: -300, right: 300 }}
         dragElastic={0.2}
         dragMomentum={false}
         onDragEnd={handleDragEnd}
-        initial={{ 
-          scale: 0.95,
-          opacity: 0
-        }}
-        animate={{ 
-          scale: 1,
-          opacity: 1,
-          transition: { 
-            type: 'spring',
-            stiffness: 200,
-            damping: 25,
-            mass: 0.8
-          }
-        }}
+        initial={{ scale: 0.95, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1, transition: { type: 'spring', stiffness: 200, damping: 25, mass: 0.8 } }}
         exit={{
           x: swipeAction === 'like' ? '100%' : swipeAction === 'dislike' ? '-100%' : 0,
           opacity: 0,
-          transition: { 
-            duration: 0.3, 
-            ease: 'easeOut'
-          }
+          transition: { duration: 0.3, ease: 'easeOut' },
         }}
-        style={{ 
-          x, 
-          rotate,
-          willChange: 'transform',
-          touchAction: 'pan-y'
-        }}
-        transition={{ 
-          type: 'spring', 
-          stiffness: 200, 
-          damping: 25,
-          mass: 0.8
-        }}
+        style={{ x, rotate, willChange: 'transform', touchAction: 'pan-y' }}
+        transition={{ type: 'spring', stiffness: 200, damping: 25, mass: 0.8 }}
         onAnimationComplete={() => {
           if (swipeAction) {
+            console.log('InfluencerPostCard: Animation complete for post:', post.id);
             onAnimationComplete(post.id);
           }
         }}
       >
+        {/* Fallback UI for Testing */}
+        {!post.video_url && (
+          <div className="w-full h-[200px] bg-gray-200 flex items-center justify-center">
+            <p className="text-gray-500 text-sm">Post Title: {post.title}</p>
+          </div>
+        )}
         {/* Media Section */}
         {post.video_url ? (
-          <div className="relative w-full h-full">
-            <video 
+          <div className="relative w-full h-[400px]">
+            <video
               ref={videoRef}
-              loop 
+              loop
               muted={isMuted}
               playsInline
               className="w-full h-full object-cover"
@@ -210,26 +194,15 @@ const InfluencerPostCard: React.FC<InfluencerPostCardProps> = memo(
               </button>
             </motion.div>
           </div>
-        ) : post.media_urls && post.media_urls.length > 0 ? (
-          <img
-            src={post.media_urls[0]}
-            alt={post.title}
-            className="w-full h-full object-cover"
-            loading="eager"
-            decoding="async"
-          />
         ) : (
-          <div className="w-full h-full bg-gray-200 flex items-center justify-center">
+          <div className="w-full h-[400px] bg-gray-200 flex items-center justify-center">
             <p className="text-gray-500 text-sm">No media available</p>
           </div>
         )}
 
         {/* Like/Dislike Overlay */}
         <motion.div
-          style={{ 
-            opacity: likeOpacity,
-            pointerEvents: 'none'
-          }}
+          style={{ opacity: likeOpacity, pointerEvents: 'none' }}
           className="absolute inset-0 flex items-center justify-center bg-green-600/90"
         >
           <div className="text-4xl sm:text-6xl font-bold text-white border-4 border-white rounded-full px-6 py-3 shadow-lg transform rotate-12">
@@ -237,10 +210,7 @@ const InfluencerPostCard: React.FC<InfluencerPostCardProps> = memo(
           </div>
         </motion.div>
         <motion.div
-          style={{ 
-            opacity: dislikeOpacity,
-            pointerEvents: 'none'
-          }}
+          style={{ opacity: dislikeOpacity, pointerEvents: 'none' }}
           className="absolute inset-0 flex items-center justify-center bg-red-600/90"
         >
           <div className="text-4xl sm:text-6xl font-bold text-white border-4 border-white rounded-full px-6 py-3 shadow-lg -rotate-12">
@@ -252,19 +222,20 @@ const InfluencerPostCard: React.FC<InfluencerPostCardProps> = memo(
         <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent pointer-events-none" />
 
         {/* Content Section */}
-        <div className="absolute bottom-0 left-0 right-0 p-4 sm:p-6 text-white">
-          {/* Title */}
-          <h2 className="text-xl sm:text-2xl font-bold mb-2">{post.title}</h2>
-
-          {/* Location */}
+        <div className="p-4 sm:p-6 text-white">
+          <h2 className="text-xl sm:text-2xl font-bold mb-2">{post.title || 'Untitled'}</h2>
+          {post.category && (
+            <div className="flex items-center mb-3 text-sm sm:text-base">
+              <Hash className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
+              <span>{post.category.name}</span>
+            </div>
+          )}
           {post.location && (
             <div className="flex items-center mb-3 text-sm sm:text-base">
               <MapPin className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
               <span>{post.location}</span>
             </div>
           )}
-
-          {/* Price & Reach Grid */}
           <div className="grid grid-cols-2 gap-3 sm:gap-4 mb-4">
             {post.price_range && (
               <div className="flex items-center">
@@ -282,23 +253,17 @@ const InfluencerPostCard: React.FC<InfluencerPostCardProps> = memo(
                 <Users className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
                 <div>
                   <p className="text-xs sm:text-sm opacity-80">Reach</p>
-                  <p className="text-sm sm:text-base">
-                    {post.reach.toLocaleString()}
-                  </p>
+                  <p className="text-sm sm:text-base">{post.reach.toLocaleString()}</p>
                 </div>
               </div>
             )}
           </div>
-
-          {/* Hashtags */}
           {post.hashtags && (
             <div className="flex items-center text-sm sm:text-base mb-4">
               <Hash className="w-4 h-4 sm:w-5 sm:h-5 mr-2" />
               <span>{post.hashtags}</span>
             </div>
           )}
-
-          {/* Description */}
           <div className="text-sm sm:text-base mb-4">
             {post.description && post.description.length > 100 && !showFullDescription ? (
               <>
@@ -312,7 +277,7 @@ const InfluencerPostCard: React.FC<InfluencerPostCardProps> = memo(
               </>
             ) : (
               <>
-                {post.description}
+                {post.description || 'No description available'}
                 {post.description && post.description.length > 100 && (
                   <button
                     onClick={() => setShowFullDescription(false)}
