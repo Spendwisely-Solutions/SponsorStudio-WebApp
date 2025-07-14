@@ -7,9 +7,10 @@ interface NoResultsCardProps {
   type: 'events' | 'influencer posts';
   resetFilters: () => void;
   resetDislikedEvents?: () => Promise<void>; // Async to match handleResetDislikedOpportunities
+  resetDislikedPosts?: () => Promise<void>; // Async to match handleResetDislikedPosts
 }
 
-const NoResultsCard: React.FC<NoResultsCardProps> = ({ type, resetFilters, resetDislikedEvents }) => {
+const NoResultsCard: React.FC<NoResultsCardProps> = ({ type, resetFilters, resetDislikedEvents, resetDislikedPosts }) => {
   const [isModalOpen, setIsModalOpen] = useState(false);
 
   const handleOpenModal = () => {
@@ -21,8 +22,11 @@ const NoResultsCard: React.FC<NoResultsCardProps> = ({ type, resetFilters, reset
   };
 
   const handleConfirmModal = async () => {
-    if (resetDislikedEvents) {
+    if (type === 'events' && resetDislikedEvents) {
       await resetDislikedEvents();
+      setIsModalOpen(false); // Close modal after execution
+    } else if (type === 'influencer posts' && resetDislikedPosts) {
+      await resetDislikedPosts();
       setIsModalOpen(false); // Close modal after execution
     }
   };
@@ -58,6 +62,16 @@ const NoResultsCard: React.FC<NoResultsCardProps> = ({ type, resetFilters, reset
               Revive Opportunities
             </button>
           )}
+          {type === 'influencer posts' && resetDislikedPosts && (
+            <button
+              onClick={handleOpenModal}
+              className="px-3 sm:px-4 py-1.5 sm:py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 text-xs sm:text-sm"
+              data-tooltip-id="revive-tooltip"
+              data-tooltip-content="Clear all disliked posts to view them again"
+            >
+              Revive Posts (300 credits)
+            </button>
+          )}
         </div>
         <Tooltip id="revive-tooltip" place="top" className="text-xs" />
       </div>
@@ -66,8 +80,8 @@ const NoResultsCard: React.FC<NoResultsCardProps> = ({ type, resetFilters, reset
         isOpen={isModalOpen}
         onClose={handleCloseModal}
         onConfirm={handleConfirmModal}
-        title="Confirm Revive Opportunities"
-        message="Reviving opportunities will cost 300 credits. Proceed?"
+        title={type === 'events' ? "Confirm Revive Opportunities" : "Confirm Revive Posts"}
+        message={type === 'events' ? "Reviving opportunities will cost 300 credits. Proceed?" : "Reviving posts will cost 300 credits. Proceed?"}
         confirmText="Yes, Revive"
         cancelText="Cancel"
         confirmButtonClass="bg-[#2B4B9B] text-white hover:bg-[#1a2f61] flex items-center"

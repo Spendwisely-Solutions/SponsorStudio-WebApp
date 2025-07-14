@@ -677,9 +677,10 @@ export default function BrandDashboard({ onUpdateProfile }: BrandDashboardProps)
 
     try {
       await deductCredits(300);
-      const { error } = await supabase.rpc('reset_disliked_posts', {
-        user_id: user.id,
-      });
+      const { error } = await supabase
+        .from('profiles')
+        .update({ disliked_posts: [] })
+        .eq('id', user.id);
 
       if (error) {
         console.error('handleResetDislikedPosts: Error resetting disliked posts:', error);
@@ -1064,43 +1065,59 @@ export default function BrandDashboard({ onUpdateProfile }: BrandDashboardProps)
               resetDislikedPosts={handleResetDislikedPosts}
             />
           ) : (
-            <div className="min-h-screen overflow-y-auto">
+            <div className="min-h-[calc(100vh-150px)] sm:min-h-[calc(100vh-100px)]">
               <AnimatePresence>
-                {posts.map((post) => (
-                  <InfluencerPostCard
-                    key={post.id}
-                    post={post}
-                    onLike={async (id: string) => {
-                      setSwipeActions((prev) => ({ ...prev, [id]: 'like' }));
-                      await handleLike(id, 'post');
-                    }}
-                    onReject={(id: string) => {
-                      setSwipeActions((prev) => ({ ...prev, [id]: 'dislike' }));
-                      handleReject(id, 'post');
-                    }}
-                    swipeAction={swipeActions[post.id] || null}
-                    onAnimationComplete={handleAnimationComplete}
-                    credits={credits ?? 0}
-                  />
-                ))}
+                {posts
+                  .filter((post) => post.id !== pendingLikeId)
+                  .slice(0, 1)
+                  .map((post) => (
+                    <InfluencerPostCard
+                      key={post.id}
+                      post={post}
+                      onLike={async (id: string) => {
+                        setSwipeActions((prev) => ({ ...prev, [id]: 'like' }));
+                        await handleLike(id, 'post');
+                      }}
+                      onReject={(id: string) => {
+                        setSwipeActions((prev) => ({ ...prev, [id]: 'dislike' }));
+                        handleReject(id, 'post');
+                      }}
+                      swipeAction={swipeActions[post.id] || null}
+                      onAnimationComplete={handleAnimationComplete}
+                      credits={credits ?? 0}
+                      deductCredits={deductCredits}
+                      showFullDetails={showFullDetails}
+                      setShowFullDetails={setShowFullDetails}
+                    />
+                  ))}
               </AnimatePresence>
-              <div className="w-full min-h-screen flex items-center justify-center">
-                <div className="text-center p-6">
-                  <Search className="w-10 h-10 sm:w-12 sm:h-12 text-gray-400 mx-auto mb-3 sm:mb-4" />
-                  <h3 className="text-base sm:text-xl font-medium text-gray-700 mb-2">
-                    No more influencer posts available
-                  </h3>
-                  <p className="text-xs sm:text-sm text-gray-500 mb-3 sm:mb-4">
-                    You've gone through all available influencer posts matching your criteria.
-                  </p>
-                  <button
-                    onClick={resetFilters}
-                    className="px-3 sm:px-4 py-1.5 sm:py-2 bg-[#2B4B9B] text-white rounded-lg hover:bg-[#1a2f61] text-xs sm:text-sm"
-                  >
-                    Reset Filters
-                  </button>
+              {posts.filter((post) => post.id !== pendingLikeId).length === 0 && (
+                <div className="w-full min-h-[calc(100vh-150px)] sm:min-h-[calc(100vh-100px)] flex items-center justify-center">
+                  <div className="text-center p-6">
+                    <Search className="w-10 h-10 sm:w-12 sm:h-12 text-gray-400 mx-auto mb-3 sm:mb-4" />
+                    <h3 className="text-base sm:text-xl font-medium text-gray-700 mb-2">
+                      No more influencer posts available
+                    </h3>
+                    <p className="text-xs sm:text-sm text-gray-500 mb-3 sm:mb-4">
+                      You've gone through all available influencer posts matching your criteria.
+                    </p>
+                    <div className="flex flex-col sm:flex-row gap-2 sm:gap-3 justify-center">
+                      <button
+                        onClick={resetFilters}
+                        className="px-3 sm:px-4 py-1.5 sm:py-2 bg-[#2B4B9B] text-white rounded-lg hover:bg-[#1a2f61] text-xs sm:text-sm"
+                      >
+                        Reset Filters
+                      </button>
+                      <button
+                        onClick={handleResetDislikedPosts}
+                        className="px-3 sm:px-4 py-1.5 sm:py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 text-xs sm:text-sm"
+                      >
+                        Revive Posts (300 credits)
+                      </button>
+                    </div>
+                  </div>
                 </div>
-              </div>
+              )}
             </div>
           )}
         </>
