@@ -275,53 +275,6 @@ export default function InfluencerDashboard() {
     }
   };
 
-  const handleAcceptMatch = async (matchId: string) => {
-    try {
-      const { error } = await supabase
-        .from('matches')
-        .update({ 
-          status: 'accepted',
-          updated_at: new Date().toISOString() 
-        })
-        .eq('id', matchId);
-      
-      if (error) throw error;
-      
-      setMatches(prev => prev.map(match => 
-        match.id === matchId ? { ...match, status: 'accepted' } : match
-      ));
-      toast.success('Match accepted successfully!');
-    } catch (error) {
-      toast.error('Failed to accept match');
-    }
-  };
-
-  const handleRejectMatch = async (matchId: string) => {
-    try {
-      const { error } = await supabase
-        .from('matches')
-        .update({ 
-          status: 'rejected',
-          updated_at: new Date().toISOString() 
-        })
-        .eq('id', matchId);
-      
-      if (error) throw error;
-      
-      setMatches(prev => prev.map(match => 
-        match.id === matchId ? { ...match, status: 'rejected' } : match
-      ));
-      toast.success('Match rejected successfully!');
-    } catch (error) {
-      toast.error('Failed to reject match');
-    }
-  };
-
-  const handleViewMatchDetails = (match: any) => {
-    // TODO: Implement view match details
-    console.log('View match details:', match);
-  };
-
   // Calculate statistics
   const stats = {
     totalPosts: posts.length,
@@ -580,10 +533,7 @@ export default function InfluencerDashboard() {
 
         {activeTab === 'matches' && (
           <MatchList
-            matches={transformedMatches}
-            onAccept={handleAcceptMatch}
-            onReject={handleRejectMatch}
-            onViewDetails={handleViewMatchDetails}
+            onRefresh={fetchData}
           />
         )}
 
