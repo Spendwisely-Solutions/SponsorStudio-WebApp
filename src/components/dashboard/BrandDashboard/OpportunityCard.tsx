@@ -345,18 +345,33 @@ const OpportunityCard: React.FC<OpportunityCardProps> = memo(
     const thumbnailGallery = useMemo(() => {
       if (!opportunity.media_urls || opportunity.media_urls.length <= 1) return null;
 
+      const useFlexWrap = opportunity.media_urls.length > 4;
+
       return (
-        <div className="flex justify-center gap-2 p-2 bg-gray-100">
-          {opportunity.media_urls.map((url, index) => {
-            const isThumbnailVideo = /\.(mp4|webm|ogg)$/i.test(url);
-            return (
-              <button
-                key={index}
-                onClick={() => handleMediaSelect(url)}
-                className={`flex-shrink-0 w-16 h-16 rounded-md overflow-hidden border-2 ${
-                  selectedMedia === url ? 'border-blue-600' : 'border-gray-300'
-                } hover:border-blue-400 transition-colors duration-200`}
-              >
+        <div className="bg-gray-100 p-2">
+          <div 
+            className={`flex gap-2 pb-2 ${
+              useFlexWrap 
+                ? 'flex-wrap justify-center' 
+                : 'overflow-x-auto scrollbar-hide'
+            }`}
+            style={useFlexWrap ? {} : {
+              scrollbarWidth: 'thin',
+              scrollbarColor: '#9CA3AF #E5E7EB',
+              WebkitOverflowScrolling: 'touch',
+              msOverflowStyle: '-ms-autohiding-scrollbar'
+            }}
+          >
+            {opportunity.media_urls.map((url, index) => {
+              const isThumbnailVideo = /\.(mp4|webm|ogg)$/i.test(url);
+              return (
+                <button
+                  key={index}
+                  onClick={() => handleMediaSelect(url)}
+                  className={`flex-shrink-0 w-14 h-14 sm:w-16 sm:h-16 rounded-md overflow-hidden border-2 ${
+                    selectedMedia === url ? 'border-blue-600' : 'border-gray-300'
+                  } hover:border-blue-400 transition-colors duration-200`}
+                >
                 {isThumbnailVideo ? (
                   <video
                     src={url}
@@ -378,6 +393,7 @@ const OpportunityCard: React.FC<OpportunityCardProps> = memo(
               </button>
             );
           })}
+          </div>
         </div>
       );
     }, [opportunity.media_urls, selectedMedia]);
