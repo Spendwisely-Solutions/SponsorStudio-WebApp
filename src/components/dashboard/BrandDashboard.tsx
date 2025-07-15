@@ -1,9 +1,9 @@
-import React, { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
 import { AnimatePresence, motion } from 'framer-motion';
 import { sendMatchNotification } from '../../lib/email';
-import { Search, Info, Heart, FileText, RotateCcw, ShieldCheck, Calendar } from 'lucide-react';
+import { Search, Info } from 'lucide-react';
 import Skeleton from 'react-loading-skeleton';
 import 'react-loading-skeleton/dist/skeleton.css';
 import { Tooltip } from 'react-tooltip';
@@ -30,19 +30,12 @@ export default function BrandDashboard({ onUpdateProfile }: BrandDashboardProps)
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState<string>('');
-  const [locationFilter, setLocationFilter] = useState<string>('');
   const [showFilters, setShowFilters] = useState(false);
   const [matches, setMatches] = useState<string[]>([]);
   const [showMatchSuccess, setShowMatchSuccess] = useState(false);
   const [matchedOpportunity, setMatchedOpportunity] = useState<Opportunity | null>(null);
   const [activeTab, setActiveTab] = useState<'discover' | 'influencers' | 'matches'>('discover');
   const [userMatches, setUserMatches] = useState<Match[]>([]);
-  const [stats, setStats] = useState({
-    total: 0,
-    pending: 0,
-    accepted: 0,
-    rejected: 0,
-  });
   const [adTypeFilter, setAdTypeFilter] = useState<string>('');
   const [priceRangeFilter, setPriceRangeFilter] = useState<string>('');
   const [locationSearch, setLocationSearch] = useState<string>('');
@@ -51,11 +44,13 @@ export default function BrandDashboard({ onUpdateProfile }: BrandDashboardProps)
   const [showFullDetails, setShowFullDetails] = useState(false);
   const [shakeCredits, setShakeCredits] = useState(false);
   const [pendingLikeId, setPendingLikeId] = useState<string | null>(null);
-  const [credits, setCredits] = useState<number | null>(profile?.credits ?? null);
+  const [credits, setCredits] = useState<number | null>((profile as any)?.credits ?? null);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [pullDistance, setPullDistance] = useState(0);
+  const [touchStartY, setTouchStartY] = useState(0);
 
   const isInitialLoad = useRef(true);
   const hasRefreshed = useRef(false);
-  const loadStartTime = useRef(Date.now());
 
   useEffect(() => {
     console.log('BrandDashboard: user:', user, 'profile:', profile, 'activeTab:', activeTab);
@@ -87,8 +82,8 @@ export default function BrandDashboard({ onUpdateProfile }: BrandDashboardProps)
   }, [posts]);
 
   useEffect(() => {
-    setCredits(profile?.credits ?? null);
-  }, [profile?.credits]);
+    setCredits((profile as any)?.credits ?? null);
+  }, [(profile as any)?.credits]);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -99,6 +94,67 @@ export default function BrandDashboard({ onUpdateProfile }: BrandDashboardProps)
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
+
+  // Pull-to-refresh functionality
+  const handleTouchStart = (e: React.TouchEvent) => {
+    if (window.scrollY === 0) {
+      setTouchStartY(e.touches[0].clientY);
+    }
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (window.scrollY === 0 && touchStartY > 0) {
+      const currentY = e.touches[0].clientY;
+      const distance = Math.max(0, Math.min(150, currentY - touchStartY));
+      setPullDistance(distance);
+    }
+  };
+
+  const handleTouchEnd = () => {
+    if (pullDistance > 100) {
+      setIsRefreshing(true);
+      // Refresh data
+      setTimeout(() => {
+        if (activeTab === 'discover') {
+          fetchOpportunities();
+        } else if (activeTab === 'influencers') {
+          fetchPosts();
+        }
+        setIsRefreshing(false);
+        setPullDistance(0);
+      }, 1000);
+    } else {
+      setPullDistance(0);
+    }
+    setTouchStartY(0);
+  };
+  
+  // Prevent horizontal overflow
+  useEffect(() => {
+    const handleResize = () => {
+      document.body.style.overflowX = 'hidden';
+      document.documentElement.style.overflowX = 'hidden';
+    };
+    
+    handleResize();
+    window.addEventListener('resize', handleResize);
+    
+    return () => {
+      window.removeEventListener('resize', handleResize);
+    };
+  }, []);
+
+  const handleRefresh = () => {
+    setIsRefreshing(true);
+    if (activeTab === 'discover') {
+      fetchOpportunities();
+    } else if (activeTab === 'influencers') {
+      fetchPosts();
+    } else {
+      fetchUserMatches();
+    }
+    setTimeout(() => setIsRefreshing(false), 1000);
+  };
 
   const fetchCategories = async () => {
     const { data, error } = await supabase.from('post_categories').select('id, name');
@@ -130,19 +186,13 @@ export default function BrandDashboard({ onUpdateProfile }: BrandDashboardProps)
         .map((match) => match.opportunity_id);
       setMatches(matchedOpportunityIds);
       setUserMatches(matchesData as Match[]);
-      setStats({
-        total: opportunities.length,
-        pending: matchesData.filter((m) => m.status === 'pending').length,
-        accepted: matchesData.filter((m) => m.status === 'accepted').length,
-        rejected: matchesData.filter((m) => m.status === 'rejected').length,
-      });
     } catch (error) {
       console.error('Error fetching user matches:', error);
       toast.error('Failed to load matches.');
     }
   };
 
-  const fetchOpportunities = async (resetIndex: boolean = false) => {
+  const fetchOpportunities = async () => {
     let query = supabase
       .from('opportunities')
       .select(`
@@ -213,7 +263,7 @@ export default function BrandDashboard({ onUpdateProfile }: BrandDashboardProps)
     setLoading(false);
   };
 
-  const fetchPosts = async (resetIndex: boolean = false) => {
+  const fetchPosts = async () => {
     setLoading(true);
     try {
       let query = supabase
@@ -289,9 +339,9 @@ export default function BrandDashboard({ onUpdateProfile }: BrandDashboardProps)
     console.log('useEffect: activeTab:', activeTab);
     if (user) {
       if (activeTab === 'discover') {
-        fetchOpportunities(true);
+        fetchOpportunities();
       } else if (activeTab === 'influencers') {
-        fetchPosts(true);
+        fetchPosts();
       }
     }
   }, [user, selectedCategory, adTypeFilter, priceRangeFilter, locationSearch, searchQuery, userMatches, activeTab]);
@@ -357,7 +407,7 @@ export default function BrandDashboard({ onUpdateProfile }: BrandDashboardProps)
     console.log(`deductCredits: Optimistically updated credits to ${(credits ?? 0) - creditsToDeduct}`);
 
     try {
-      let accessToken = user.access_token;
+      let accessToken = (user as any).access_token;
       if (!accessToken) {
         console.log('deductCredits: No access token, attempting refresh');
         accessToken = await refreshToken();
@@ -557,8 +607,8 @@ export default function BrandDashboard({ onUpdateProfile }: BrandDashboardProps)
               postData.title,
               influencerProfile?.company_name || 'Influencer',
               influencerProfile?.email || '',
-              null,
-              null
+              undefined,
+              undefined
             );
             console.log('handleLike: Match notification sent for post');
 
@@ -644,7 +694,7 @@ export default function BrandDashboard({ onUpdateProfile }: BrandDashboardProps)
         throw error;
       }
 
-      await fetchOpportunities(true);
+      await fetchOpportunities();
       console.log('handleResetDislikedOpportunities: Successfully reset disliked opportunities');
       toast.success('Disliked opportunities revived.', {
         duration: 4000,
@@ -677,16 +727,17 @@ export default function BrandDashboard({ onUpdateProfile }: BrandDashboardProps)
 
     try {
       await deductCredits(300);
-      const { error } = await supabase.rpc('reset_disliked_posts', {
-        user_id: user.id,
-      });
+      const { error } = await supabase
+        .from('profiles')
+        .update({ disliked_posts: [] })
+        .eq('id', user.id);
 
       if (error) {
         console.error('handleResetDislikedPosts: Error resetting disliked posts:', error);
         throw error;
       }
 
-      await fetchPosts(true);
+      await fetchPosts();
       console.log('handleResetDislikedPosts: Successfully reset disliked posts');
       toast.success('Disliked posts revived.', {
         duration: 4000,
@@ -709,7 +760,6 @@ export default function BrandDashboard({ onUpdateProfile }: BrandDashboardProps)
 
   const resetFilters = () => {
     setSelectedCategory('');
-    setLocationFilter('');
     setShowFilters(false);
     setAdTypeFilter('');
     setPriceRangeFilter('');
@@ -756,64 +806,53 @@ export default function BrandDashboard({ onUpdateProfile }: BrandDashboardProps)
 
   if (loading && activeTab !== 'influencers') {
     return (
-      <div className="max-w-full overflow-x-hidden">
-        <div className="mb-4 flex items-center space-x-2">
-          <Skeleton circle width={24} height={24} />
-          <Skeleton width={80} height={20} />
-        </div>
-        <ProfileAlert companyName={profile?.company_name} onUpdateProfile={onUpdateProfile} />
-        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-4">
-          <Skeleton width={200} height={24} />
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:space-x-2 mt-4 sm:mt-0">
-            <Skeleton width={80} height={32} />
-            <Skeleton width={200} height={32} />
-          </div>
-        </div>
-        <div className="mb-4 border-b border-gray-200">
-          <div className="flex flex-wrap gap-4 sm:gap-8">
-            <Skeleton width={120} height={20} />
-            <Skeleton width={150} height={20} />
-            <Skeleton width={150} height={20} />
-          </div>
-        </div>
-        <div>
-          {showFilters && (
-            <div className="bg-white p-3 sm:p-4 rounded-lg shadow-sm mb-4">
-              <div className="flex justify-between items-center mb-3 sm:mb-4">
-                <Skeleton width={150} height={16} />
-                <Skeleton width={100} height={16} />
-              </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-                {Array(4)
-                  .fill(0)
-                  .map((_, index) => (
-                    <div key={index}>
-                      <Skeleton width={80} height={12} className="mb-1" />
-                      <Skeleton height={32} />
-                    </div>
-                  ))}
-              </div>
-              <div className="mt-3 sm:mt-4">
-                <Skeleton width={80} height={12} className="mb-1" />
-                <Skeleton height={32} />
-              </div>
+      <div className="min-h-screen bg-gray-50 px-2 sm:px-4 lg:px-6 py-3 sm:py-4 max-w-full overflow-x-hidden">
+        {/* Loading Credit Bar */}
+        <div className="mb-4 sm:mb-6 bg-white p-4 sm:p-5 rounded-2xl shadow-lg border border-gray-100 flex items-center justify-between">
+          <div className="flex items-center space-x-3 sm:space-x-4">
+            <Skeleton circle width={32} height={32} className="sm:w-9 sm:h-9" />
+            <div className="flex flex-col">
+              <Skeleton width={60} height={24} className="sm:h-8 mb-1" />
+              <Skeleton width={100} height={12} className="sm:h-4" />
             </div>
-          )}
-          <div className="min-h-[400px] sm:min-h-[500px] bg-white rounded-lg shadow-sm overflow-hidden">
-            <Skeleton height={192} className="sm:h-64" />
-            <div className="p-4 sm:p-6">
-              <Skeleton width="80%" height={24} className="mb-2" />
-              <Skeleton width={120} height={16} className="mb-4" />
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mb-4">
-                <Skeleton width={150} height={16} />
-                <Skeleton width={150} height={16} />
-              </div>
-              <Skeleton width={100} height={16} className="mb-4" />
-              <Skeleton count={3} height={16} className="mb-2" />
-              <div className="flex justify-center gap-4 mt-4">
-                <Skeleton circle width={48} height={48} />
-                <Skeleton circle width={48} height={48} />
-              </div>
+          </div>
+          <Skeleton width={120} height={40} className="sm:w-32 sm:h-12 rounded-xl" />
+        </div>
+        
+        <ProfileAlert companyName={profile?.company_name || undefined} onUpdateProfile={onUpdateProfile} />
+        
+        {/* Loading Header */}
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-4 sm:mb-6">
+          <Skeleton width={200} height={28} className="sm:h-8 mb-2 sm:mb-0" />
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:space-x-2">
+            <Skeleton width={80} height={36} className="sm:h-10 rounded-lg" />
+            <Skeleton width={200} height={36} className="sm:h-10 rounded-lg" />
+          </div>
+        </div>
+        
+        {/* Loading Tabs */}
+        <div className="mb-4 sm:mb-6 border-b border-gray-200">
+          <div className="flex flex-row gap-2 sm:gap-6 overflow-x-auto">
+            {Array(3).fill(0).map((_, index) => (
+              <Skeleton key={index} width={120} height={32} className="sm:w-40 rounded-lg mb-2" />
+            ))}
+          </div>
+        </div>
+        
+        {/* Loading Card */}
+        <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
+          <Skeleton height={200} className="sm:h-80" />
+          <div className="p-4 sm:p-6">
+            <Skeleton width="90%" height={28} className="sm:h-8 mb-3" />
+            <Skeleton width={150} height={16} className="sm:h-5 mb-4" />
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4 mb-4">
+              <Skeleton width="100%" height={16} className="sm:h-5" />
+              <Skeleton width="100%" height={16} className="sm:h-5" />
+            </div>
+            <Skeleton count={3} height={16} className="sm:h-5 mb-2" />
+            <div className="flex justify-center gap-4 mt-6 sm:mt-8">
+              <Skeleton circle width={56} height={56} className="sm:w-16 sm:h-16" />
+              <Skeleton circle width={56} height={56} className="sm:w-16 sm:h-16" />
             </div>
           </div>
         </div>
@@ -821,178 +860,257 @@ export default function BrandDashboard({ onUpdateProfile }: BrandDashboardProps)
     );
   }
 
-  console.log(`Rendering BrandDashboard with credits: ${credits}, access_token: ${user?.access_token ? 'present' : 'missing'}`);
+  console.log(`Rendering BrandDashboard with credits: ${credits}, access_token: ${(user as any)?.access_token ? 'present' : 'missing'}`);
 
   return (
-    <div className="max-w-full overflow-x-hidden">
+    <div 
+      className="min-h-screen bg-gray-50 px-2 sm:px-4 lg:px-6 py-3 sm:py-4 w-full max-w-[100vw] overflow-x-hidden"
+      onTouchStart={handleTouchStart}
+      onTouchMove={handleTouchMove}
+      onTouchEnd={handleTouchEnd}
+      style={{
+        transform: `translateY(${Math.min(pullDistance / 3, 50)}px)`,
+        transition: pullDistance === 0 ? 'transform 0.3s ease-out' : 'none'
+      }}
+    >
+      {/* Pull-to-refresh indicator */}
+      {pullDistance > 50 && (
+        <div className="fixed top-0 left-0 right-0 z-50 flex justify-center pt-4">
+          <div className="bg-white rounded-full shadow-lg px-4 py-2 flex items-center space-x-2">
+            <div className={`w-4 h-4 border-2 border-blue-600 rounded-full ${pullDistance > 100 || isRefreshing ? 'animate-spin border-t-transparent' : ''}`}></div>
+            <span className="text-sm font-medium text-gray-700">
+              {isRefreshing ? 'Refreshing...' : pullDistance > 100 ? 'Release to refresh' : 'Pull to refresh'}
+            </span>
+          </div>
+        </div>
+      )}
+
+      {/* Mobile Refresh Button - Fixed Position */}
+      <div className="fixed bottom-6 right-4 z-40 sm:hidden">
+        <button
+          onClick={handleRefresh}
+          disabled={isRefreshing}
+          className="w-14 h-14 bg-gradient-to-r from-[#2B4B9B] to-[#3B5BB9] text-white rounded-full shadow-xl hover:shadow-2xl transition-all duration-300 flex items-center justify-center disabled:opacity-50 border-2 border-white"
+        >
+          <svg
+            className={`w-6 h-6 ${isRefreshing ? 'animate-spin' : ''}`}
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+          </svg>
+        </button>
+      </div>
+      {/* Simplified Credit Bar */}
       <motion.div
-        className="mb-4 bg-gradient-to-r from-white to-gray-50 p-4 rounded-xl shadow-md flex items-center justify-between transition-all duration-300 hover:shadow-lg border border-gray-100"
+        className="mb-3 sm:mb-5 bg-white p-2.5 sm:p-4 rounded-xl shadow-sm border border-gray-200 transition-all duration-300 hover:shadow-md overflow-hidden"
         animate={shakeCredits ? { x: [0, -10, 10, -10, 10, 0], transition: { duration: 0.5 } } : {}}
       >
-        <div className="flex items-center space-x-3">
-          <div className="relative">
-            <img src={coinIcon} alt="Credits" className="w-7 h-7 drop-shadow-sm" />
-            <div className="absolute -top-1 -right-1 w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          {/* Credit Balance */}
+          <div className="flex items-center space-x-2 sm:space-x-3.5 min-w-0">
+            <div className="w-7 h-7 sm:w-10 sm:h-10 bg-blue-50 rounded-lg flex items-center justify-center flex-shrink-0">
+              <img src={coinIcon} alt="Credits" className="w-3.5 h-3.5 sm:w-5 sm:h-5" />
+            </div>
+            <div className="min-w-0">
+              <span className="text-base sm:text-xl font-bold text-gray-800 whitespace-nowrap">
+                {credits ?? 'N/A'} <span className="text-xs sm:text-sm text-gray-500 font-normal">credits</span>
+              </span>
+            </div>
           </div>
-          <div className="flex flex-col">
-            <span className="text-lg font-bold text-gray-800" data-tooltip-id="credits-info-tooltip">
-              {credits ?? 'N/A'}
-            </span>
-          </div>
-          <div className="flex flex-col items-center ml-2">
+
+          {/* Action Buttons */}
+          <div className="flex items-center gap-1 sm:gap-3 flex-shrink-0">
+            {/* How Credits Work Button */}
             <button
-              className="p-1.5 text-gray-400 hover:text-blue-600 hover:bg-blue-50 rounded-full transition-all duration-200"
+              className="flex items-center gap-1 p-1 sm:p-2 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-lg transition-all duration-200"
               data-tooltip-id="credits-info-tooltip"
+              title="How credits work"
             >
-              <Info className="w-4 h-4" />
+              <Info className="w-4 h-4 sm:w-5 sm:h-5" />
+              <span className="text-xs sm:text-sm font-medium hidden sm:inline">How Credits Work</span>
             </button>
-            <span className="text-[10px] text-gray-400 mt-1 leading-tight text-center">
-              How credits work
-            </span>
-          </div>
-          <Tooltip
-            id="credits-info-tooltip"
-            place="bottom"
-            className="!bg-white !text-gray-800 !shadow-xl !border !border-gray-200 !rounded-xl !p-0 !opacity-100"
-            style={{
-              backgroundColor: '#ffffff',
-              color: '#1f2937',
-              borderRadius: '12px',
-              padding: '0',
-              fontSize: '13px',
-              maxWidth: '320px',
-              zIndex: 1000,
-              boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)',
-            }}
-            html={`
-              <div class="p-4">
-                <div class="flex items-center gap-2 mb-3 pb-2 border-b border-gray-100">
-                  <div class="w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center">
-                    <svg class="w-3 h-3 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
-                      <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"></path>
-                    </svg>
-                  </div>
-                  <span class="font-semibold text-gray-800">Credit Usage Guide</span>
-                </div>
-                <div class="space-y-2.5">
-                  <div class="flex items-center justify-between p-2 bg-red-50 rounded-lg border border-red-100">
-                    <div class="flex items-center gap-2">
-                      <div class="w-4 h-4 bg-red-100 rounded-full flex items-center justify-center">
-                        <svg class="w-2.5 h-2.5 text-red-600" fill="currentColor" viewBox="0 0 20 20">
-                          <path fill-rule="evenodd" d="M3.172 5.172a4 4 0 015.656 0L10 6.343l1.172-1.171a4 4 0 115.656 5.656L10 17.657l-6.828-6.829a4 4 0 010-5.656z" clip-rule="evenodd"></path>
-                        </svg>
-                      </div>
-                      <span class="text-gray-700 text-sm font-medium">Like/Interest</span>
-                    </div>
-                    <span class="font-bold text-red-600 text-sm">50 credits</span>
-                  </div>
-                  <div class="flex items-center justify-between p-2 bg-blue-50 rounded-lg border border-blue-100">
-                    <div class="flex items-center gap-2">
-                      <div class="w-4 h-4 bg-blue-100 rounded-full flex items-center justify-center">
-                        <svg class="w-2.5 h-2.5 text-blue-600" fill="currentColor" viewBox="0 0 20 20">
-                          <path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clip-rule="evenodd"></path>
-                        </svg>
-                      </div>
-                      <span class="text-gray-700 text-sm font-medium">Unlock Brochure</span>
-                    </div>
-                    <span class="font-bold text-blue-600 text-sm">100 credits</span>
-                  </div>
-                  <div class="flex items-center justify-between p-2 bg-green-50 rounded-lg border border-green-100">
-                    <div class="flex items-center gap-2">
-                      <div class="w-4 h-4 bg-green-100 rounded-full flex items-center justify-center">
-                        <svg class="w-2.5 h-2.5 text-green-600" fill="currentColor" viewBox="0 0 20 20">
-                          <path fill-rule="evenodd" d="M6 2a2 2 0 00-2 2v12a2 2 0 002 2h8a2 2 0 002-2V7.414A2 2 0 0015.414 6L12 2.586A2 2 0 0010.586 2H6zm5 6a1 1 0 10-2 0v3.586l-1.293-1.293a1 1 0 10-1.414 1.414l3 3a1 1 0 001.414 0l3-3a1 1 0 00-1.414-1.414L11 11.586V8z" clip-rule="evenodd"></path>
-                        </svg>
-                      </div>
-                      <span class="text-gray-700 text-sm font-medium">Post Event Report</span>
-                    </div>
-                    <span class="font-bold text-green-600 text-sm">100 credits</span>
-                  </div>
-                  <div class="flex items-center justify-between p-2 bg-orange-50 rounded-lg border border-orange-100">
-                    <div class="flex items-center gap-2">
-                      <div class="w-4 h-4 bg-orange-100 rounded-full flex items-center justify-center">
-                        <svg class="w-2.5 h-2.5 text-orange-600" fill="currentColor" viewBox="0 0 20 20">
-                          <path fill-rule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clip-rule="evenodd"></path>
-                        </svg>
-                      </div>
-                      <span class="text-gray-700 text-sm font-medium">Revive Opportunities</span>
-                    </div>
-                    <span class="font-bold text-orange-600 text-sm">300 credits</span>
-                  </div>
-                  <div class="flex items-center justify-between p-2 bg-purple-50 rounded-lg border border-purple-100">
-                    <div class="flex items-center gap-2">
-                      <div class="w-4 h-4 bg-purple-100 rounded-full flex items-center justify-center">
-                        <svg class="w-2.5 h-2.5 text-purple-600" fill="currentColor" viewBox="0 0 20 20">
-                          <path fill-rule="evenodd" d="M2.166 4.999A11.954 11.954 0 0010 1.944 11.954 11.954 0 0017.834 5c.11.65.166 1.32.166 2.001 0 5.225-3.34 9.67-8 11.317C5.34 16.67 2 12.225 2 7c0-.682.057-1.35.166-2.001zm11.541 3.708a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"></path>
-                        </svg>
-                      </div>
-                      <span class="text-gray-700 text-sm font-medium">Risk Analysis Report</span>
-                    </div>
-                    <span class="font-bold text-purple-600 text-sm">500 credits</span>
-                  </div>
-                </div>
-                <div class="mt-3 pt-2 border-t border-gray-100">
-                  <p class="text-xs text-gray-500 text-center">💡 Credits are deducted when actions are completed</p>
-                </div>
-              </div>
-            `}
-          />
-        </div>
-        <div className="flex items-center space-x-2">
-          <button
-            className="group relative px-5 py-2.5 bg-gradient-to-r from-[#2B4B9B] to-[#3B5BB9] text-white rounded-xl hover:from-[#1a2f61] hover:to-[#2a4ba1] transition-all duration-300 text-sm font-semibold shadow-lg hover:shadow-xl transform hover:scale-105 active:scale-95 overflow-hidden"
-            onClick={() => {
-              window.location.href = '/purchase';
-            }}
-          >
-            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
-            <span className="relative flex items-center gap-2.5">
-              <svg
-                className="w-4 h-4 transition-transform duration-300 group-hover:rotate-90"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
+
+            {/* Add Credits Button */}
+            <button
+              className="flex items-center gap-1 px-2 py-1 sm:px-4 sm:py-2 bg-[#2B4B9B] text-white rounded-lg hover:bg-[#1a2f61] transition-all duration-200"
+              onClick={() => {
+                window.location.href = '/purchase';
+              }}
+            >
+              <svg className="w-3 h-3 sm:w-3.5 sm:h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
               </svg>
-              <span className="font-medium">Add Credits</span>
-            </span>
-          </button>
+              <span className="text-xs sm:text-sm font-medium">Add Credits</span>
+            </button>
+          </div>
         </div>
+
+        {/* Credit Information Tooltip */}
+        <Tooltip
+          id="credits-info-tooltip"
+          place="bottom"
+          className="!bg-white !text-gray-800 !shadow-lg !border !border-gray-200 !rounded-lg !p-0 !opacity-100"
+          style={{
+            backgroundColor: '#ffffff',
+            color: '#1f2937',
+            borderRadius: '8px',
+            padding: '0',
+            fontSize: '11px',
+            maxWidth: '280px',
+            zIndex: 1000,
+            boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)',
+          }}
+          html={`
+            <div class="p-2.5">
+              <h3 class="font-bold text-gray-800 text-xs sm:text-sm border-b border-gray-100 pb-1 mb-1.5">Credit Usage</h3>
+              <div class="space-y-1">
+                <div class="flex items-center justify-between">
+                  <span class="text-[10px] sm:text-xs text-gray-700">Like/Interest</span>
+                  <span class="font-bold text-red-600 text-[10px] sm:text-xs">50 credits</span>
+                </div>
+                <div class="flex items-center justify-between">
+                  <span class="text-[10px] sm:text-xs text-gray-700">Unlock Brochure</span>
+                  <span class="font-bold text-blue-600 text-[10px] sm:text-xs">100 credits</span>
+                </div>
+                <div class="flex items-center justify-between">
+                  <span class="text-[10px] sm:text-xs text-gray-700">Post Event Report</span>
+                  <span class="font-bold text-green-600 text-[10px] sm:text-xs">100 credits</span>
+                </div>
+                <div class="flex items-center justify-between">
+                  <span class="text-[10px] sm:text-xs text-gray-700">Revive Opportunities</span>
+                  <span class="font-bold text-orange-600 text-[10px] sm:text-xs">300 credits</span>
+                </div>
+                <div class="flex items-center justify-between">
+                  <span class="text-[10px] sm:text-xs text-gray-700">Risk Analysis Report</span>
+                  <span class="font-bold text-purple-600 text-[10px] sm:text-xs">500 credits</span>
+                </div>
+              </div>
+              <p class="text-[9px] sm:text-[10px] text-gray-500 text-center mt-1.5 pt-1 border-t border-gray-100">
+                Credits are deducted when actions are completed
+              </p>
+            </div>
+          `}
+        />
       </motion.div>
 
-      <ProfileAlert companyName={profile?.company_name} onUpdateProfile={onUpdateProfile} />
-      {(activeTab === 'discover' || activeTab === 'influencers') && (
-        <FilterSection
-          showFilters={showFilters}
-          categories={categories}
-          selectedCategory={selectedCategory}
-          setSelectedCategory={setSelectedCategory}
-          adTypeFilter={adTypeFilter}
-          setAdTypeFilter={setAdTypeFilter}
-          priceRangeFilter={priceRangeFilter}
-          setPriceRangeFilter={setPriceRangeFilter}
-          locationSearch={locationSearch}
-          setLocationSearch={setLocationSearch}
-          searchQuery={searchQuery}
-          setSearchQuery={setSearchQuery}
-          resetFilters={resetFilters}
-          toggleFilters={() => setShowFilters(!showFilters)}
-          isInfluencerTab={activeTab === 'influencers'}
+      <ProfileAlert companyName={profile?.company_name || undefined} onUpdateProfile={onUpdateProfile} />
+      
+      {/* Sticky Header for Mobile */}
+      <div className="sticky top-0 z-30 bg-gray-50/95 backdrop-blur-sm border-b border-gray-200 -mx-2 px-2 py-2 mb-4 sm:hidden w-[calc(100%+16px)] overflow-hidden">
+        <div className="flex items-center justify-center w-full">
+          <div className="flex items-center space-x-1.5 min-w-0">
+            <h1 className="text-base font-bold text-gray-800 truncate">
+              {activeTab === 'discover' ? '🎯 Discover Opportunities' : activeTab === 'influencers' ? '✨ Discover Influencers' : '🤝 Matches'}
+            </h1>
+            {activeTab === 'matches' && pendingMatches.length > 0 && (
+              <span className="px-1.5 py-0.5 bg-yellow-100 text-yellow-800 text-xs font-medium rounded-full flex-shrink-0">
+                {pendingMatches.length} pending
+              </span>
+            )}
+          </div>
+          <div className="flex items-center gap-1.5 text-xs text-gray-600 flex-shrink-0">
+            {/* How Credits Work Button */}
+            {/* <button
+              className="flex items-center text-blue-600"
+              data-tooltip-id="credits-info-tooltip-mobile"
+              title="How credits work"
+            >
+              <Info className="w-3 h-3" />
+            </button>
+             */}
+            {/* <div className="flex items-center gap-0.5">
+              <img src={coinIcon} alt="Credits" className="w-3.5 h-3.5" />
+              <span className="font-semibold">{credits ?? 'N/A'}</span>
+            </div> */}
+          </div>
+        </div>          {/* Mobile Credit Information Tooltip */}
+        <Tooltip
+          id="credits-info-tooltip-mobile"
+          place="bottom"
+          className="!bg-white !text-gray-800 !shadow-lg !border !border-gray-200 !rounded-lg !p-0 !opacity-100"
+          style={{
+            backgroundColor: '#ffffff',
+            color: '#1f2937',
+            borderRadius: '8px',
+            padding: '0',
+            fontSize: '11px',
+            maxWidth: '250px',
+            zIndex: 1000,
+            boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)',
+          }}
+          html={`
+            <div class="p-2.5">
+              <h3 class="font-bold text-gray-800 text-xs border-b border-gray-100 pb-1 mb-1.5">Credit Usage</h3>
+              <div class="space-y-1">
+                <div class="flex items-center justify-between">
+                  <span class="text-[10px] text-gray-700">Like/Interest</span>
+                  <span class="font-bold text-red-600 text-[10px]">50 credits</span>
+                </div>
+                <div class="flex items-center justify-between">
+                  <span class="text-[10px] text-gray-700">Unlock Brochure</span>
+                  <span class="font-bold text-blue-600 text-[10px]">100 credits</span>
+                </div>
+                <div class="flex items-center justify-between">
+                  <span class="text-[10px] text-gray-700">Post Event Report</span>
+                  <span class="font-bold text-green-600 text-[10px]">100 credits</span>
+                </div>
+                <div class="flex items-center justify-between">
+                  <span class="text-[10px] text-gray-700">Revive Opportunities</span>
+                  <span class="font-bold text-orange-600 text-[10px]">300 credits</span>
+                </div>
+                <div class="flex items-center justify-between">
+                  <span class="text-[10px] text-gray-700">Risk Analysis Report</span>
+                  <span class="font-bold text-purple-600 text-[10px]">500 credits</span>
+                </div>
+              </div>
+              <p class="text-[9px] text-gray-500 text-center mt-1.5 pt-1 border-t border-gray-100">
+                Credits are deducted when actions are completed
+              </p>
+            </div>
+          `}
         />
-      )}
-      <TabsSection
-        activeTab={activeTab}
-        setActiveTab={setActiveTab}
-        pendingMatches={pendingMatches}
-      />
-      <MatchNotification
-        showMatchSuccess={showMatchSuccess}
-        matchedOpportunity={matchedOpportunity}
+      </div>
+      
+      <FilterSection
+        showFilters={showFilters}
+        categories={categories}
+        selectedCategory={selectedCategory}
+        setSelectedCategory={setSelectedCategory}
+        adTypeFilter={adTypeFilter}
+        setAdTypeFilter={setAdTypeFilter}
+        priceRangeFilter={priceRangeFilter}
+        setPriceRangeFilter={setPriceRangeFilter}
+        locationSearch={locationSearch}
+        setLocationSearch={setLocationSearch}
+        searchQuery={searchQuery}
+        setSearchQuery={setSearchQuery}
+        resetFilters={resetFilters}
+        toggleFilters={() => setShowFilters(!showFilters)}
         isInfluencerTab={activeTab === 'influencers'}
-      />
+        activeTab={activeTab}
+      />    <TabsSection
+      activeTab={activeTab}
+      setActiveTab={setActiveTab}
+      pendingMatches={pendingMatches}
+    />
+    <MatchNotification
+      showMatchSuccess={showMatchSuccess}
+      matchedOpportunity={matchedOpportunity}
+      isInfluencerTab={activeTab === 'influencers'}
+    />
+    
+    <AnimatePresence mode="wait">
       {activeTab === 'discover' && (
-        <>
+        <motion.div 
+          className="pb-20 sm:pb-8"
+          key="discover-tab"
+          initial={{ opacity: 0, x: 20 }}
+          animate={{ opacity: 1, x: 0 }}
+          exit={{ opacity: 0, x: -20 }}
+          transition={{ duration: 0.3, ease: "easeInOut" }}
+        >
           {opportunities.length === 0 ? (
             <NoResultsCard
               type="events"
@@ -1008,7 +1126,17 @@ export default function BrandDashboard({ onUpdateProfile }: BrandDashboardProps)
                   .map((opportunity) => (
                     <OpportunityCard
                       key={opportunity.id}
-                      opportunity={opportunity}
+                      opportunity={{
+                        ...opportunity,
+                        location: opportunity.location || '',
+                        start_date: opportunity.start_date || undefined,
+                        end_date: opportunity.end_date || undefined,
+                        description: opportunity.description || '',
+                        media_urls: opportunity.media_urls || undefined,
+                        sponsorship_brochure_url: opportunity.sponsorship_brochure_url || undefined,
+                        category_id: opportunity.category_id || undefined,
+                        price_range: opportunity.price_range || undefined
+                      }}
                       onLike={async (id: string) => {
                         setSwipeActions((prev) => ({ ...prev, [id]: 'like' }));
                         await handleLike(id, 'opportunity');
@@ -1027,34 +1155,52 @@ export default function BrandDashboard({ onUpdateProfile }: BrandDashboardProps)
                   ))}
               </AnimatePresence>
               {opportunities.length === 1 && !pendingLikeId && (
-                <div className="w-full min-h-screen flex items-center justify-center">
-                  <div className="text-center p-6">
-                    <Search className="w-10 h-10 sm:w-12 sm:h-12 text-gray-400 mx-auto mb-3 sm:mb-4" />
-                    <h3 className="text-base sm:text-xl font-medium text-gray-700 mb-2">
-                      No more events available
+                <div className="w-full min-h-[60vh] flex items-center justify-center bg-gradient-to-br from-blue-50 to-white rounded-2xl border border-blue-100 mx-2 sm:mx-0">
+                  <div className="text-center p-6 sm:p-8 max-w-md">
+                    <div className="w-16 h-16 sm:w-20 sm:h-20 mx-auto mb-4 sm:mb-6 bg-gradient-to-br from-blue-100 to-blue-200 rounded-full flex items-center justify-center shadow-lg">
+                      <Search className="w-8 h-8 sm:w-10 sm:h-10 text-blue-600" />
+                    </div>
+                    <h3 className="text-lg sm:text-xl font-semibold text-gray-800 mb-3">
+                      That's all for now! 🎉
                     </h3>
-                    <p className="text-xs sm:text-sm text-gray-500 mb-3 sm:mb-4">
-                      You've gone through all available events matching your criteria.
+                    <p className="text-sm sm:text-base text-gray-600 mb-4 sm:mb-6 leading-relaxed">
+                      You've explored all available events matching your criteria. New opportunities are added regularly.
                     </p>
-                    <button
-                      onClick={resetFilters}
-                      className="px-3 sm:px-4 py-1.5 sm:py-2 bg-[#2B4B9B] text-white rounded-lg hover:bg-[#1a2f61] text-xs sm:text-sm"
-                    >
-                      Reset Filters
-                    </button>
+                    <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                      <button
+                        onClick={resetFilters}
+                        className="px-4 sm:px-6 py-2.5 sm:py-3 bg-[#2B4B9B] text-white rounded-xl hover:bg-[#1a2f61] text-sm sm:text-base font-medium transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105"
+                      >
+                        Reset Filters
+                      </button>
+                      <button
+                        onClick={() => setActiveTab('influencers')}
+                        className="px-4 sm:px-6 py-2.5 sm:py-3 bg-purple-600 text-white rounded-xl hover:bg-purple-700 text-sm sm:text-base font-medium transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105"
+                      >
+                        Try Influencers
+                      </button>
+                    </div>
                   </div>
                 </div>
               )}
             </div>
           )}
-        </>
+        </motion.div>
       )}
       {activeTab === 'influencers' && (
-        <>
+        <motion.div 
+          className="pb-20 sm:pb-8"
+          key="influencers-tab"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1, x: 0 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.3, ease: "easeInOut" }}
+        >
           {loading ? (
-            <div className="min-h-screen flex items-center justify-center">
-              <div className="text-center">
-                <p className="text-gray-500 text-sm">Loading posts...</p>
+            <div className="min-h-[60vh] flex items-center justify-center bg-white rounded-2xl shadow-lg mx-2 sm:mx-0">
+              <div className="text-center p-6 sm:p-8">
+                <div className="w-12 h-12 sm:w-16 sm:h-16 mx-auto mb-4 border-4 border-purple-200 border-t-purple-600 rounded-full animate-spin"></div>
+                <p className="text-gray-600 text-sm sm:text-base font-medium">Discovering amazing influencer posts...</p>
               </div>
             </div>
           ) : posts.length === 0 ? (
@@ -1064,58 +1210,86 @@ export default function BrandDashboard({ onUpdateProfile }: BrandDashboardProps)
               resetDislikedPosts={handleResetDislikedPosts}
             />
           ) : (
-            <div className="min-h-screen overflow-y-auto">
+            <div className="min-h-[calc(100vh-150px)] sm:min-h-[calc(100vh-100px)]">
               <AnimatePresence>
-                {posts.map((post) => (
-                  <InfluencerPostCard
-                    key={post.id}
-                    post={post}
-                    onLike={async (id: string) => {
-                      setSwipeActions((prev) => ({ ...prev, [id]: 'like' }));
-                      await handleLike(id, 'post');
-                    }}
-                    onReject={(id: string) => {
-                      setSwipeActions((prev) => ({ ...prev, [id]: 'dislike' }));
-                      handleReject(id, 'post');
-                    }}
-                    swipeAction={swipeActions[post.id] || null}
-                    onAnimationComplete={handleAnimationComplete}
-                    credits={credits ?? 0}
-                  />
-                ))}
+                {posts
+                  .filter((post) => post.id !== pendingLikeId)
+                  .slice(0, 1)
+                  .map((post) => (
+                    <InfluencerPostCard
+                      key={post.id}
+                      post={post}
+                      onLike={async (id: string) => {
+                        setSwipeActions((prev) => ({ ...prev, [id]: 'like' }));
+                        await handleLike(id, 'post');
+                      }}
+                      onReject={(id: string) => {
+                        setSwipeActions((prev) => ({ ...prev, [id]: 'dislike' }));
+                        handleReject(id, 'post');
+                      }}
+                      swipeAction={swipeActions[post.id] || null}
+                      onAnimationComplete={handleAnimationComplete}
+                      credits={credits ?? 0}
+                      deductCredits={deductCredits}
+                      showFullDetails={showFullDetails}
+                      setShowFullDetails={setShowFullDetails}
+                    />
+                  ))}
               </AnimatePresence>
-              <div className="w-full min-h-screen flex items-center justify-center">
-                <div className="text-center p-6">
-                  <Search className="w-10 h-10 sm:w-12 sm:h-12 text-gray-400 mx-auto mb-3 sm:mb-4" />
-                  <h3 className="text-base sm:text-xl font-medium text-gray-700 mb-2">
-                    No more influencer posts available
-                  </h3>
-                  <p className="text-xs sm:text-sm text-gray-500 mb-3 sm:mb-4">
-                    You've gone through all available influencer posts matching your criteria.
-                  </p>
-                  <button
-                    onClick={resetFilters}
-                    className="px-3 sm:px-4 py-1.5 sm:py-2 bg-[#2B4B9B] text-white rounded-lg hover:bg-[#1a2f61] text-xs sm:text-sm"
-                  >
-                    Reset Filters
-                  </button>
+              {posts.filter((post) => post.id !== pendingLikeId).length === 0 && (
+                <div className="w-full min-h-[60vh] flex items-center justify-center bg-gradient-to-br from-purple-50 to-white rounded-2xl border border-purple-100 mx-2 sm:mx-0">
+                  <div className="text-center p-6 sm:p-8 max-w-md">
+                    <div className="w-16 h-16 sm:w-20 sm:h-20 mx-auto mb-4 sm:mb-6 bg-gradient-to-br from-purple-100 to-purple-200 rounded-full flex items-center justify-center shadow-lg">
+                      <Search className="w-8 h-8 sm:w-10 sm:h-10 text-purple-600" />
+                    </div>
+                    <h3 className="text-lg sm:text-xl font-semibold text-gray-800 mb-3">
+                      All caught up! ✨
+                    </h3>
+                    <p className="text-sm sm:text-base text-gray-600 mb-4 sm:mb-6 leading-relaxed">
+                      You've explored all available influencer posts. Check back later for fresh content!
+                    </p>
+                    <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                      <button
+                        onClick={resetFilters}
+                        className="px-4 sm:px-6 py-2.5 sm:py-3 bg-[#2B4B9B] text-white rounded-xl hover:bg-[#1a2f61] text-sm sm:text-base font-medium transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105"
+                      >
+                        Reset Filters
+                      </button>
+                      <button
+                        onClick={handleResetDislikedPosts}
+                        className="px-4 sm:px-6 py-2.5 sm:py-3 bg-purple-600 text-white rounded-xl hover:bg-purple-700 text-sm sm:text-base font-medium transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105"
+                      >
+                        Revive Posts (300 credits)
+                      </button>
+                    </div>
+                  </div>
                 </div>
-              </div>
+              )}
             </div>
           )}
-        </>
+        </motion.div>
       )}
       {activeTab === 'matches' && (
-        <MatchesSection
-          matches={matches}
-          pendingMatches={pendingMatches}
-          acceptedMatches={acceptedMatches}
-          rejectedMatches={rejectedMatches}
-          setActiveTab={setActiveTab}
-          generateGoogleCalendarLink={generateGoogleCalendarLink}
-          deductCredits={deductCredits}
-        />
+        <motion.div 
+          className="pb-20 sm:pb-8"
+          key="matches-tab"
+          initial={{ opacity: 0, x: -20 }}
+          animate={{ opacity: 1, x: 0 }}
+          exit={{ opacity: 0, x: 20 }}
+          transition={{ duration: 0.3, ease: "easeInOut" }}
+        >
+          <MatchesSection
+            matches={matches}
+            pendingMatches={pendingMatches}
+            acceptedMatches={acceptedMatches}
+            rejectedMatches={rejectedMatches}
+            setActiveTab={setActiveTab}
+            generateGoogleCalendarLink={generateGoogleCalendarLink}
+            deductCredits={deductCredits}
+          />
+        </motion.div>
       )}
+    </AnimatePresence>
     </div>
   );
 }

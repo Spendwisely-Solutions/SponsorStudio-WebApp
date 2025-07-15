@@ -28,6 +28,7 @@ export type Post = {
   category_id: string | null;
   status: string;
   verification_status: string;
+  influencer_id: string | null;
   categories: Category | null;
 };
 
