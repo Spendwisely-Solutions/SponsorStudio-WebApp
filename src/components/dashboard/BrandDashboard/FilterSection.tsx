@@ -1,5 +1,5 @@
-import React from 'react';
-import { Search, Filter } from 'lucide-react';
+import React, { useState } from 'react';
+import { Search, Filter, X } from 'lucide-react';
 import type { Category } from './types';
 
 interface FilterSectionProps {
@@ -18,6 +18,7 @@ interface FilterSectionProps {
   resetFilters: () => void;
   toggleFilters: () => void;
   isInfluencerTab: boolean;
+  activeTab?: 'discover' | 'influencers' | 'matches';
 }
 
 const FilterSection: React.FC<FilterSectionProps> = ({
@@ -36,50 +37,86 @@ const FilterSection: React.FC<FilterSectionProps> = ({
   resetFilters,
   toggleFilters,
   isInfluencerTab,
+  activeTab = 'discover',
 }) => {
+  const [showSearch, setShowSearch] = useState(false);
+
+  const handleSearchToggle = () => {
+    setShowSearch(!showSearch);
+    if (showSearch) {
+      setSearchQuery('');
+    }
+  };
+
   return (
     <>
-      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-4">
-        <h1 className="text-xl sm:text-2xl font-bold text-gray-800">
-          Brand Dashboard
-        </h1>
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:space-x-2 mt-4 sm:mt-0">
-          <button
-            onClick={toggleFilters}
-            className="flex items-center justify-center space-x-1 px-2 py-1.5 bg-white border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 text-xs sm:text-sm"
-          >
-            <Filter className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
-            <span>Filters</span>
-          </button>
-          <div className="relative w-full sm:w-auto">
+      <div className="flex flex-col space-y-2 max-w-full overflow-hidden">
+        <div className="flex justify-between items-center w-full mb-3">
+          <h1 className="text-lg sm:text-2xl font-bold text-gray-800 truncate mr-2 ">
+            Brand Dashboard
+          </h1>
+          <div className="flex items-center gap-1.5 flex-shrink-0">
+            <button
+              onClick={toggleFilters}
+              className={`flex items-center justify-center w-7 h-7 sm:w-8 sm:h-8 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 shadow-sm hover:shadow-md transition-all duration-200 ${
+                showFilters ? 'bg-blue-50 text-[#2B4B9B] border-[#2B4B9B]' : 'bg-white'
+              }`}
+              title="Filters"
+            >
+              <Filter className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
+            </button>
+            <button
+              onClick={handleSearchToggle}
+              className={`flex items-center justify-center w-7 h-7 sm:w-8 sm:h-8 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 shadow-sm hover:shadow-md transition-all duration-200 ${
+                showSearch ? 'bg-blue-50 text-[#2B4B9B] border-[#2B4B9B]' : 'bg-white'
+              }`}
+              title="Search"
+            >
+              {showSearch ? <X className="w-3.5 h-3.5 sm:w-4 sm:h-4" /> : <Search className="w-3.5 h-3.5 sm:w-4 sm:h-4" />}
+            </button>
+          </div>
+        </div>
+        
+        {/* Search Input Field */}
+        {showSearch && (
+          <div className="relative w-full overflow-hidden">
             <input
               type="text"
-              placeholder="Search location..."
-              value={locationSearch}
-              onChange={(e) => setLocationSearch(e.target.value)}
-              className="w-full pl-7 pr-3 py-1.5 border border-gray-300 rounded-lg focus:ring-[#2B4B9B] focus:border-[#2B4B9B] text-xs sm:text-sm"
+              placeholder={
+                activeTab === 'influencers' ? "Search posts..." : 
+                activeTab === 'matches' ? "Search matches..." : 
+                "Search opportunities..."
+              }
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-8 pr-3 py-1.5 sm:py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#2B4B9B] focus:border-[#2B4B9B] text-sm shadow-sm transition-all duration-200"
+              autoFocus
             />
             <Search className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-gray-400 absolute left-2 top-1/2 transform -translate-y-1/2" />
           </div>
-        </div>
+        )}
       </div>
 
       {showFilters && (
-        <div className="bg-white p-3 sm:p-4 rounded-lg shadow-sm mb-4 max-w-full overflow-x-hidden">
+        <div className="bg-white p-2.5 sm:p-4 rounded-lg shadow-sm mb-4 max-w-full overflow-hidden">
           <div className="flex justify-between items-center mb-3 sm:mb-4">
-            <h3 className="font-medium text-xs sm:text-sm">
-              Filter {isInfluencerTab ? 'Influencer Posts' : 'Opportunities'}
+            <h3 className="font-medium text-xs sm:text-sm truncate pr-2">
+              Filter {
+                activeTab === 'influencers' ? 'Influencer Posts' : 
+                activeTab === 'matches' ? 'Matches' : 'Opportunities'
+              }
             </h3>
             <button
               onClick={resetFilters}
-              className="text-xs sm:text-sm text-[#2B4B9B] hover:text-[#1a2f61]"
+              className="text-xs sm:text-sm text-[#2B4B9B] hover:text-[#1a2f61] whitespace-nowrap flex-shrink-0"
             >
               Reset Filters
             </button>
           </div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-            <div>
-              <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4">
+            {/* Category filter for all tabs */}
+            <div className="min-w-0">
+              <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 truncate">
                 Category
               </label>
               <select
@@ -96,10 +133,11 @@ const FilterSection: React.FC<FilterSectionProps> = ({
               </select>
             </div>
 
-            {!isInfluencerTab && (
-              <div>
-                <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">
-                  Advertisement Type
+            {/* Ad Type filter for Discover tab only */}
+            {activeTab === 'discover' && (
+              <div className="min-w-0">
+                <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 truncate">
+                  Ad Type
                 </label>
                 <select
                   value={adTypeFilter}
@@ -115,9 +153,49 @@ const FilterSection: React.FC<FilterSectionProps> = ({
               </div>
             )}
 
-            <div>
-              <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">
-                Price Range
+            {/* Status filter for Matches tab */}
+            {activeTab === 'matches' && (
+              <div className="min-w-0">
+                <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 truncate">
+                  Status
+                </label>
+                <select
+                  value={adTypeFilter} 
+                  onChange={(e) => setAdTypeFilter(e.target.value)}
+                  className="w-full px-2 sm:px-3 py-1.5 sm:py-2 border border-gray-300 rounded-lg focus:ring-[#2B4B9B] focus:border-[#2B4B9B] text-xs sm:text-sm"
+                >
+                  <option value="">All Statuses</option>
+                  <option value="pending">Pending</option>
+                  <option value="accepted">Accepted</option>
+                  <option value="rejected">Rejected</option>
+                </select>
+              </div>
+            )}
+
+            {/* Content type filter for Influencers tab */}
+            {activeTab === 'influencers' && (
+              <div className="min-w-0">
+                <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 truncate">
+                  Content Type
+                </label>
+                <select
+                  value={adTypeFilter}
+                  onChange={(e) => setAdTypeFilter(e.target.value)}
+                  className="w-full px-2 sm:px-3 py-1.5 sm:py-2 border border-gray-300 rounded-lg focus:ring-[#2B4B9B] focus:border-[#2B4B9B] text-xs sm:text-sm"
+                >
+                  <option value="">All Types</option>
+                  <option value="photo">Photo</option>
+                  <option value="video">Video</option>
+                  <option value="article">Article</option>
+                  <option value="review">Review</option>
+                </select>
+              </div>
+            )}
+
+            {/* Price Range filter for all tabs */}
+            <div className="min-w-0">
+              <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 truncate">
+                {activeTab === 'matches' ? 'Budget Range' : 'Price Range'}
               </label>
               <select
                 value={priceRangeFilter}
@@ -126,16 +204,17 @@ const FilterSection: React.FC<FilterSectionProps> = ({
               >
                 <option value="">Any Budget</option>
                 <option value="0-10000">Under ₹10,000</option>
-                <option value="10000-50000"> ₹10,000 - ₹50,000</option>
-                <option value="50000-100000">₹50,000 - ₹1,00,000</option>
-                <option value="100000-500000">₹1,00,000 - ₹5,00,000</option>
-                <option value="500000-1000000">₹5,00,000 - ₹10,00,000</option>
-                <option value="1000000-">Above ₹10,00,000</option>
+                <option value="10000-50000">₹10K - ₹50K</option>
+                <option value="50000-100000">₹50K - ₹1L</option>
+                <option value="100000-500000">₹1L - ₹5L</option>
+                <option value="500000-1000000">₹5L - ₹10L</option>
+                <option value="1000000-">Above ₹10L</option>
               </select>
             </div>
 
-            <div>
-              <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">
+            {/* Location filter for all tabs */}
+            <div className="min-w-0">
+              <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 truncate">
                 Location
               </label>
               <input
@@ -146,21 +225,38 @@ const FilterSection: React.FC<FilterSectionProps> = ({
                 className="w-full px-2 sm:px-3 py-1.5 sm:py-2 border border-gray-300 rounded-lg focus:ring-[#2B4B9B] focus:border-[#2B4B9B] text-xs sm:text-sm"
               />
             </div>
+            
+            {/* Date filter specifically for Matches tab */}
+            {activeTab === 'matches' && (
+              <div className="min-w-0">
+                <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 truncate">
+                  Meeting Date
+                </label>
+                <input
+                  type="date"
+                  className="w-full px-2 sm:px-3 py-1.5 sm:py-2 border border-gray-300 rounded-lg focus:ring-[#2B4B9B] focus:border-[#2B4B9B] text-xs sm:text-sm"
+                />
+              </div>
+            )}
           </div>
 
-          <div className="mt-3 sm:mt-4">
-            <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">
+          <div className="mt-3 sm:mt-4 min-w-0">
+            <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 truncate">
               Search
             </label>
-            <div className="relative">
+            <div className="relative overflow-hidden">
               <input
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search by title, description, or hashtags..."
-                className="w-full pl-8 sm:pl-10 pr-3 sm:pr-4 py-1.5 sm:py-2 border border-gray-300 rounded-lg focus:ring-[#2B4B9B] focus:border-[#2B4B9B] text-xs sm:text-sm"
+                placeholder={
+                  activeTab === 'influencers' ? "Search by influencer name or content..." :
+                  activeTab === 'matches' ? "Search by event name or brand..." :
+                  "Search by title or description..."
+                }
+                className="w-full pl-7 pr-3 py-1.5 sm:py-2 border border-gray-300 rounded-lg focus:ring-[#2B4B9B] focus:border-[#2B4B9B] text-xs sm:text-sm"
               />
-              <Search className="w-4 h-4 sm:w-5 sm:h-5 text-gray-400 absolute left-2 sm:left-3 top-1/2 transform -translate-y-1/2" />
+              <Search className="w-2.5 h-2.5 sm:w-3 sm:h-3 text-gray-400 absolute left-2 top-1/2 transform -translate-y-1/2" />
             </div>
           </div>
         </div>

@@ -13,55 +13,72 @@ const TabsSection: React.FC<TabsSectionProps> = ({
   pendingMatches,
 }) => {
   return (
-    <div className="mb-4 border-b border-gray-200">
-      <div className="flex flex-row gap-1 sm:gap-6 overflow-x-auto scrollbar-hide min-w-fit">
+    <div className="sticky top-0 z-40 mb-4 sm:mb-6 border-b-0 bg-white/95 backdrop-blur-sm rounded-t-2xl shadow-lg w-[calc(100%+1rem)] -mx-2 sm:mx-0 sm:w-full overflow-hidden">
+      <div className="flex flex-row gap-px overflow-x-auto no-scrollbar w-full bg-white my-5 border-b border-gray-200">
         <button
           onClick={() => setActiveTab('discover')}
-          className={`relative py-1.5 px-1.5 sm:px-3 font-medium text-[10px] sm:text-sm flex items-center space-x-0.5 sm:space-x-1 transition-all duration-200 ${
-            activeTab === 'discover'
-              ? 'text-[#2B4B9B] font-semibold'
-              : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50'
-          } max-[400px]:flex-col max-[400px]:items-center max-[400px]:space-x-0 min-w-fit`}
+          className={`relative flex-1 py-2.5 sm:py-3.5 px-1 cursor-pointer transition-all duration-300 ease-in-out ${
+            activeTab === 'discover' 
+              ? 'text-[#2B4B9B] font-medium bg-blue-50/60 shadow-sm border-t border-x border-blue-100 rounded-t-lg translate-y-[-1px]'
+              : 'text-gray-600 hover:bg-black/5'
+          }`}
         >
-          <span className="truncate">Discover Opportunities</span>
-          {/* <span className="truncate max-[400px]:mt-0.5"></span> */}
-          {activeTab === 'discover' && (
-            <span className="absolute bottom-0 left-0 w-full h-0.5 bg-[#2B4B9B] rounded-t-full transition-all duration-200" />
-          )}
+          <div className="flex flex-col items-center justify-center pb-[7px]">
+            <span className="text-sm sm:text-base font-bold mb-1">
+              Discover
+            </span>
+            <span className={`text-[10px] sm:text-xs ${activeTab === 'discover' ? 'text-[#2B4B9B]/70 font-medium' : 'text-gray-500'}`}>
+              Opportunities
+            </span>
+          </div>
+          <span className={`absolute bottom-0 left-0 w-full h-[3px] bg-[#2B4B9B] transform transition-all duration-300 ${
+            activeTab === 'discover' ? 'opacity-100 scale-x-100' : 'opacity-0 scale-x-0'
+          }`} style={{ bottom: '0' }} />
         </button>
         <button
           onClick={() => setActiveTab('influencers')}
-          className={`relative py-1.5 px-1.5 sm:px-3 font-medium text-[10px] sm:text-sm flex items-center space-x-0.5 sm:space-x-1 transition-all duration-200 ${
-            activeTab === 'influencers'
-              ? 'text-[#2B4B9B] font-semibold'
-              : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50'
-          } max-[400px]:flex-col max-[400px]:items-center max-[400px]:space-x-0 min-w-fit`}
-          
+          className={`relative flex-1 py-2.5 sm:py-3.5 px-1 cursor-pointer transition-all duration-300 ease-in-out ${
+            activeTab === 'influencers' 
+              ? 'text-purple-600 font-medium bg-purple-50/60 shadow-sm border-t border-x border-purple-100 rounded-t-lg translate-y-[-1px]'
+              : 'text-gray-600 hover:bg-black/5'
+          }`}
         >
-          <span className="truncate">Discover Influencers</span>
-          <span className="truncate max-[400px]:mt-0.5"></span>
-          {activeTab === 'influencers' && (
-            <span className="absolute bottom-0 left-0 w-full h-0.5 bg-[#2B4B9B] rounded-t-full transition-all duration-200" />
-          )}
+          <div className="flex flex-col items-center justify-center pb-[7px]">
+            <span className="text-sm sm:text-base font-bold mb-1">
+              Discover
+            </span>
+            <span className={`text-[10px] sm:text-xs ${activeTab === 'influencers' ? 'text-purple-600/70 font-medium' : 'text-gray-500'}`}>
+              Influencers
+            </span>
+          </div>
+          <span className={`absolute bottom-0 left-0 w-full h-[3px] bg-purple-600 transform transition-all duration-300 ${
+            activeTab === 'influencers' ? 'opacity-100 scale-x-100' : 'opacity-0 scale-x-0'
+          }`} style={{ bottom: '0' }} />
         </button>
         <button
           onClick={() => setActiveTab('matches')}
-          className={`relative py-1.5 px-1.5 sm:px-3 font-medium text-[10px] sm:text-sm flex items-center space-x-0.5 sm:space-x-1 transition-all duration-200 ${
-            activeTab === 'matches'
-              ? 'text-[#2B4B9B] font-semibold'
-              : 'text-gray-600 hover:text-gray-800 hover:bg-gray-50'
-          } max-[400px]:flex-col max-[400px]:items-center max-[400px]:space-x-0 min-w-fit`}
+          className={`relative flex-1 py-2.5 sm:py-3.5 px-1 cursor-pointer transition-all duration-300 ease-in-out ${
+            activeTab === 'matches' 
+              ? 'text-green-600 font-medium bg-green-50/60 shadow-sm border-t border-x border-green-100 rounded-t-lg translate-y-[-1px]'
+              : 'text-gray-600 hover:bg-black/5'
+          }`}
         >
-          <span className="truncate">Your Matches</span>
-          {/* <span className="truncate max-[400px]:mt-0.5"></span> */}
-          {pendingMatches.length > 0 && (
-            <span className="ml-0.5 sm:ml-1.5 px-1 sm:px-1.5 py-0.5 text-[9px] sm:text-xs bg-gradient-to-r from-yellow-200 to-yellow-300 text-yellow-900 rounded-full shadow-sm max-[400px]:mt-0.5">
-              {pendingMatches.length} pending
+          <div className="flex flex-col items-center justify-center pb-[7px]">
+            <span className="text-sm sm:text-base font-bold mb-1 flex items-center">
+              Matches
+              {pendingMatches.length > 0 && (
+                <span className="inline-block ml-1.5 px-1.5 py-0.5 text-[9px] bg-gradient-to-r from-yellow-200 to-yellow-300 text-yellow-900 rounded-full shadow-sm font-medium">
+                  {pendingMatches.length}
+                </span>
+              )}
             </span>
-          )}
-          {activeTab === 'matches' && (
-            <span className="absolute bottom-0 left-0 w-full h-0.5 bg-[#2B4B9B] rounded-t-full transition-all duration-200" />
-          )}
+            <span className={`text-[10px] sm:text-xs ${activeTab === 'matches' ? 'text-green-600/70 font-medium' : 'text-gray-500'}`}>
+              Your Connections
+            </span>
+          </div>
+          <span className={`absolute bottom-0 left-0 w-full h-[3px] bg-green-600 transform transition-all duration-300 ${
+            activeTab === 'matches' ? 'opacity-100 scale-x-100' : 'opacity-0 scale-x-0'
+          }`} style={{ bottom: '0' }} />
         </button>
       </div>
     </div>
