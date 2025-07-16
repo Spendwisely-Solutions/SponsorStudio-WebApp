@@ -84,9 +84,9 @@ const NavBar: React.FC<NavBarProps> = ({
             <a href="#clients" className="text-[#2B4B9B] hover:text-[#1F3A7A] font-medium transition-colors text-lg sm:text-base">
               Clients
             </a>
-            <a href="#pricing" className="text-[#2B4B9B] hover:text-[#1F3A7A] font-medium transition-colors text-lg sm:text-base">
+            {/* <a href="#pricing" className="text-[#2B4B9B] hover:text-[#1F3A7A] font-medium transition-colors text-lg sm:text-base">
               Pricing
-            </a>
+            </a> */}
            
             <a href="#success" className="text-[#2B4B9B] hover:text-[#1F3A7A] font-medium transition-colors text-lg sm:text-base">
               Success Stories

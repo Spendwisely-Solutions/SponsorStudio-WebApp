@@ -261,7 +261,7 @@ export default function Dashboard() {
           <img 
             src="https://i.ibb.co/ZzPfwrxP/logo-final-png.png" 
             alt="Sponsor Studio" 
-            className="h-12 mb-6 cursor-pointer"
+            className="h-14 mb-6 cursor-pointer"
             onClick={() => navigate('/')}
           />
           <div className="flex items-center space-x-3 mb-8">
@@ -513,7 +513,7 @@ export default function Dashboard() {
       {/* Main Content */}
       <div className="flex-1 md:ml-64 p-6">
         {/* Mobile Header with Menu Button */}
-        <div className="md:hidden flex items-center justify-between mb-4">
+        <div className="md:hidden flex items-center justify-between mb-1">
           <button
             onClick={() => setMobileSidebarOpen(true)}
             className="p-2 rounded-lg text-gray-600 hover:bg-gray-100"
@@ -523,10 +523,10 @@ export default function Dashboard() {
           <img 
             src="https://i.ibb.co/ZzPfwrxP/logo-final-png.png" 
             alt="Sponsor Studio" 
-            className="h-8 cursor-pointer"
+            className="h-12 cursor-pointer mb-2 scale-150"
             onClick={() => navigate('/')}
           />
-          <div className="w-6"></div> {/* Placeholder for alignment */}
+          <div className="w-6"></div> {/* Placeholder for spacing */}
         </div>
 
         {activeTab === 'dashboard' && (

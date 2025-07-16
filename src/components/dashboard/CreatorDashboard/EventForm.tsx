@@ -1,6 +1,5 @@
 import React, { useState, useRef } from 'react';
 import {
-  PlusCircle,
   X,
   RefreshCw,
   FileText,
@@ -9,7 +8,11 @@ import {
   Video,
   File,
   Trash2,
+  AlertCircle,
+  Sparkles,
+  Check
 } from 'lucide-react';
+import { motion } from 'framer-motion';
 import type { Database } from '../../../lib/database.types';
 import MouSignComponent from './MouSignComponent'; // Import the MouSignComponent
 import { toast } from 'react-hot-toast';
@@ -53,6 +56,11 @@ const advertisingCategories = [
   'Bus Stop Advertising'
 ];
 
+// Character limit constants
+const MAX_DESCRIPTION_LENGTH = 300;
+const MAX_REQUIREMENTS_LENGTH = 200;
+const MAX_BENEFITS_LENGTH = 200;
+
 export default function EventForm({
   formData,
   setFormData,
@@ -74,6 +82,18 @@ export default function EventForm({
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
   ) => {
     const { name, value } = e.target;
+    
+    // Apply character limits for specific fields
+    if (name === 'description' && value.length > MAX_DESCRIPTION_LENGTH) {
+      return; // Don't update if over the limit
+    }
+    if (name === 'requirements' && value.length > MAX_REQUIREMENTS_LENGTH) {
+      return; // Don't update if over the limit
+    }
+    if (name === 'benefits' && value.length > MAX_BENEFITS_LENGTH) {
+      return; // Don't update if over the limit
+    }
+    
     if (name === 'price_min') {
       setFormData({
         ...formData,
@@ -228,16 +248,27 @@ export default function EventForm({
 
   const selectedCategory = categories.find(cat => cat.id === formData.category_id);
   const isAdvertisingCategory = selectedCategory && advertisingCategories.includes(selectedCategory.name);
+  
+  // No tooltip effects needed with inline approach
 
   return (
     <>
-      <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[1000] p-4 sm:static sm:bg-transparent sm:backdrop-blur-none sm:flex-none sm:items-start sm:justify-start">
-        <div className="bg-white rounded-xl shadow-2xl w-full max-w-7xl max-h-[90vh] flex flex-col mx-auto overflow-hidden sm:rounded-lg sm:shadow-sm sm:max-w-none sm:h-auto sm:max-h-none">
-          {/* ...existing code... */}
+      <div className="fixed inset-0 bg-black/70 backdrop-blur-sm flex items-center justify-center z-[1000] p-4 sm:static sm:bg-transparent sm:backdrop-blur-none sm:flex-none sm:items-start sm:justify-start">
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.4, ease: "easeOut" }}
+          className="bg-white rounded-xl shadow-2xl w-full max-w-7xl max-h-[90vh] flex flex-col mx-auto overflow-hidden sm:rounded-lg sm:shadow-sm sm:max-w-none sm:h-auto sm:max-h-none border border-gray-100"
+        >
           {/* Header */}
-          <div className="flex items-center justify-between p-6 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-indigo-50">
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.2, duration: 0.3 }}
+            className="flex items-center justify-between p-6 border-b border-gray-200 bg-gradient-to-r from-blue-50 to-indigo-50"
+          >
             <div>
-              <h2 className="text-2xl font-bold text-gray-900">
+              <h2 className="text-2xl font-bold bg-gradient-to-r from-blue-700 to-indigo-600 bg-clip-text text-transparent">
                 {isEditing ? 'Edit Opportunity' : 'Create New Opportunity'}
               </h2>
               <p className="text-sm text-gray-600 mt-1">
@@ -246,24 +277,34 @@ export default function EventForm({
             </div>
             <button
               onClick={onClose}
-              className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-colors"
+              className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full transition-colors duration-200"
               aria-label="Close form"
             >
-              <X className="w-6 h-6" />
+              <X className="w-5 h-5" />
             </button>
-          </div>
+          </motion.div>
 
           {/* Form Content */}
-          <div className="flex-1 overflow-y-auto">
+          <motion.div 
+            className="flex-1 overflow-y-auto"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.3, duration: 0.4 }}
+          >
             <form onSubmit={handleSubmit} className="p-6 space-y-8">
               {/* ...existing code... */}
             {/* Basic Information Section */}
-            <div className="space-y-6">
+            <motion.div 
+              className="space-y-6"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.4, duration: 0.3 }}
+            >
               <div className="flex items-center space-x-3 mb-4">
-                <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center text-white text-sm font-semibold">
+                <div className="w-8 h-8 bg-gradient-to-r from-blue-600 to-blue-500 rounded-full flex items-center justify-center text-white text-sm font-bold shadow-sm">
                   1
                 </div>
-                <h3 className="text-lg font-semibold text-gray-900">Basic Information</h3>
+                <h3 className="text-lg font-bold text-gray-900">Basic Information</h3>
               </div>
               
               <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
@@ -323,15 +364,24 @@ export default function EventForm({
                   <label className="block text-sm font-medium text-gray-700">
                     Description <span className="text-red-500">*</span>
                   </label>
-                  <textarea
-                    name="description"
-                    value={formData.description ?? ''}
-                    onChange={handleInputChange}
-                    rows={4}
-                    className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors resize-none"
-                    placeholder="Describe your opportunity in detail"
-                    required
-                  />
+                  <div className="relative">
+                    <textarea
+                      name="description"
+                      value={formData.description ?? ''}
+                      onChange={handleInputChange}
+                      rows={4}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors resize-none"
+                      placeholder="Describe your opportunity in detail"
+                      maxLength={MAX_DESCRIPTION_LENGTH}
+                      required
+                    />
+                    <div className="flex items-center justify-end text-xs mt-1">
+                      <AlertCircle className={`w-3 h-3 mr-1 ${(formData.description?.length || 0) > MAX_DESCRIPTION_LENGTH * 0.9 ? 'text-amber-500' : 'text-gray-500'}`} />
+                      <span className={`${(formData.description?.length || 0) > MAX_DESCRIPTION_LENGTH * 0.9 ? 'text-amber-500 font-medium' : 'text-gray-500'}`}>
+                        {`${(formData.description ?? '').length}/${MAX_DESCRIPTION_LENGTH}`}
+                      </span>
+                    </div>
+                  </div>
                 </div>
 
                 <div className="space-y-2">
@@ -348,18 +398,111 @@ export default function EventForm({
                   />
                 </div>
 
+                <motion.div 
+                  className="space-y-3 p-4 rounded-lg bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-100"
+                  initial={{ opacity: 0, y: 5 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.1, duration: 0.3 }}
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center space-x-2">
+                      <Sparkles className="h-5 w-5 text-amber-500" />
+                      <h4 className="font-semibold text-blue-800">Pricing Plan</h4>
+                    </div>
+                    <div className="flex items-center">
+                      <span className="text-sm text-gray-600 mr-3 font-medium">
+                        {(formData as any).is_vip ? 'VIP' : 'Basic'}
+                      </span>
+                      <label className="relative inline-flex items-center cursor-pointer">
+                        <input 
+                          type="checkbox"
+                          name="is_vip"
+                          checked={!!(formData as any).is_vip}
+                          onChange={(e) => setFormData((prev) => ({ ...prev, is_vip: e.target.checked } as any))}
+                          className="sr-only peer"
+                        />
+                        <div className="w-11 h-6 bg-gray-200 rounded-full peer peer-focus:ring-4 peer-focus:ring-blue-200 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-gradient-to-r from-amber-500 to-yellow-500"></div>
+                      </label>
+                    </div>
+                  </div>
+                  
+                  <div className="text-sm space-y-2">
+                    <p className="text-gray-600 font-medium">Choose your plan:</p>
+
+                    {!(formData as any).is_vip && (
+                      <motion.div 
+                        className="mt-2 p-3 bg-gray-50 border border-gray-200 rounded-md"
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: 'auto' }}
+                        transition={{ duration: 0.2 }}
+                      >
+                        <p className="font-medium text-gray-900 mb-1">Basic Plan:</p>
+                        <ul className="space-y-1 pl-5 list-disc text-gray-700">
+                          <li>Free event listing</li>
+                          <li>₹5,000 fee to unlock brand matches</li>
+                          <li>10% commission on total sponsorship amount</li>
+                          {/* <li>Standard support</li> */}
+                        </ul>
+                      </motion.div>
+                    )}
+                    
+                    {(formData as any).is_vip && (
+                      <motion.div 
+                        className="mt-2 p-4 bg-gradient-to-br from-amber-50 to-yellow-50 border border-amber-200 rounded-md"
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: 'auto' }}
+                        transition={{ duration: 0.2 }}
+                      >
+                        <p className="font-medium text-gray-900 mb-2">VIP Benefits:</p>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-sm">
+                          {/* <div className="flex items-center space-x-2">
+                            <Check className="h-4 w-4 text-green-500" />
+                            <span className="text-gray-700">Priority search placement</span>
+                          </div> */}
+                          <div className="flex items-center space-x-2">
+                            <Check className="h-4 w-4 text-green-500" />
+                            <span className="text-gray-700">24/7 dedicated support</span>
+                          </div>
+                          <div className="flex items-center space-x-2">
+                            <Check className="h-4 w-4 text-green-500" />
+                            <span className="text-gray-700">Premium sponsor access</span>
+                          </div>
+                          {/* <div className="flex items-center space-x-2">
+                            <Check className="h-4 w-4 text-green-500" />
+                            <span className="text-gray-700">Featured opportunities</span>
+                          </div> */}
+                        </div>
+                        
+                        <div className="mt-3 p-3 bg-blue-50 border border-blue-100 rounded-md">
+                          <p className="text-blue-800 text-sm font-medium">VIP Plan Pricing:</p>
+                          <ul className="mt-1 space-y-1 pl-5 list-disc text-gray-700">
+                            <li>₹10,000 upfront fee</li>
+                            <li>25% commission on sponsorships over ₹2 lakhs</li>
+                          </ul>
+                          <p className="text-xs text-gray-500 mt-2">By enabling VIP privileges, you agree to the pricing terms above.</p>
+                        </div>
+                      </motion.div>
+                    )}
+                  </div>
+                </motion.div>
+
                 {/* Additional space for better layout */}
                 <div className="hidden xl:block"></div>
               </div>
-            </div>
+            </motion.div>
 
             {/* Pricing Section */}
-            <div className="space-y-6">
+            <motion.div 
+              className="space-y-6"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.5, duration: 0.3 }}
+            >
               <div className="flex items-center space-x-3 mb-4">
-                <div className="w-8 h-8 bg-green-600 rounded-full flex items-center justify-center text-white text-sm font-semibold">
+                <div className="w-8 h-8 bg-gradient-to-r from-green-600 to-emerald-500 rounded-full flex items-center justify-center text-white text-sm font-bold shadow-sm">
                   2
                 </div>
-                <h3 className="text-lg font-semibold text-gray-900">Pricing Information</h3>
+                <h3 className="text-lg font-bold text-gray-900">Pricing Information</h3>
               </div>
 
               {isAdvertisingCategory ? (
@@ -405,7 +548,7 @@ export default function EventForm({
                   <div className="hidden xl:block"></div>
                 </div>
               )}
-            </div>
+            </motion.div>
 
             {/* Event Details Section - Only for non-advertising categories */}
             {!isAdvertisingCategory && (
@@ -445,25 +588,43 @@ export default function EventForm({
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                   <div className="space-y-2">
                     <label className="block text-sm font-medium text-gray-700">Requirements</label>
-                    <textarea
-                      name="requirements"
-                      value={formData.requirements ?? ''}
-                      onChange={handleInputChange}
-                      rows={3}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors resize-none"
-                      placeholder="Specify your guidelines or requirements for brands"
-                    />
+                    <div className="relative">
+                      <textarea
+                        name="requirements"
+                        value={formData.requirements ?? ''}
+                        onChange={handleInputChange}
+                        rows={3}
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors resize-none"
+                        placeholder="Specify your guidelines or requirements for brands"
+                        maxLength={MAX_REQUIREMENTS_LENGTH}
+                      />
+                      <div className="flex items-center justify-end text-xs mt-1">
+                        <AlertCircle className={`w-3 h-3 mr-1 ${(formData.requirements?.length || 0) > MAX_REQUIREMENTS_LENGTH * 0.9 ? 'text-amber-500' : 'text-gray-500'}`} />
+                        <span className={`${(formData.requirements?.length || 0) > MAX_REQUIREMENTS_LENGTH * 0.9 ? 'text-amber-500 font-medium' : 'text-gray-500'}`}>
+                          {`${(formData.requirements ?? '').length}/${MAX_REQUIREMENTS_LENGTH}`}
+                        </span>
+                      </div>
+                    </div>
                   </div>
                   <div className="space-y-2">
                     <label className="block text-sm font-medium text-gray-700">Benefits</label>
-                    <textarea
-                      name="benefits"
-                      value={formData.benefits ?? ''}
-                      onChange={handleInputChange}
-                      rows={3}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors resize-none"
-                      placeholder="List the benefits offered"
-                    />
+                    <div className="relative">
+                      <textarea
+                        name="benefits"
+                        value={formData.benefits ?? ''}
+                        onChange={handleInputChange}
+                        rows={3}
+                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors resize-none"
+                        placeholder="List the benefits offered"
+                        maxLength={MAX_BENEFITS_LENGTH}
+                      />
+                      <div className="flex items-center justify-end text-xs mt-1">
+                        <AlertCircle className={`w-3 h-3 mr-1 ${(formData.benefits?.length || 0) > MAX_BENEFITS_LENGTH * 0.9 ? 'text-amber-500' : 'text-gray-500'}`} />
+                        <span className={`${(formData.benefits?.length || 0) > MAX_BENEFITS_LENGTH * 0.9 ? 'text-amber-500 font-medium' : 'text-gray-500'}`}>
+                          {`${(formData.benefits ?? '').length}/${MAX_BENEFITS_LENGTH}`}
+                        </span>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -859,22 +1020,29 @@ export default function EventForm({
             </div>
 
             {/* Submit Section */}
-            <div className="flex justify-end space-x-4 pt-6 border-t border-gray-200">
+            <motion.div 
+              className="flex justify-end space-x-4 pt-6 border-t border-gray-200 mt-8"
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.7, duration: 0.4 }}
+            >
               <button
                 type="button"
                 onClick={onClose}
-                className="px-6 py-3 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors font-medium"
+                className="px-6 py-3 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-all duration-200 font-medium hover:shadow-sm"
               >
                 Cancel
               </button>
-              <button
+              <motion.button
                 type="submit"
-                className={`px-6 py-3 rounded-lg font-medium transition-colors ${
+                className={`px-8 py-3 rounded-lg font-semibold transition-all duration-300 ${
                   isSubmitting || !isMOUAgreed 
                     ? 'bg-gray-400 cursor-not-allowed text-white' 
-                    : 'bg-blue-600 hover:bg-blue-700 text-white shadow-sm'
+                    : 'bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-md hover:shadow-lg hover:scale-[1.02]'
                 }`}
                 disabled={isSubmitting || !isMOUAgreed}
+                whileHover={{ scale: isSubmitting || !isMOUAgreed ? 1 : 1.02 }}
+                whileTap={{ scale: isSubmitting || !isMOUAgreed ? 1 : 0.98 }}
               >
                 {isSubmitting ? (
                   <span className="flex items-center">
@@ -886,11 +1054,11 @@ export default function EventForm({
                 ) : (
                   'Create Opportunity'
                 )}
-              </button>
-            </div>
+              </motion.button>
+            </motion.div>
               </form>
-          </div>
-        </div>
+          </motion.div>
+        </motion.div>
       </div>
       
       {/* MOU Sign Modal - Positioned at the bottom for proper viewport centering */}

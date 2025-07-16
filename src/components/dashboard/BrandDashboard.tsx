@@ -1002,7 +1002,7 @@ export default function BrandDashboard({ onUpdateProfile }: BrandDashboardProps)
         <div className="flex items-center justify-center w-full">
           <div className="flex items-center space-x-1.5 min-w-0">
             <h1 className="text-base font-bold text-gray-800 truncate">
-              {activeTab === 'discover' ? '🎯 Discover Opportunities' : activeTab === 'influencers' ? '✨ Discover Influencers' : '🤝 Matches'}
+              {activeTab === 'discover' ? '🎯 Discover Events' : activeTab === 'influencers' ? '✨ Discover Influencers' : '🤝 Matches'}
             </h1>
             {activeTab === 'matches' && pendingMatches.length > 0 && (
               <span className="px-1.5 py-0.5 bg-yellow-100 text-yellow-800 text-xs font-medium rounded-full flex-shrink-0">

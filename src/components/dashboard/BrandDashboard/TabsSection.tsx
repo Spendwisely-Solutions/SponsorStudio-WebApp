@@ -28,13 +28,15 @@ const TabsSection: React.FC<TabsSectionProps> = ({
               Discover
             </span>
             <span className={`text-[10px] sm:text-xs ${activeTab === 'discover' ? 'text-[#2B4B9B]/70 font-medium' : 'text-gray-500'}`}>
-              Opportunities
+              Events
             </span>
           </div>
           <span className={`absolute bottom-0 left-0 w-full h-[3px] bg-[#2B4B9B] transform transition-all duration-300 ${
             activeTab === 'discover' ? 'opacity-100 scale-x-100' : 'opacity-0 scale-x-0'
           }`} style={{ bottom: '0' }} />
         </button>
+
+        {/* discover influencer tab now hidden */}
         <button
           onClick={() => setActiveTab('influencers')}
           className={`relative flex-1 py-2.5 sm:py-3.5 px-1 cursor-pointer transition-all duration-300 ease-in-out ${
@@ -42,6 +44,7 @@ const TabsSection: React.FC<TabsSectionProps> = ({
               ? 'text-purple-600 font-medium bg-purple-50/60 shadow-sm border-t border-x border-purple-100 rounded-t-lg translate-y-[-1px]'
               : 'text-gray-600 hover:bg-black/5'
           }`}
+          style={{display:'none'}}
         >
           <div className="flex flex-col items-center justify-center pb-[7px]">
             <span className="text-sm sm:text-base font-bold mb-1">
@@ -55,6 +58,8 @@ const TabsSection: React.FC<TabsSectionProps> = ({
             activeTab === 'influencers' ? 'opacity-100 scale-x-100' : 'opacity-0 scale-x-0'
           }`} style={{ bottom: '0' }} />
         </button>
+
+
         <button
           onClick={() => setActiveTab('matches')}
           className={`relative flex-1 py-2.5 sm:py-3.5 px-1 cursor-pointer transition-all duration-300 ease-in-out ${
