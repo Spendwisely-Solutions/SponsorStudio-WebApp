@@ -513,7 +513,7 @@ export default function Dashboard() {
       {/* Main Content */}
       <div className="flex-1 md:ml-64 p-6">
         {/* Mobile Header with Menu Button */}
-        <div className="md:hidden flex items-center justify-between mb-0">
+        <div className="md:hidden flex items-center justify-between mb-1">
           <button
             onClick={() => setMobileSidebarOpen(true)}
             className="p-2 rounded-lg text-gray-600 hover:bg-gray-100"
