@@ -261,7 +261,7 @@ export default function Dashboard() {
           <img 
             src="https://i.ibb.co/ZzPfwrxP/logo-final-png.png" 
             alt="Sponsor Studio" 
-            className="h-12 mb-6 cursor-pointer"
+            className="h-14 mb-6 cursor-pointer"
             onClick={() => navigate('/')}
           />
           <div className="flex items-center space-x-3 mb-8">
@@ -523,10 +523,10 @@ export default function Dashboard() {
           <img 
             src="https://i.ibb.co/ZzPfwrxP/logo-final-png.png" 
             alt="Sponsor Studio" 
-            className="h-8 cursor-pointer"
+            className="h-12 cursor-pointer mb-2"
             onClick={() => navigate('/')}
           />
-          <div className="w-6"></div> {/* Placeholder for alignment */}
+          {/* <div className="w-6"></div> Placeholder for alignment */}
         </div>
 
         {activeTab === 'dashboard' && (
