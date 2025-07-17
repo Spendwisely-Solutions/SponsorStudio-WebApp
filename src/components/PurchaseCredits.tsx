@@ -46,6 +46,7 @@ const PurchaseCredits: React.FC = () => {
   const [loading, setLoading] = useState<Record<number, boolean>>({});
   const [error, setError] = useState<string | null>(null);
   const [currentCredits, setCurrentCredits] = useState<number>(0);
+  const [isFirstTimeBuyer, setIsFirstTimeBuyer] = useState<boolean>(true);
   const { Razorpay } = useRazorpay();
   const navigate = useNavigate();
 
@@ -63,6 +64,23 @@ const PurchaseCredits: React.FC = () => {
 
         if (error) throw error;
         setCurrentCredits(profileData?.credits || 0);
+        
+        // Check if user has previously purchased credits
+        const { data: previousPurchases, error: purchasesError } = await supabase
+          .from('credits')
+          .select('id')
+          .eq('user_id', user.id)
+          .eq('status', 'completed')
+          .gt('amount', 0)  // Only consider paid purchases
+          .limit(1);
+          
+        if (purchasesError) {
+          console.error('Error checking previous purchases:', purchasesError);
+          return;
+        }
+        
+        // If no previous purchases found, user is a first-time buyer
+        setIsFirstTimeBuyer(previousPurchases.length === 0);
       } catch (error) {
         console.error('Error fetching credits:', error);
       }
@@ -92,6 +110,11 @@ const PurchaseCredits: React.FC = () => {
 
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('User not authenticated');
+      
+      // Apply special price for first-time buyers on Professional Pack
+      const actualPrice = (isFirstTimeBuyer && pack.name === 'Professional Pack') 
+        ? 5000  // Special price of ₹5000 instead of ₹20000
+        : pack.price;
 
       // Calculate expiry date
       const expiryDate = new Date();
@@ -178,7 +201,7 @@ const PurchaseCredits: React.FC = () => {
 
       // For paid packs, initiate Razorpay payment
       const response = await axios.post('https://payment-gateway-serverless-lac.vercel.app/api/create-order', {
-        amount: pack.price,
+        amount: actualPrice, // Use special price for first-time buyers
         currency: 'INR',
       });
 
@@ -194,7 +217,9 @@ const PurchaseCredits: React.FC = () => {
           status: 'pending',
           razorpay_order_id: orderId,
           credits_added: pack.credits,
-          description: `${pack.name}: ${pack.credits} credits`,
+          description: isFirstTimeBuyer && pack.name === 'Professional Pack'
+            ? `${pack.name} (Special First-Time Offer): ${pack.credits} credits`
+            : `${pack.name}: ${pack.credits} credits`,
           expires_at: expiryDate.toISOString(),
         })
         .select()
@@ -441,12 +466,22 @@ const PurchaseCredits: React.FC = () => {
                 animate="visible"
                 whileHover={{ y: -5 }}
               >
-                {/* Popular Badge */}
-                {pack.popular && (
+                {/* Popular or Special Offer Badge */}
+                {(pack.popular && (!isFirstTimeBuyer || pack.name !== 'Professional Pack')) && (
                   <div className="absolute -top-1 -right-1 z-10">
                     <div className="bg-gradient-to-r from-purple-500 to-pink-500 text-white px-4 py-1 rounded-bl-xl rounded-tr-xl text-sm font-semibold flex items-center">
                       <Star className="w-4 h-4 mr-1" />
                       Most Popular
+                    </div>
+                  </div>
+                )}
+                
+                {/* Special Offer Badge for first-time buyers */}
+                {isFirstTimeBuyer && pack.name === 'Professional Pack' && (
+                  <div className="absolute -top-1 -right-1 z-10">
+                    <div className="bg-gradient-to-r from-green-500 to-emerald-500 text-white px-4 py-1 rounded-bl-xl rounded-tr-xl text-sm font-semibold flex items-center">
+                      <Sparkles className="w-4 h-4 mr-1" />
+                      Special Offer
                     </div>
                   </div>
                 )}
@@ -470,11 +505,30 @@ const PurchaseCredits: React.FC = () => {
                 {/* Content */}
                 <div className="p-6 flex flex-col flex-grow">
                   <div className="text-center mb-6">
-                    <div className="text-4xl font-bold text-gray-900 mb-1">
-                      {pack.price === 0 ? 'FREE' : formatPrice(pack.price)}
-                    </div>
-                    <div className="text-sm text-gray-500">
-                      {getMoneyPerCredit(pack.price, pack.credits)}
+                    {isFirstTimeBuyer && pack.name === 'Professional Pack' ? (
+                      <>
+                        <div className="flex items-center justify-center mb-1">
+                          <div className="text-sm font-semibold text-red-500 mr-2">Special Offer</div>
+                          <div className="line-through text-gray-400 text-xl">
+                            {formatPrice(pack.price)}
+                          </div>
+                        </div>
+                        <div className="text-4xl font-bold text-green-600 mb-1">
+                          {formatPrice(5000)}
+                        </div>
+                        <div className="bg-green-100 text-green-800 text-xs font-semibold px-2 py-1 rounded-full inline-block">
+                          75% OFF for first-time buyers!
+                        </div>
+                      </>
+                    ) : (
+                      <div className="text-4xl font-bold text-gray-900 mb-1">
+                        {pack.price === 0 ? 'FREE' : formatPrice(pack.price)}
+                      </div>
+                    )}
+                    <div className="text-sm text-gray-500 mt-1">
+                      {isFirstTimeBuyer && pack.name === 'Professional Pack' 
+                        ? getMoneyPerCredit(5000, pack.credits) 
+                        : getMoneyPerCredit(pack.price, pack.credits)}
                     </div>
                   </div>
 
@@ -535,6 +589,11 @@ const PurchaseCredits: React.FC = () => {
                           <>
                             <Gift className="w-5 h-5 mr-2" />
                             Claim Free Credits
+                          </>
+                        ) : isFirstTimeBuyer && pack.name === 'Professional Pack' ? (
+                          <>
+                            <CreditCard className="w-5 h-5 mr-2" />
+                            Claim Special Offer
                           </>
                         ) : (
                           <>
