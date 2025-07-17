@@ -14,6 +14,7 @@ import {
   ChevronDown,
   ChevronUp,
   FileText,
+  Sparkles,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
@@ -184,6 +185,12 @@ export default function EventCard({
                   {opportunity.status === 'active' ? 'Active' : 'Paused'}
                 </span>
                 {getVerificationStatusBadge(opportunity.verification_status)}
+                {opportunity.is_vip && (
+                  <span className="px-3 py-1 text-xs font-semibold rounded-full bg-gradient-to-r from-amber-400 to-yellow-600 text-white shadow-sm flex items-center">
+                    <Sparkles className="w-3 h-3 mr-1" />
+                    VIP
+                  </span>
+                )}
               </div>
             </div>
             <p
