@@ -72,6 +72,11 @@ const App: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [showAllStories, setShowAllStories] = useState<boolean>(false);
   const [showAuthForm, setShowAuthForm] = useState<boolean>(false);
+  
+  // Add a useEffect to log when showAuthForm state changes
+  useEffect(() => {
+    console.log('Auth form visibility changed:', showAuthForm);
+  }, [showAuthForm]);
   const [mobileMenuOpen, setMobileMenuOpen] = useState<boolean>(false);
   const [formData, setFormData] = useState<FormData>({
     name: '',
@@ -193,8 +198,8 @@ const App: React.FC = () => {
         mobileMenuOpen={mobileMenuOpen}
         setMobileMenuOpen={setMobileMenuOpen}
       />
-      <HeroSection user={user} setShowAuthForm={setShowAuthForm} />
-      {/* <HeroSectionNew user={user} setShowAuthForm={setShowAuthForm} /> */}
+      {/* <HeroSection user={user} setShowAuthForm={setShowAuthForm} /> */}
+      <HeroSectionNew user={user} setShowAuthForm={setShowAuthForm} />
       <HowWeWorkSection />
       <ClientsSection loading={loading} clientLogos={clientLogos} />
       {/* <PricingSectionStatic /> */}

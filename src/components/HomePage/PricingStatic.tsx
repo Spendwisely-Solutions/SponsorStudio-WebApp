@@ -64,20 +64,48 @@ const PricingSectionStatic: React.FC<PricingSectionStaticProps> = ({ user }) => 
       id="pricing"
     >
       <div className="max-w-7xl mx-auto">
-        <div className="text-center mb-12">
+        <div className="text-center mb-20">
+          <div className="inline-flex items-center px-6 py-3 mb-8 rounded-full bg-white/80 backdrop-blur-sm shadow-lg border border-blue-100/50">
+            <div className="w-10 h-10 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-full flex items-center justify-center mr-3 shadow-sm">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+            </div>
+            <div>
+              <span className="text-sm font-semibold text-gray-800">Transparent Pricing</span>
+              <div className="flex items-center mt-1">
+                <span className="text-xs text-gray-600">Pay only for what you use</span>
+              </div>
+            </div>
+          </div>
+          
           <h2
-            className="text-3xl sm:text-4xl font-extrabold text-gray-900 mb-4"
+            className="text-4xl sm:text-5xl md:text-6xl font-extrabold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600"
             data-aos="zoom-in-up"
             data-aos-delay="100"
           >
             Our Pricing
           </h2>
+          
+          {/* Feature badges */}
+          <div className="flex flex-wrap gap-3 justify-center mt-8 mb-10">
+            <div className="feature-badge flex items-center gap-2 bg-gradient-to-r from-blue-50 to-indigo-50 px-4 py-2 rounded-full border border-blue-200/50 shadow-sm">
+              <span className="text-sm font-medium text-blue-800">No Hidden Fees</span>
+            </div>
+            <div className="feature-badge flex items-center gap-2 bg-gradient-to-r from-green-50 to-emerald-50 px-4 py-2 rounded-full border border-green-200/50 shadow-sm">
+              <span className="text-sm font-medium text-green-800">Free Opportunity Listing</span>
+            </div>
+            <div className="feature-badge flex items-center gap-2 bg-gradient-to-r from-purple-50 to-pink-50 px-4 py-2 rounded-full border border-purple-200/50 shadow-sm">
+              <span className="text-sm font-medium text-purple-800">Pay Only For Success</span>
+            </div>
+          </div>
+          
           <p
-            className="text-lg text-gray-600 max-w-2xl mx-auto"
+            className="mt-6 max-w-2xl mx-auto text-xl sm:text-2xl text-gray-600 leading-relaxed font-light"
             data-aos="zoom-in-up"
             data-aos-delay="200"
           >
-            Pricing for each Opportunity you list. Pay only for the services you use.
+            Pricing for each Opportunity you list. Pay only for the services you use with our transparent pricing model.
           </p>
         </div>
 
