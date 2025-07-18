@@ -18,6 +18,22 @@
   animation: blink 1s infinite;
 }
 
+@keyframes bounce-x {
+
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+
+  50% {
+    transform: translateX(3px);
+  }
+}
+
+.animate-bounce-x {
+  animation: bounce-x 1s infinite;
+}
+
 .duration-1000 {
   transition-duration: 1000ms;
 }

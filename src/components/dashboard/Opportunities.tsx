@@ -34,7 +34,8 @@ import {
   Hash,
   Video,
   Upload,
-  File
+  File,
+  Sparkles
 } from 'lucide-react';
 import type { Database } from '../../lib/database.types';
 
@@ -727,6 +728,12 @@ export default function Opportunities({ searchTerm, setSearchTerm, stats, setSta
                         <span className="px-2 py-0.5 text-xs rounded-full bg-blue-100 text-blue-800">
                           {isOpportunity ? 'Opportunity' : 'Post'}
                         </span>
+                        {isOpportunity && (item as Opportunity).is_vip && (
+                          <span className="px-2 py-0.5 text-xs rounded-full bg-amber-100 text-amber-800 flex items-center">
+                            <Sparkles className="w-3 h-3 mr-1" />
+                            VIP
+                          </span>
+                        )}
                       </div>
 
                       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
@@ -764,6 +771,12 @@ export default function Opportunities({ searchTerm, setSearchTerm, stats, setSta
                             <div className="flex items-center text-sm text-gray-500">
                               <Footprints size={16} className="mr-2 flex-shrink-0" />
                               {(item as Opportunity).footfall.toLocaleString()} footfall
+                            </div>
+                          )}
+                          {isOpportunity && (item as Opportunity).is_vip && (
+                            <div className="flex items-center text-sm font-medium text-amber-700">
+                              <Sparkles size={16} className="mr-2 flex-shrink-0 text-amber-500" />
+                              VIP Privileged Opportunity
                             </div>
                           )}
                         </div>
@@ -935,6 +948,24 @@ export default function Opportunities({ searchTerm, setSearchTerm, stats, setSta
                               <div>
                                 <h5 className="text-sm font-medium text-gray-700 mb-2">Benefits</h5>
                                 <p className="text-gray-600">{(item as Opportunity).benefits}</p>
+                              </div>
+                            )}
+                            {isOpportunity && (item as Opportunity).is_vip && (
+                              <div className="mt-4">
+                                <div className="flex items-center">
+                                  <Sparkles size={18} className="text-amber-500 mr-2" />
+                                  <h5 className="text-sm font-medium text-amber-800">VIP Privilege Information</h5>
+                                </div>
+                                <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 mt-2">
+                                  <p className="text-gray-700 mb-2">This opportunity has VIP privileges, which include:</p>
+                                  <ul className="list-disc pl-5 text-sm space-y-1 text-gray-600">
+                                    <li>24/7 dedicated support</li>
+                                    <li>Premium sponsor access</li>
+                                    <li>Priority placement in search results</li>
+                                    <li>Upfront fee of ₹10,000</li>
+                                    <li>25% commission on sponsorships over ₹2 lakhs</li>
+                                  </ul>
+                                </div>
                               </div>
                             )}
                           </div>
