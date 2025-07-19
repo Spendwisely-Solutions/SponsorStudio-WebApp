@@ -153,31 +153,54 @@ export default function AuthForm({ onSuccess, onSignUpSuccess }: AuthFormProps) 
   };
 
   return (
-    <div className="w-full max-w-sm mx-auto bg-white rounded-lg shadow-md p-6 max-h-[90vh] overflow-y-auto">
+    <div className="w-full max-w-sm mx-auto bg-gradient-to-br from-white to-gray-50 border border-gray-200 shadow-2xl rounded-2xl p-8 max-h-[90dvh] overflow-y-auto relative transition-all duration-300">
       <style jsx>{`
+        /* Custom scrollbar with vibrant accents */
+        div[class*="max-h-[90dvh]"]::-webkit-scrollbar {
+          width: 8px;
+          background: transparent;
+        }
+        div[class*="max-h-[90dvh]"]::-webkit-scrollbar-thumb {
+          background: linear-gradient(180deg, #3b82f6, #8b5cf6);
+          border-radius: 8px;
+        }
+        div[class*="max-h-[90dvh]"]::-webkit-scrollbar-thumb:hover {
+          background: linear-gradient(180deg, #2563eb, #7c3aed);
+        }
+        div[class*="max-h-[90dvh]"]::-webkit-scrollbar-track {
+          background: rgba(229, 231, 235, 0.3);
+        }
+        /* For Firefox */
+        div[class*="max-h-[90dvh]"] {
+          scrollbar-width: thin;
+          scrollbar-color: #3b82f6 rgba(229, 231, 235, 0.3);
+        }
         .PhoneInput,
         input.custom-input,
         select.custom-select {
           display: flex;
           align-items: center;
-          border: 1px solid #d1d5db !important;
-          border-radius: 0.375rem;
-          padding: 0.375rem 0.75rem;
-          background: white;
-          transition: border-color 0.2s, box-shadow 0.2s;
-          box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+          border: 2px solid #e5e7eb !important;
+          border-radius: 0.75rem;
+          padding: 0.65rem 1.25rem;
+          background: #ffffff;
+          transition: all 0.3s ease;
+          box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
         }
         .PhoneInput:hover,
         input.custom-input:hover,
         select.custom-select:hover {
-          border-color: #a1a1aa !important;
+          border-color: #3b82f6 !important;
+          box-shadow: 0 2px 8px rgba(59, 130, 246, 0.2);
+          transform: translateY(-1px);
         }
         .PhoneInput:focus-within,
         input.custom-input:focus,
         select.custom-select:focus {
-          border-color: #2B4B9B !important;
-          box-shadow: 0 0 0 2px rgba(43, 75, 155, 0.2);
+          border-color: #3b82f6 !important;
+          box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3);
           outline: none;
+          transform: translateY(-1px);
         }
         .PhoneInputInput,
         input.custom-input,
@@ -185,24 +208,27 @@ export default function AuthForm({ onSuccess, onSignUpSuccess }: AuthFormProps) 
           border: none;
           outline: none;
           flex: 1;
-          font-size: 0.875rem;
-          line-height: 1.25rem;
+          font-size: 1rem;
+          line-height: 1.5rem;
           background: transparent;
-          color: #111827;
+          color: #1f2937;
           width: 100%;
+          font-weight: 500;
         }
         .PhoneInputInput::placeholder,
         input.custom-input::placeholder {
           color: #9ca3af;
+          font-weight: 400;
         }
         .PhoneInputCountry {
-          margin-right: 0.5rem;
+          margin-right: 0.75rem;
         }
         .PhoneInputCountrySelect {
           border: none;
           background: transparent;
-          color: #111827;
+          color: #1f2937;
           outline: none;
+          font-weight: 500;
         }
         .PhoneInputCountrySelectArrow {
           display: none;
@@ -210,25 +236,34 @@ export default function AuthForm({ onSuccess, onSignUpSuccess }: AuthFormProps) 
         .PhoneInput--disabled,
         input.custom-input:disabled,
         select.custom-select:disabled {
-          opacity: 0.5;
+          opacity: 0.6;
           cursor: not-allowed;
         }
+        /* Subtle animation for form elements */
+        .form-field {
+          transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .form-field:hover {
+          transform: translateY(-2px);
+        }
       `}</style>
-      <h2 className="text-xl font-bold text-center text-[#2B4B9B] mb-4">
+      {/* Dynamic gradient accent bar */}
+      <div className="absolute -top-2 left-1/2 -translate-x-1/2 w-48 h-2 rounded-full bg-gradient-to-r from-blue-500 via-indigo-500 to-purple-500 shadow-lg mb-6 transition-all duration-500 hover:scale-105" />
+      <h2 className="text-3xl font-extrabold text-center bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 bg-clip-text text-transparent mb-8 tracking-tight drop-shadow-md">
         {isForgotPassword ? 'Reset Password' : isSignUp ? 'Create an Account' : 'Welcome Back'}
       </h2>
 
       {isForgotPassword ? (
-        <form onSubmit={handleForgotPasswordSubmit} className="space-y-4">
+        <form onSubmit={handleForgotPasswordSubmit} className="space-y-6">
           {resetEmailSent ? (
             <div className="text-center">
-              <p className="text-sm text-gray-600">
+              <p className="text-sm text-gray-700 font-medium">
                 A password reset link has been sent to {email}. Please check your inbox (and spam folder).
               </p>
               <button
                 type="button"
                 onClick={resetForm}
-                className="mt-4 text-xs text-[#2B4B9B] hover:text-[#1a2f61]"
+                className="mt-5 text-sm text-blue-600 hover:text-blue-800 font-semibold transition-colors duration-200"
                 disabled={loading}
               >
                 Back to Sign In
@@ -236,8 +271,8 @@ export default function AuthForm({ onSuccess, onSignUpSuccess }: AuthFormProps) 
             </div>
           ) : (
             <>
-              <div>
-                <label htmlFor="email" className="block text-xs font-medium text-gray-700">
+              <div className="form-field">
+                <label htmlFor="email" className="block text-sm font-semibold text-gray-800 tracking-wide mb-2">
                   Email
                 </label>
                 <input
@@ -245,18 +280,18 @@ export default function AuthForm({ onSuccess, onSignUpSuccess }: AuthFormProps) 
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="mt-1 block w-full px-3 py-1.5 shadow-sm custom-input disabled:opacity-50"
+                  className="mt-1 block w-full custom-input disabled:opacity-60"
                   required
                   disabled={loading}
                 />
               </div>
 
-              {error && <div className="text-red-600 text-xs">{error}</div>}
+              {error && <div className="text-red-600 text-sm font-medium">{error}</div>}
 
               <button
                 type="submit"
                 disabled={loading}
-                className="w-full py-2 px-3 rounded-md bg-[#2B4B9B] text-white text-sm font-medium hover:bg-[#1a2f61] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#2B4B9B] disabled:opacity-50 disabled:cursor-not-allowed"
+                className="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 text-white text-base font-semibold shadow-lg hover:from-blue-700 hover:to-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-60 disabled:cursor-not-allowed transition-all duration-300 hover:scale-[1.02]"
               >
                 {loading ? 'Please wait...' : 'Send Reset Link'}
               </button>
@@ -265,7 +300,7 @@ export default function AuthForm({ onSuccess, onSignUpSuccess }: AuthFormProps) 
                 <button
                   type="button"
                   onClick={resetForm}
-                  className="text-xs text-[#2B4B9B] hover:text-[#1a2f61]"
+                  className="text-sm text-blue-600 hover:text-blue-800 font-semibold transition-colors duration-200"
                   disabled={loading}
                 >
                   Back to Sign In
@@ -277,10 +312,10 @@ export default function AuthForm({ onSuccess, onSignUpSuccess }: AuthFormProps) 
       ) : (
         <form
           onSubmit={isSignUp ? handleSignUpSubmit : handleSignInSubmit}
-          className="space-y-4"
+          className="space-y-6"
         >
-          <div>
-            <label htmlFor="email" className="block text-xs font-medium text-gray-700">
+          <div className="form-field">
+            <label htmlFor="email" className="block text-sm font-semibold text-gray-800 tracking-wide mb-2">
               Email
             </label>
             <input
@@ -288,7 +323,7 @@ export default function AuthForm({ onSuccess, onSignUpSuccess }: AuthFormProps) 
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="mt-1 block w-full px-3 py-1.5 shadow-sm custom-input disabled:opacity-50"
+              className="mt-1 block w-full custom-input disabled:opacity-60"
               required
               disabled={loading}
             />
@@ -296,8 +331,8 @@ export default function AuthForm({ onSuccess, onSignUpSuccess }: AuthFormProps) 
 
           {isSignUp && (
             <>
-              <div>
-                <label htmlFor="name" className="block text-xs font-medium text-gray-700">
+              <div className="form-field">
+                <label htmlFor="name" className="block text-sm font-semibold text-gray-800 tracking-wide mb-2">
                   Name
                 </label>
                 <input
@@ -305,14 +340,14 @@ export default function AuthForm({ onSuccess, onSignUpSuccess }: AuthFormProps) 
                   type="text"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
-                  className="mt-1 block w-full px-3 py-1.5 shadow-sm custom-input disabled:opacity-50"
+                  className="mt-1 block w-full custom-input disabled:opacity-60"
                   required
                   disabled={loading}
                 />
               </div>
 
-              <div>
-                <label htmlFor="phoneNumber" className="block text-xs font-medium text-gray-700">
+              <div className="form-field">
+                <label htmlFor="phoneNumber" className="block text-sm font-semibold text-gray-800 tracking-wide mb-2">
                   Phone Number
                 </label>
                 <PhoneInput
@@ -321,8 +356,8 @@ export default function AuthForm({ onSuccess, onSignUpSuccess }: AuthFormProps) 
                   countryCallingCodeEditable={false}
                   defaultCountry="IN"
                   value={phoneNumber}
-                  onChange={setPhoneNumber}
-                  className="mt-1 block w-full shadow-sm disabled:opacity-50"
+                  onChange={value => setPhoneNumber(value || "")}
+                  className="mt-1 block w-full disabled:opacity-60"
                   required
                   disabled={loading}
                   placeholder="+12025550123"
@@ -331,8 +366,8 @@ export default function AuthForm({ onSuccess, onSignUpSuccess }: AuthFormProps) 
             </>
           )}
 
-          <div>
-            <label htmlFor="password" className="block text-xs font-medium text-gray-700">
+          <div className="form-field">
+            <label htmlFor="password" className="block text-sm font-semibold text-gray-800 tracking-wide mb-2">
               Password
             </label>
             <div className="relative mt-1">
@@ -341,24 +376,24 @@ export default function AuthForm({ onSuccess, onSignUpSuccess }: AuthFormProps) 
                 type={showPassword ? 'text' : 'password'}
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                className="block w-full px-3 py-1.5 shadow-sm custom-input pr-8 disabled:opacity-50"
+                className="block w-full custom-input pr-10 disabled:opacity-60"
                 required
                 disabled={loading}
               />
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute inset-y-0 right-0 pr-2 flex items-center text-gray-500 hover:text-gray-700"
+                className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-600 hover:text-gray-800 transition-colors duration-200"
                 disabled={loading}
               >
-                {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                {showPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
               </button>
             </div>
           </div>
 
           {isSignUp && (
-            <div>
-              <label htmlFor="confirmPassword" className="block text-xs font-medium text-gray-700">
+            <div className="form-field">
+              <label htmlFor="confirmPassword" className="block text-sm font-semibold text-gray-800 tracking-wide mb-2">
                 Confirm Password
               </label>
               <div className="relative mt-1">
@@ -367,32 +402,32 @@ export default function AuthForm({ onSuccess, onSignUpSuccess }: AuthFormProps) 
                   type={showConfirmPassword ? 'text' : 'password'}
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
-                  className="block w-full px-3 py-1.5 shadow-sm custom-input pr-8 disabled:opacity-50"
+                  className="block w-full custom-input pr-10 disabled:opacity-60"
                   required
                   disabled={loading}
                 />
                 <button
                   type="button"
                   onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                  className="absolute inset-y-0 right-0 pr-2 flex items-center text-gray-500 hover:text-gray-700"
+                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-600 hover:text-gray-800 transition-colors duration-200"
                   disabled={loading}
                 >
-                  {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                  {showConfirmPassword ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                 </button>
               </div>
             </div>
           )}
 
           {isSignUp && (
-            <div>
-              <label htmlFor="userType" className="block text-xs font-medium text-gray-700">
+            <div className="form-field">
+              <label htmlFor="userType" className="block text-sm font-semibold text-gray-800 tracking-wide mb-2">
                 I am a
               </label>
               <select
                 id="userType"
                 value={userType}
                 onChange={(e) => setUserType(e.target.value as UserType)}
-                className="mt-1 block w-full px-3 py-1.5 shadow-sm custom-select disabled:opacity-50"
+                className="mt-1 block w-full custom-select disabled:opacity-60"
                 required
                 disabled={loading}
               >
@@ -404,12 +439,12 @@ export default function AuthForm({ onSuccess, onSignUpSuccess }: AuthFormProps) 
             </div>
           )}
 
-          {error && <div className="text-red-600 text-xs">{error}</div>}
+          {error && <div className="text-red-600 text-sm font-medium">{error}</div>}
 
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-2 px-3 rounded-md bg-[#2B4B9B] text-white text-sm font-medium hover:bg-[#1a2f61] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-[#2B4B9B] disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-blue-600 to-indigo-600 text-white text-base font-semibold shadow-lg hover:from-blue-700 hover:to-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-60 disabled:cursor-not-allowed transition-all duration-300 hover:scale-[1.02]"
           >
             {loading
               ? 'Please wait...'
@@ -418,7 +453,7 @@ export default function AuthForm({ onSuccess, onSignUpSuccess }: AuthFormProps) 
                 : 'Sign In'}
           </button>
 
-          <div className="text-center space-y-2">
+          <div className="text-center space-y-3 mt-3">
             {!isSignUp && (
               <button
                 type="button"
@@ -428,7 +463,7 @@ export default function AuthForm({ onSuccess, onSignUpSuccess }: AuthFormProps) 
                   setEmail('');
                   setPassword('');
                 }}
-                className="text-xs text-[#2B4B9B] hover:text-[#1a2f61]"
+                className="text-sm text-blue-600 hover:text-blue-800 font-semibold transition-colors duration-200"
                 disabled={loading}
               >
                 Forgot Password?
@@ -446,7 +481,7 @@ export default function AuthForm({ onSuccess, onSignUpSuccess }: AuthFormProps) 
                   setPhoneNumber('');
                   setName('');
                 }}
-                className="text-xs text-[#2B4B9B] hover:text-[#1a2f61]"
+                className="text-sm text-blue-600 hover:text-blue-800 font-semibold transition-colors duration-200"
                 disabled={loading}
               >
                 {isSignUp ? 'Already have an account? Sign in' : "Don't have an account? Sign up"}
@@ -455,9 +490,9 @@ export default function AuthForm({ onSuccess, onSignUpSuccess }: AuthFormProps) 
           </div>
 
           {error && (
-            <div className="text-center text-xs text-gray-600 mt-2">
+            <div className="text-center text-sm text-gray-600 mt-3">
               Having trouble?{' '}
-              <a href="mailto:support@sponsorstudio.in" className="text-[#2B4B9B] hover:text-[#1a2f61]">
+              <a href="mailto:support@sponsorstudio.in" className="text-blue-600 hover:text-blue-800 font-semibold transition-colors duration-200">
                 Contact support
               </a>
             </div>

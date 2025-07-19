@@ -36,23 +36,23 @@ const NavBar: React.FC<NavBarProps> = ({
       { 
         y: 0, 
         opacity: 1, 
-        duration: 0.8, 
+        duration: 0.32, 
         ease: 'power3.out',
         clearProps: "all" 
       }
     );
 
-    // Create nav item stagger animation
+    // Create nav item stagger animation (instant for mobile)
     gsap.fromTo(
       ".nav-item",
       { y: -20, opacity: 0 },
       { 
         y: 0, 
         opacity: 1, 
-        duration: 0.5, 
-        stagger: 0.1,
+        duration: 0.09, 
+        stagger: 0.001,
         ease: 'back.out(1.2)', 
-        delay: 0.3,
+        delay: 0.001,
         clearProps: "all"
       }
     );
@@ -71,7 +71,7 @@ const NavBar: React.FC<NavBarProps> = ({
           opacity: 1, 
           y: 0,
           scaleY: 1, 
-          duration: 0.5, 
+          duration: 0.18, 
           ease: "power3.out" 
         }
       );
@@ -79,7 +79,7 @@ const NavBar: React.FC<NavBarProps> = ({
       gsap.fromTo(
         ".mobile-menu > div > *", 
         { opacity: 0, x: -20 },
-        { opacity: 1, x: 0, duration: 0.4, stagger: 0.1, delay: 0.2, ease: "power2.out" }
+        { opacity: 1, x: 0, duration: 0.12, stagger: 0.03, delay: 0.05, ease: "power2.out" }
       );
     }
 

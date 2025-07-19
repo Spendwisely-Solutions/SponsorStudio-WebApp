@@ -1,29 +1,14 @@
-import React, { useEffect, useRef } from 'react';
-import { gsap } from 'gsap';
-import { ScrollTrigger } from 'gsap/ScrollTrigger';
-import { ClientLogo as ClientLogoType } from "../../App"
 
-gsap.registerPlugin(ScrollTrigger);
+import React, { useRef } from 'react';
+import { ClientLogo as ClientLogoType } from "../../App"
 
 interface ClientLogoProps {
   logo: ClientLogoType;
 }
 
 const ClientLogo: React.FC<ClientLogoProps> = ({ logo }) => {
-  const logoRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
-    gsap.fromTo(
-      logoRef.current,
-      { opacity: 0, x: 20 },
-      {
-        opacity: 1,
-        x: 0,
-        duration: 0.6,
-        scrollTrigger: { trigger: logoRef.current, start: 'top 90%', fastScrollEnd: true },
-      }
-    );
-  }, []);
+  const logoRef = useRef<HTMLDivElement>(null);
 
   return (
     <div ref={logoRef} className="flex-shrink-0 px-4">

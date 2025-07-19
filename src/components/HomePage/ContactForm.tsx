@@ -145,7 +145,7 @@ const ContactForm: React.FC<ContactFormProps> = ({ formData, setFormData, showTh
         <div
           className="bg-white/90 backdrop-blur-sm border border-green-200 rounded-2xl p-10 text-center shadow-xl relative overflow-hidden"
           data-aos="zoom-in-up"
-          data-aos-duration="800"
+           data-aos-duration="500"
           data-aos-easing="ease-out-cubic"
         >
           {/* Success confetti particles */}
@@ -183,37 +183,16 @@ const ContactForm: React.FC<ContactFormProps> = ({ formData, setFormData, showTh
         <div
           className="bg-white/80 backdrop-blur-sm p-10 rounded-2xl shadow-xl border border-blue-100"
           data-aos="zoom-in-up"
-          data-aos-duration="800"
+           data-aos-duration="500"
           data-aos-easing="ease-out-cubic"
-          data-aos-delay="100"
+          data-aos-delay="30"
         >
-          <div className="text-center mb-10">
-            <div className="inline-flex items-center px-4 py-1.5 mb-6 rounded-full bg-blue-100 text-blue-800 border border-blue-200">
-              <span className="flex h-2 w-2 rounded-full bg-blue-500 mr-2 animate-pulse"></span>
-              <span className="text-sm font-medium">We respond within 24 hours</span>
-            </div>
-            
-            <h3
-              className="text-3xl sm:text-3xl md:text-4xl font-extrabold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-[#2B4B9B] to-[#4C6ECA] drop-shadow-sm"
-              data-aos="fade-up"
-              data-aos-delay="100"
-            >
-              Get in Touch
-            </h3>
-            
-            <p
-              className="mt-4 max-w-md mx-auto text-lg text-gray-600"
-              data-aos="fade-up"
-              data-aos-delay="150"
-            >
-              Have questions or ready to elevate your sponsorship strategy? Reach out to our team.
-            </p>
-          </div>
+          {/* Removed duplicate badge, heading, and subtitle to avoid repetition. */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div
               className="relative"
               data-aos="fade-up"
-              data-aos-delay="150"
+              data-aos-delay="50"
             >
               <label
                 htmlFor="name"
@@ -227,7 +206,7 @@ const ContactForm: React.FC<ContactFormProps> = ({ formData, setFormData, showTh
                 </div>
                 <input
                   type="text"
-                  id="name"
+           data-aos-duration="500"
                   value={safeFormData.name}
                   onChange={(e) => {
                     setFormData({ ...safeFormData, name: e.target.value });
@@ -250,9 +229,9 @@ const ContactForm: React.FC<ContactFormProps> = ({ formData, setFormData, showTh
               </div>
             </div>
             <div
-              className="relative"
+           data-aos-duration="500"
               data-aos="fade-up"
-              data-aos-delay="200"
+              data-aos-delay="70"
             >
               <label
                 htmlFor="email"
@@ -291,7 +270,7 @@ const ContactForm: React.FC<ContactFormProps> = ({ formData, setFormData, showTh
             <div
               className="relative"
               data-aos="fade-up"
-              data-aos-delay="250"
+              data-aos-delay="90"
             >
               <label
                 htmlFor="phone"
@@ -320,7 +299,7 @@ const ContactForm: React.FC<ContactFormProps> = ({ formData, setFormData, showTh
             <div
               className="relative"
               data-aos="fade-up"
-              data-aos-delay="300"
+              data-aos-delay="110"
             >
               <label
                 htmlFor="organization_type"
@@ -368,7 +347,7 @@ const ContactForm: React.FC<ContactFormProps> = ({ formData, setFormData, showTh
             <div 
               className="md:col-span-2"
               data-aos="fade-up"
-              data-aos-delay="350"
+              data-aos-delay="130"
             >
               <label
                 htmlFor="message"
@@ -407,7 +386,7 @@ const ContactForm: React.FC<ContactFormProps> = ({ formData, setFormData, showTh
             <div 
               className="md:col-span-2"
               data-aos="fade-up"
-              data-aos-delay="400"
+              data-aos-delay="150"
             >
               <button
                 onClick={(e) => {
