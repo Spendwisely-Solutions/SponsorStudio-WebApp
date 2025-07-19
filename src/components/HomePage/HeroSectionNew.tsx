@@ -217,22 +217,28 @@ const HeroSection: React.FC<HeroSectionProps> = ({ user, setShowAuthForm }) => {
 
             {/* Enhanced CTA section */}
             <div className="space-y-6">
-              <div className="flex flex-col sm:flex-row gap-4 justify-center lg:justify-start">
+              <div className="flex flex-row gap-3 justify-center lg:justify-start">
                 {user ? (
                   <a
                     ref={buttonRef as React.RefObject<HTMLAnchorElement>}
                     href="/dashboard"
-                    className="group inline-flex items-center px-8 py-4 bg-gradient-to-r from-blue-600 to-indigo-600 text-white text-lg font-semibold rounded-2xl hover:from-blue-700 hover:to-indigo-700 shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1"
+                    className="group inline-flex items-center px-4 sm:px-8 py-3 sm:py-4 bg-gradient-to-r from-blue-600 to-indigo-600 text-white text-base sm:text-lg font-semibold rounded-xl sm:rounded-2xl hover:from-blue-700 hover:to-indigo-700 shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1"
                   >
+<<<<<<< Updated upstream
                     Get Started Free
                     <ArrowRight className="ml-3 h-5 w-5 group-hover:translate-x-1 transition-transform duration-200" />
+=======
+                    Dashboard
+                    <ArrowRight className="ml-2 sm:ml-3 h-4 sm:h-5 w-4 sm:w-5 group-hover:translate-x-1 transition-transform duration-200" />
+>>>>>>> Stashed changes
                   </a>
                 ) : (
                   <button
                     ref={buttonRef as React.RefObject<HTMLButtonElement>}
                     onClick={() => setShowAuthForm(true)}
-                    className="group inline-flex items-center px-8 py-4 bg-gradient-to-r from-blue-600 to-indigo-600 text-white text-lg font-semibold rounded-2xl hover:from-blue-700 hover:to-indigo-700 shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1"
+                    className="group inline-flex items-center px-4 sm:px-8 py-3 sm:py-4 bg-gradient-to-r from-blue-600 to-indigo-600 text-white text-base sm:text-lg font-semibold rounded-xl sm:rounded-2xl hover:from-blue-700 hover:to-indigo-700 shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1"
                   >
+<<<<<<< Updated upstream
                     Get Started Free
                     <ArrowRight className="ml-3 h-5 w-5 group-hover:translate-x-1 transition-transform duration-200" />
                   </button>
@@ -241,9 +247,23 @@ const HeroSection: React.FC<HeroSectionProps> = ({ user, setShowAuthForm }) => {
                 <button className="group inline-flex items-center px-8 py-4 bg-white/80 backdrop-blur-sm text-gray-700 text-lg font-semibold rounded-2xl border-2 border-gray-200/50 hover:border-blue-300 hover:bg-blue-50/50 transition-all duration-300 shadow-lg hover:shadow-xl">
                   <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-full flex items-center justify-center mr-3 group-hover:scale-110 transition-transform duration-200">
                     <Play className="w-4 h-4 text-white ml-0.5" fill="currentColor" />
+=======
+                    Get Started
+                    <ArrowRight className="ml-2 sm:ml-3 h-4 sm:h-5 w-4 sm:w-5 group-hover:translate-x-1 transition-transform duration-200" />
+                  </button>
+                )}
+                <a href="#about-video">
+                <button className="group inline-flex items-center px-4 sm:px-8 py-3 sm:py-4 bg-white/80 backdrop-blur-sm text-gray-700 text-base sm:text-lg font-semibold rounded-xl sm:rounded-2xl border-2 border-gray-200/50 hover:border-blue-300 hover:bg-blue-50/50 transition-all duration-300 shadow-lg hover:shadow-xl">
+                  <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-full flex items-center justify-center mr-2 sm:mr-3 group-hover:scale-110 transition-transform duration-200">
+                    <Play className="w-3 h-3 sm:w-4 sm:h-4 text-white ml-0.5" fill="currentColor" />
+>>>>>>> Stashed changes
                   </div>
-                  Watch Demo
+                  <span className="whitespace-nowrap">Watch Demo</span>
                 </button>
+<<<<<<< Updated upstream
+=======
+                </a>
+>>>>>>> Stashed changes
               </div>
               
               <p className="text-sm text-gray-500 text-center lg:text-left">
