@@ -155,25 +155,25 @@ export default function AuthForm({ onSuccess, onSignUpSuccess }: AuthFormProps) 
   return (
     <div className="w-full max-w-sm mx-auto bg-gradient-to-br from-white to-gray-50 border border-gray-200 shadow-2xl rounded-2xl p-8 max-h-[90dvh] overflow-y-auto relative transition-all duration-300">
       <style jsx>{`
-        /* Custom scrollbar with vibrant accents */
+        /* Minimal scrollbar with subtle color */
         div[class*="max-h-[90dvh]"]::-webkit-scrollbar {
-          width: 8px;
+          width: 4px;
           background: transparent;
         }
         div[class*="max-h-[90dvh]"]::-webkit-scrollbar-thumb {
-          background: linear-gradient(180deg, #3b82f6, #8b5cf6);
-          border-radius: 8px;
+          background: rgba(156, 163, 175, 0.3);
+          border-radius: 4px;
         }
         div[class*="max-h-[90dvh]"]::-webkit-scrollbar-thumb:hover {
-          background: linear-gradient(180deg, #2563eb, #7c3aed);
+          background: rgba(156, 163, 175, 0.5);
         }
         div[class*="max-h-[90dvh]"]::-webkit-scrollbar-track {
-          background: rgba(229, 231, 235, 0.3);
+          background: transparent;
         }
         /* For Firefox */
         div[class*="max-h-[90dvh]"] {
           scrollbar-width: thin;
-          scrollbar-color: #3b82f6 rgba(229, 231, 235, 0.3);
+          scrollbar-color: rgba(156, 163, 175, 0.3) transparent;
         }
         .PhoneInput,
         input.custom-input,
@@ -452,7 +452,6 @@ export default function AuthForm({ onSuccess, onSignUpSuccess }: AuthFormProps) 
                 ? 'Create Account'
                 : 'Sign In'}
           </button>
-
           <div className="text-center space-y-3 mt-3">
             {!isSignUp && (
               <button
