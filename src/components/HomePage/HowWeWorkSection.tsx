@@ -16,18 +16,9 @@ const HowWeWorkSection: React.FC = () => {
     <section className="py-20 bg-white relative z-10" id="about">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8" id='about-video'>
         <div className="text-center mb-20">
-          <div className="inline-flex items-center px-6 py-3 mb-8 rounded-full bg-white/80 backdrop-blur-sm shadow-lg border border-blue-100/50">
-            <div className="w-10 h-10 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-full flex items-center justify-center mr-3 shadow-sm">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
-              </svg>
-            </div>
-            <div>
-              <span className="text-sm font-semibold text-gray-800">Platform Overview</span>
-              <div className="flex items-center mt-1">
-                <span className="text-xs text-gray-600">See how it works</span>
-              </div>
-            </div>
+          <div className="inline-flex items-center px-4 py-1.5 mb-8 rounded-full bg-blue-100 text-blue-800 border border-blue-200">
+            <span className="flex h-2 w-2 rounded-full bg-blue-500 mr-2 animate-pulse"></span>
+            <span className="text-sm font-medium">Platform Overview</span>
           </div>
           
           <h2

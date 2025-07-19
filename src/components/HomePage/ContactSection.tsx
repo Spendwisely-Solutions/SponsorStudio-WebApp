@@ -19,18 +19,9 @@ const ContactSection: React.FC<ContactSectionProps> = ({
     <section className="py-20 bg-gray-50 relative z-10" id="contact">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-20">
-          <div className="inline-flex items-center px-6 py-3 mb-8 rounded-full bg-white/80 backdrop-blur-sm shadow-lg border border-blue-100/50">
-            <div className="w-10 h-10 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-full flex items-center justify-center mr-3 shadow-sm">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-              </svg>
-            </div>
-            <div>
-              <span className="text-sm font-semibold text-gray-800">Get In Touch</span>
-              <div className="flex items-center mt-1">
-                <span className="text-xs text-gray-600">We're here to help</span>
-              </div>
-            </div>
+          <div className="inline-flex items-center px-4 py-1.5 mb-8 rounded-full bg-blue-100 text-blue-800 border border-blue-200">
+            <span className="flex h-2 w-2 rounded-full bg-blue-500 mr-2 animate-pulse"></span>
+            <span className="text-sm font-medium">Get In Touch</span>
           </div>
           
           <h2
@@ -38,7 +29,7 @@ const ContactSection: React.FC<ContactSectionProps> = ({
             data-aos="zoom-in-up"
             data-aos-duration="800"
             data-aos-easing="ease-out-cubic"
-            data-aos-delay="50"
+            data-aos-delay="10"
             data-aos-once="false"
           >
             Contact Us
@@ -62,7 +53,7 @@ const ContactSection: React.FC<ContactSectionProps> = ({
             data-aos="zoom-in-up"
             data-aos-duration="800"
             data-aos-easing="ease-out-cubic"
-            data-aos-delay="75"
+            data-aos-delay="20"
             data-aos-once="false"
           >
             Have questions? We're here to help! Reach out to our team for personalized assistance.

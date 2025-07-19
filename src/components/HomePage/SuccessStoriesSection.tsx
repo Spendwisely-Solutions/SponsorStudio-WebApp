@@ -59,18 +59,9 @@ const SuccessStoriesSection: React.FC<SuccessStoriesSectionProps> = ({
       
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         <div className="text-center mb-20">
-          <div className="inline-flex items-center px-6 py-3 mb-8 rounded-full bg-white/80 backdrop-blur-sm shadow-lg border border-blue-100/50">
-            <div className="w-10 h-10 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-full flex items-center justify-center mr-3 shadow-sm">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z" />
-              </svg>
-            </div>
-            <div>
-              <span className="text-sm font-semibold text-gray-800">Event Blogs & Stories</span>
-              <div className="flex items-center mt-1">
-                <span className="text-xs text-gray-600">Highlights from past events</span>
-              </div>
-            </div>
+          <div className="inline-flex items-center px-4 py-1.5 mb-8 rounded-full bg-blue-100 text-blue-800 border border-blue-200">
+            <span className="flex h-2 w-2 rounded-full bg-blue-500 mr-2 animate-pulse"></span>
+            <span className="text-sm font-medium">Event Blogs & Stories</span>
           </div>
           
           <h2
