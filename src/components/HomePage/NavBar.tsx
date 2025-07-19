@@ -200,9 +200,7 @@ const NavBar: React.FC<NavBarProps> = ({
                       {profile?.company_name?.charAt(0).toUpperCase() || user.email?.charAt(0).toUpperCase()}
                     </div>
                   )}
-                  {!isProfileComplete && (
-                    <div className="absolute -top-1 -right-1 w-4 h-4 bg-yellow-400 rounded-full animate-pulse border-2 border-white" />
-                  )}
+                  {/* Removed yellow blinking indicator for incomplete profile */}
                 </div>
                 <div className="flex flex-col">
                   <span className="text-gray-800 font-semibold group-hover:text-[#2B4B9B] transition-colors text-sm lg:text-base">
@@ -303,9 +301,7 @@ const NavBar: React.FC<NavBarProps> = ({
                         {profile?.company_name?.charAt(0).toUpperCase() || user.email?.charAt(0).toUpperCase()}
                       </div>
                     )}
-                    {!isProfileComplete && (
-                      <div className="absolute -top-1 -right-1 w-4 h-4 bg-yellow-400 rounded-full animate-pulse border-2 border-white" />
-                    )}
+                    {/* Removed yellow blinking indicator for incomplete profile */}
                   </div>
                   <div className="ml-4">
                     <div className="text-gray-800 font-semibold">{profile?.company_name || 'Complete Profile'}</div>
