@@ -35,7 +35,8 @@ import {
   Video,
   Upload,
   File,
-  Sparkles
+  Sparkles,
+  Eye
 } from 'lucide-react';
 import type { Database } from '../../lib/database.types';
 
@@ -44,13 +45,15 @@ type Opportunity = Database['public']['Tables']['opportunities']['Row'] & {
   categories: Database['public']['Tables']['categories']['Row'] | null;
   type: 'opportunity';
   report: Database['public']['Tables']['reports']['Row'] | null;
-  mou_id: string | null; // Added mou_id to type
+  mou_id: string | null;
+  impression_count?: number; // Added for impression count
 };
 
 type Post = Database['public']['Tables']['posts']['Row'] & {
   influencer_profile: (Database['public']['Tables']['profiles']['Row'] & { email?: string }) | null;
   categories: Database['public']['Tables']['categories']['Row'] | null;
   type: 'post';
+  impression_count?: number; // Added for impression count
 };
 
 type CombinedItem = Opportunity | Post;
@@ -73,7 +76,7 @@ interface OpportunitiesProps {
 }
 
 export default function Opportunities({ searchTerm, setSearchTerm, stats, setStats }: OpportunitiesProps) {
-  const navigate = useNavigate(); // Initialize navigate hook
+  const navigate = useNavigate();
   const [items, setItems] = useState<CombinedItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [expandedItem, setExpandedItem] = useState<string | null>(null);
@@ -111,12 +114,32 @@ export default function Opportunities({ searchTerm, setSearchTerm, stats, setSta
         throw new Error(`Failed to fetch opportunities: ${opportunitiesError.message}`);
       }
 
+      // Fetch impression counts for opportunities
+      const opportunityIds = opportunitiesData?.map(opp => opp.id) ?? [];
+      let opportunityImpressions: Record<string, number> = {};
+      if (opportunityIds.length > 0) {
+        const { data: impressionsData, error: impressionsError } = await supabase
+          .from('impressions')
+          .select('opportunity_id')
+          .in('opportunity_id', opportunityIds);
+
+        if (impressionsError) {
+          console.warn(`Error fetching opportunity impressions: ${impressionsError.message}`);
+        } else {
+          opportunityImpressions = impressionsData?.reduce((acc, curr) => {
+            acc[curr.opportunity_id] = (acc[curr.opportunity_id] || 0) + 1;
+            return acc;
+          }, {} as Record<string, number>) || {};
+        }
+      }
+
       const normalizedOpportunities = (opportunitiesData ?? []).map(opp => ({
         ...opp,
         verification_status: opp.verification_status?.trim().toLowerCase() ?? 'pending',
         type: 'opportunity' as const,
         report: opp.report || null,
-        mou_id: opp.mou_id || null // Ensure mou_id is included
+        mou_id: opp.mou_id || null,
+        impression_count: opportunityImpressions[opp.id] || 0
       }));
 
       // Fetch posts
@@ -132,10 +155,30 @@ export default function Opportunities({ searchTerm, setSearchTerm, stats, setSta
         throw new Error(`Failed to fetch posts: ${postsError.message}`);
       }
 
+      // Fetch impression counts for posts
+      const postIds = postsData?.map(post => post.id) ?? [];
+      let postImpressions: Record<string, number> = {};
+      if (postIds.length > 0) {
+        const { data: impressionsData, error: impressionsError } = await supabase
+          .from('impressions')
+          .select('post_id')
+          .in('post_id', postIds);
+
+        if (impressionsError) {
+          console.warn(`Error fetching post impressions: ${impressionsError.message}`);
+        } else {
+          postImpressions = impressionsData?.reduce((acc, curr) => {
+            acc[curr.post_id] = (acc[curr.post_id] || 0) + 1;
+            return acc;
+          }, {} as Record<string, number>) || {};
+        }
+      }
+
       const normalizedPosts = (postsData ?? []).map(post => ({
         ...post,
         verification_status: post.verification_status?.trim().toLowerCase() ?? 'pending',
-        type: 'post' as const
+        type: 'post' as const,
+        impression_count: postImpressions[post.id] || 0
       }));
 
       // Combine and filter data
@@ -472,13 +515,11 @@ export default function Opportunities({ searchTerm, setSearchTerm, stats, setSta
       return;
     }
 
-    // Validate file type
     if (reportFile.type !== 'application/pdf') {
       toast.error('Please upload a valid PDF file');
       return;
     }
 
-    // Validate file size (max 10MB)
     if (reportFile.size > 10 * 1024 * 1024) {
       toast.error('File size must be less than 10MB');
       return;
@@ -487,7 +528,6 @@ export default function Opportunities({ searchTerm, setSearchTerm, stats, setSta
     try {
       setProcessingAction(reportOpportunityId);
 
-      // Check for existing report
       const { data: existingReport, error: fetchError } = await supabase
         .from('reports')
         .select('id, pdf_path')
@@ -498,7 +538,6 @@ export default function Opportunities({ searchTerm, setSearchTerm, stats, setSta
         throw new Error(`Failed to check existing report: ${fetchError.message}`);
       }
 
-      // Delete existing report if it exists
       if (existingReport?.id) {
         const { error: storageError } = await supabase.storage
           .from('reports')
@@ -518,15 +557,11 @@ export default function Opportunities({ searchTerm, setSearchTerm, stats, setSta
         }
       }
 
-      // Generate file path
       const fileName = `${reportOpportunityId}_${Date.now()}.pdf`;
       const filePath = `${reportOpportunityId}/${fileName}`;
-
-      // Read file as binary data
       const arrayBuffer = await reportFile.arrayBuffer();
       const fileData = new Uint8Array(arrayBuffer);
 
-      // Upload file
       const { error: uploadError } = await supabase.storage
         .from('reports')
         .upload(filePath, fileData, {
@@ -539,7 +574,6 @@ export default function Opportunities({ searchTerm, setSearchTerm, stats, setSta
         throw new Error(`Failed to upload report: ${uploadError.message}`);
       }
 
-      // Insert report record
       const { error: insertError } = await supabase
         .from('reports')
         .insert({
@@ -773,6 +807,10 @@ export default function Opportunities({ searchTerm, setSearchTerm, stats, setSta
                               {(item as Opportunity).footfall.toLocaleString()} footfall
                             </div>
                           )}
+                          <div className="flex items-center text-sm text-gray-500">
+                            <Eye size={16} className="mr-2 flex-shrink-0" />
+                            {item.impression_count !== undefined ? `${item.impression_count.toLocaleString()} impressions` : 'Loading...'}
+                          </div>
                           {isOpportunity && (item as Opportunity).is_vip && (
                             <div className="flex items-center text-sm font-medium text-amber-700">
                               <Sparkles size={16} className="mr-2 flex-shrink-0 text-amber-500" />
@@ -1118,7 +1156,7 @@ export default function Opportunities({ searchTerm, setSearchTerm, stats, setSta
                                 type="text"
                                 className="flex-1 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                                 value={sheetLinkInput[item.id] || item.sheetlink || ''}
-                                onChange={(e) => setSheetLinkInput(prev => ({ ...prev, [item.id]: e.target.value }))}
+                                onChange={(e) => setSheetLinkInput(prev => ({ ...prev, [id]: e.target.value }))}
                                 placeholder="Enter spreadsheet link..."
                               />
                               <button

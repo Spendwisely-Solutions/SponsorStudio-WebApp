@@ -23,7 +23,7 @@ const SuccessStoriesSection: React.FC<SuccessStoriesSectionProps> = ({
   useEffect(() => {
     AOS.init({
       duration: 800, // Slightly longer animation duration for smoother effect
-      once: false, // Animate every time the element enters the viewport
+      once: true, // Animate every time the element enters the viewport
       offset: 100, // Trigger animation earlier
       easing: 'ease-out-cubic', // Smoother easing function
       mirror: true // Animations can be triggered when scrolling back up
@@ -45,10 +45,7 @@ const SuccessStoriesSection: React.FC<SuccessStoriesSectionProps> = ({
         <div className="absolute top-0 left-1/4 w-96 h-96 bg-gradient-to-br from-blue-200/40 to-indigo-300/30 rounded-full blur-3xl animate-pulse" style={{animationDuration: '4s'}}></div>
         <div className="absolute bottom-0 right-1/4 w-80 h-80 bg-gradient-to-br from-purple-200/40 to-pink-300/30 rounded-full blur-3xl animate-pulse" style={{animationDuration: '6s', animationDelay: '2s'}}></div>
         
-        {/* Floating geometric shapes */}
-        <div className="absolute top-32 left-16 w-6 h-6 bg-blue-400/60 rounded rotate-45 animate-bounce" style={{animationDelay: '0s', animationDuration: '3s'}}></div>
-        <div className="absolute top-48 right-24 w-4 h-4 bg-indigo-400/60 rounded-full animate-bounce" style={{animationDelay: '1s', animationDuration: '4s'}}></div>
-        <div className="absolute bottom-32 left-32 w-8 h-8 bg-purple-400/60 rounded-full animate-bounce" style={{animationDelay: '2s', animationDuration: '5s'}}></div>
+        {/* Floating geometric shapes removed for a cleaner look */}
         
         {/* Subtle pattern overlay */}
         <div className="absolute inset-0 opacity-[0.03]" style={{

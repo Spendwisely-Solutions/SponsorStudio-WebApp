@@ -30,7 +30,7 @@ const ContactSection: React.FC<ContactSectionProps> = ({
             data-aos-duration="800"
             data-aos-easing="ease-out-cubic"
             data-aos-delay="10"
-            data-aos-once="false"
+            data-aos-once="true"
           >
             Contact Us
           </h2>
@@ -54,7 +54,7 @@ const ContactSection: React.FC<ContactSectionProps> = ({
             data-aos-duration="800"
             data-aos-easing="ease-out-cubic"
             data-aos-delay="20"
-            data-aos-once="false"
+            data-aos-once="true"
           >
             Have questions? We're here to help! Reach out to our team for personalized assistance.
           </p>

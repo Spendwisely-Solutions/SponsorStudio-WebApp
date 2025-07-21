@@ -90,7 +90,7 @@ const App: React.FC = () => {
 
   useEffect(() => {
     AOS.init({
-      once: false, // Ensures animations only run once
+      once: true, // Ensures animations only run once
     offset: 50, // Triggers animations 100px before element enters viewport
     });
   }, []);

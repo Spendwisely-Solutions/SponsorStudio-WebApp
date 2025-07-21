@@ -19,7 +19,7 @@ const Step: React.FC<StepProps> = ({ icon, title, description, index }) => {
       data-aos-easing="ease-out-cubic"
       data-aos-delay={200 + index * 200} // Base delay of 200ms plus 200ms per step
       data-aos-anchor-placement="top-bottom"
-      data-aos-once="false"
+      data-aos-once="true"
     >
       <div className="flex items-center justify-center h-16 w-16 rounded-full bg-[#2B4B9B] text-white mx-auto shadow-md transform hover:scale-110 transition-transform duration-200 ease-out">
         {icon}
