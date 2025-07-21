@@ -2,6 +2,8 @@ import React, { memo, useState, useEffect, useMemo, useRef } from 'react';
 import { Calendar, DollarSign, MapPin, FileText, Heart, X, Volume2, VolumeX, Link as LinkIcon, Tag, User, Users, Unlock } from 'lucide-react';
 import { motion, useMotionValue, useTransform } from 'framer-motion';
 import toast from 'react-hot-toast';
+import { supabase } from '../../../lib/supabase';
+import { useAuth } from '../../../contexts/AuthContext';
 
 interface Opportunity {
   id: string;
@@ -104,8 +106,59 @@ const useSwipeAnimation = (
   return { x, rotate, likeOpacity, dislikeOpacity, handleDragEnd };
 };
 
+const useImpressionTracking = (opportunityId: string, userId: string | null) => {
+  const hasTracked = useRef(false);
+  const cardRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!userId || hasTracked.current || !cardRef.current) return;
+
+    const observer = new IntersectionObserver(
+      async ([entry]) => {
+        if (entry.isIntersecting && !hasTracked.current) {
+          try {
+            hasTracked.current = true;
+            console.log(`useImpressionTracking: Recording impression for opportunity ${opportunityId}, user ${userId}`);
+            const { error } = await supabase
+              .from('impressions')
+              .insert({
+                opportunity_id: opportunityId,
+                user_id: userId,
+                viewed_at: new Date().toISOString(),
+              });
+
+            if (error) {
+              if (error.code === '23505') {
+                console.log('useImpressionTracking: Impression already recorded for this user and opportunity');
+              } else {
+                console.error('useImpressionTracking: Error recording impression:', error);
+                toast.error('Failed to record impression.');
+              }
+            } else {
+              console.log('useImpressionTracking: Impression recorded successfully');
+            }
+          } catch (err) {
+            console.error('useImpressionTracking: Unexpected error:', err);
+            toast.error('An unexpected error occurred while recording impression.');
+          }
+        }
+      },
+      { threshold: 0.5 } // Trigger when 50% of the card is visible
+    );
+
+    observer.observe(cardRef.current);
+
+    return () => {
+      observer.disconnect();
+    };
+  }, [opportunityId, userId]);
+
+  return cardRef;
+};
+
 const OpportunityCard: React.FC<OpportunityCardProps> = memo(
   ({ opportunity, onLike, onReject, swipeAction, onAnimationComplete, showFullDetails, credits, deductCredits }) => {
+    const { user } = useAuth();
     const [isSwipePending, setIsSwipePending] = useState(false);
     const { x, rotate, likeOpacity, dislikeOpacity, handleDragEnd } = useSwipeAnimation(
       () => onLike(opportunity.id),
@@ -118,8 +171,9 @@ const OpportunityCard: React.FC<OpportunityCardProps> = memo(
     const [showMuteIndicator, setShowMuteIndicator] = useState(false);
     const [selectedMedia, setSelectedMedia] = useState(opportunity.media_urls?.[0] || '');
     const [isBrochureUnlocked, setIsBrochureUnlocked] = useState(false);
-    const [isUnlocking, setIsUnlocking] = useState(false); // New loading state
+    const [isUnlocking, setIsUnlocking] = useState(false);
     const videoRef = useRef<HTMLVideoElement>(null);
+    const cardRef = useImpressionTracking(opportunity.id, user?.id || null);
 
     useEffect(() => {
       console.log(`OpportunityCard: Mounted with credits=${credits}, opportunity.id=${opportunity.id}`);
@@ -236,7 +290,7 @@ const OpportunityCard: React.FC<OpportunityCardProps> = memo(
         return;
       }
 
-      setIsUnlocking(true); // Start loading
+      setIsUnlocking(true);
       try {
         console.log('handleUnlockBrochure: Attempting to deduct 100 credits');
         await deductCredits(100);
@@ -248,9 +302,8 @@ const OpportunityCard: React.FC<OpportunityCardProps> = memo(
         console.log('handleUnlockBrochure: Brochure unlocked');
       } catch (error: any) {
         console.error('handleUnlockBrochure: Error deducting credits:', error);
-        // Error messages (e.g., "Session expired" or "Failed to deduct credits") are handled by deductCredits in BrandDashboard
       } finally {
-        setIsUnlocking(false); // Stop loading
+        setIsUnlocking(false);
       }
     };
 
@@ -372,27 +425,27 @@ const OpportunityCard: React.FC<OpportunityCardProps> = memo(
                     selectedMedia === url ? 'border-blue-600' : 'border-gray-300'
                   } hover:border-blue-400 transition-colors duration-200`}
                 >
-                {isThumbnailVideo ? (
-                  <video
-                    src={url}
-                    className="w-full h-full object-cover"
-                    muted
-                    loop
-                    onMouseOver={e => e.currentTarget.play()}
-                    onMouseOut={e => e.currentTarget.pause()}
-                  >
-                    <source src={url} type="video/mp4" />
-                  </video>
-                ) : (
-                  <img
-                    src={url}
-                    alt={`Thumbnail ${index + 1}`}
-                    className="w-full h-full object-cover"
-                  />
-                )}
-              </button>
-            );
-          })}
+                  {isThumbnailVideo ? (
+                    <video
+                      src={url}
+                      className="w-full h-full object-cover"
+                      muted
+                      loop
+                      onMouseOver={e => e.currentTarget.play()}
+                      onMouseOut={e => e.currentTarget.pause()}
+                    >
+                      <source src={url} type="video/mp4" />
+                    </video>
+                  ) : (
+                    <img
+                      src={url}
+                      alt={`Thumbnail ${index + 1}`}
+                      className="w-full h-full object-cover"
+                    />
+                  )}
+                </button>
+              );
+            })}
           </div>
         </div>
       );
@@ -400,94 +453,93 @@ const OpportunityCard: React.FC<OpportunityCardProps> = memo(
 
     const detailCards = [
       {
-      icon: <DollarSign className="w-5 h-5 sm:w-6 sm:h-6 text-gray-700" />,
-      label: (() => {
-        const pr = opportunity.price_range;
-        if (pr) {
-        const { min, max } = pr;
-        // If max is not set (0 or undefined/null), show "Price"
-        if (!max) {
-          return 'Price';
-        }
-        return 'Budget';
-        }
-        return 'Budget';
-      })(),
-      value: (() => {
-        const pr = opportunity.price_range;
-        if (pr) {
-        const { min, max } = pr;
-        if (min > 0 && max > 0) {
-          return `₹${min} - ₹${max}`;
-        } else if (min > 0 && !max) {
-          return `₹${min}`;
-        } else if (max > 0 && !min) {
-          return `₹${max}`;
-        } else {
-          return 'Contact for price';
-        }
-        }
-        return 'N/A';
-      })(),
+        icon: <DollarSign className="w-5 h-5 sm:w-6 sm:h-6 text-gray-700" />,
+        label: (() => {
+          const pr = opportunity.price_range;
+          if (pr) {
+            const { min, max } = pr;
+            if (!max) {
+              return 'Price';
+            }
+            return 'Budget';
+          }
+          return 'Budget';
+        })(),
+        value: (() => {
+          const pr = opportunity.price_range;
+          if (pr) {
+            const { min, max } = pr;
+            if (min > 0 && max > 0) {
+              return `₹${min} - ₹${max}`;
+            } else if (min > 0 && !max) {
+              return `₹${min}`;
+            } else if (max > 0 && !min) {
+              return `₹${max}`;
+            } else {
+              return 'Contact for price';
+            }
+          }
+          return 'N/A';
+        })(),
       },
       {
-      icon: <FileText className="w-5 h-5 sm:w-6 sm:h-6 text-gray-700" />,
-      label: 'Brochure',
-      value: opportunity.sponsorship_brochure_url ? (
-        <div className="flex flex-col space-y-1">
-        {isBrochureUnlocked ? (
-          <a
-          href={opportunity.sponsorship_brochure_url}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="flex items-center text-blue-600 hover:text-blue-800"
-          aria-label="View sponsorship brochure"
-          >
-          <LinkIcon className="w-4 h-4 mr-1" />
-          View Brochure
-          </a>
-        ) : (
-          <button
-          onClick={handleUnlockBrochure}
-          disabled={credits < 100 || isUnlocking}
-          className={`flex items-center px-2 py-1 rounded-md transition-colors duration-200 ${
-            credits < 100 || isUnlocking
-            ? 'bg-gray-400/80 text-gray-600 cursor-not-allowed'
-            : 'bg-blue-600/80 text-white hover:bg-blue-700/90'
-          }`}
-          aria-label="Unlock sponsorship brochure, costs 100 credits"
-          >
-          {isUnlocking ? (
-            <span className="flex items-center">
-            <span className="inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-1"></span>
-            Unlocking...
-            </span>
-          ) : (
-            <>
-            <Unlock className="w-4 h-4 mr-1" />
-            Unlock Brochure
-            </>
-          )}
-          </button>
-        )}
-        <p className="text-xs text-gray-500">Costs 100 credits to view</p>
-        </div>
-      ) : 'Not Available',
+        icon: <FileText className="w-5 h-5 sm:w-6 sm:h-6 text-gray-700" />,
+        label: 'Brochure',
+        value: opportunity.sponsorship_brochure_url ? (
+          <div className="flex flex-col space-y-1">
+            {isBrochureUnlocked ? (
+              <a
+                href={opportunity.sponsorship_brochure_url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center text-blue-600 hover:text-blue-800"
+                aria-label="View sponsorship brochure"
+              >
+                <LinkIcon className="w-4 h-4 mr-1" />
+                View Brochure
+              </a>
+            ) : (
+              <button
+                onClick={handleUnlockBrochure}
+                disabled={credits < 100 || isUnlocking}
+                className={`flex items-center px-2 py-1 rounded-md transition-colors duration-200 ${
+                  credits < 100 || isUnlocking
+                    ? 'bg-gray-400/80 text-gray-600 cursor-not-allowed'
+                    : 'bg-blue-600/80 text-white hover:bg-blue-700/90'
+                }`}
+                aria-label="Unlock sponsorship brochure, costs 100 credits"
+              >
+                {isUnlocking ? (
+                  <span className="flex items-center">
+                    <span className="inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-1"></span>
+                    Unlocking...
+                  </span>
+                ) : (
+                  <>
+                    <Unlock className="w-4 h-4 mr-1" />
+                    Unlock Brochure
+                  </>
+                )}
+              </button>
+            )}
+            <p className="text-xs text-gray-500">Costs 100 credits to view</p>
+          </div>
+        ) : 'Not Available',
       },
       {
-      icon: <Tag className="w-5 h-5 sm:w-6 sm:h-6 text-gray-700" />,
-      label: 'Category',
-      value: opportunity.category_name || 'N/A',
+        icon: <Tag className="w-5 h-5 sm:w-6 sm:h-6 text-gray-700" />,
+        label: 'Category',
+        value: opportunity.category_name || 'N/A',
       },
       {
-      icon: <Tag className="w-5 h-5 sm:w-6 sm:h-6 text-gray-700" />,
-      label: 'Ad Type',
-      value: opportunity.ad_type || 'N/A',
+        icon: <Tag className="w-5 h-5 sm:w-6 sm:h-6 text-gray-700" />,
+        label: 'Ad Type',
+        value: opportunity.ad_type || 'N/A',
       },
       {
-      icon: <User className="w-5 h-5 sm:w-6 sm:h-6 text-gray-700" />,
-      label: 'Creator',
-      value: opportunity.creator_name || 'N/A',
+        icon: <User className="w-5 h-5 sm:w-6 sm:h-6 text-gray-700" />,
+        label: 'Creator',
+        value: opportunity.creator_name || 'N/A',
       },
     ].filter(card => card.value !== 'N/A' || card.label === 'Brochure');
 
@@ -501,7 +553,7 @@ const OpportunityCard: React.FC<OpportunityCardProps> = memo(
       : 'N/A';
 
     return (
-      <div className="flex flex-col pb-6">
+      <div className="flex flex-col pb-6" ref={cardRef}>
         <motion.div
           key={opportunity.id}
           className="snap-center flex-shrink-0 w-full h-[calc(100vh-150px)] sm:h-[calc(100vh-100px)] flex flex-col bg-white rounded-lg overflow-hidden relative"
@@ -633,18 +685,18 @@ const OpportunityCard: React.FC<OpportunityCardProps> = memo(
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {opportunity.requirements && opportunity.requirements.trim() !== '' && (
               <div className="bg-white rounded-lg p-3 shadow-md">
-              <p className="text-xs sm:text-sm text-gray-600">Requirements</p>
-              <p className="text-base sm:text-lg text-gray-900 text-justify">
-                {opportunity.requirements}
-              </p>
+                <p className="text-xs sm:text-sm text-gray-600">Requirements</p>
+                <p className="text-base sm:text-lg text-gray-900 text-justify">
+                  {opportunity.requirements}
+                </p>
               </div>
             )}
             {opportunity.benefits && opportunity.benefits.trim() !== '' && (
               <div className="bg-white rounded-lg p-3 shadow-md">
-              <p className="text-xs sm:text-sm text-gray-600">Benefits</p>
-              <p className="text-base sm:text-lg text-gray-900 text-justify">
-                {opportunity.benefits}
-              </p>
+                <p className="text-xs sm:text-sm text-gray-600">Benefits</p>
+                <p className="text-base sm:text-lg text-gray-900 text-justify">
+                  {opportunity.benefits}
+                </p>
               </div>
             )}
           </div>

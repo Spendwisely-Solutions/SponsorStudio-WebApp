@@ -77,6 +77,7 @@ export default function EventCard({
   const [isDescriptionExpanded, setIsDescriptionExpanded] = useState(false);
   const [mouId, setMouId] = useState<string | null>(null);
   const [loadingMou, setLoadingMou] = useState(true);
+  const [impressionCount, setImpressionCount] = useState<number | null>(null);
   const navigate = useNavigate();
 
   // Fetch MOU ID from opportunity.mou_id
@@ -99,6 +100,31 @@ export default function EventCard({
 
     fetchMouId();
   }, [opportunity.mou_id, opportunity.id]);
+
+  // Fetch impression count from impressions table
+  useEffect(() => {
+    const fetchImpressionCount = async () => {
+      try {
+        const { count, error } = await supabase
+          .from('impressions')
+          .select('*', { count: 'exact', head: true })
+          .eq('opportunity_id', opportunity.id);
+
+        if (error) {
+          console.error('Error fetching impression count:', error);
+          setImpressionCount(0);
+          return;
+        }
+
+        setImpressionCount(count || 0);
+      } catch (err) {
+        console.error('Unexpected error fetching impression count:', err);
+        setImpressionCount(0);
+      }
+    };
+
+    fetchImpressionCount();
+  }, [opportunity.id]);
 
   const getCategoryName = (categoryId: string) => {
     const category = categories.find((cat) => cat.id === categoryId);
@@ -457,6 +483,25 @@ export default function EventCard({
               </span>
             </motion.div>
           )}
+          <motion.div
+            className="flex items-center group"
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.9 }}
+          >
+            <Eye
+              className={`w-4 h-4 mr-2 flex-shrink-0 ${
+                hasImageBackground ? 'text-gray-300' : 'text-gray-500'
+              } group-hover:text-indigo-500 transition-colors`}
+            />
+            <span
+              className={`text-sm ${
+                hasImageBackground ? 'text-gray-200' : 'text-gray-700'
+              }`}
+            >
+              {impressionCount !== null ? `${impressionCount.toLocaleString('en-IN')} impressions` : 'Loading...'}
+            </span>
+          </motion.div>
         </motion.div>
 
         {/* Links */}
