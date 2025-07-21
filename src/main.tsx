@@ -2,6 +2,7 @@ import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
+import { ModalProvider } from './contexts/ModalContext';
 import { Toaster } from 'react-hot-toast';
 import App from './App';
 import Dashboard from './components/Dashboard';
@@ -21,6 +22,7 @@ import ViewMou from './components/ViewMou';
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <AuthProvider>
+      <ModalProvider>
       <Router>
         <Routes>
           <Route path="/" element={<App />} />
@@ -75,6 +77,7 @@ createRoot(document.getElementById('root')!).render(
           },
         }}
       />
+      </ModalProvider>
     </AuthProvider>
   </StrictMode>
 );

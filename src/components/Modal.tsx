@@ -3,7 +3,7 @@ import React, { useEffect, useState } from 'react';
 interface ModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onConfirm: () => Promise<void> | void; // Can be async now
+  onConfirm: () => Promise<void> | void;
   title: string;
   message: string;
   confirmText?: string;
@@ -25,7 +25,7 @@ export default function Modal({
 }: ModalProps) {
   const [isVisible, setIsVisible] = useState(false);
   const [animate, setAnimate] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false); // Track loading state
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
     const preventScroll = (e: Event) => {
@@ -34,25 +34,45 @@ export default function Modal({
 
     if (isOpen) {
       setIsVisible(true);
+      document.body.style.overflow = 'hidden';
+      document.body.style.height = '100vh';
+      document.body.style.width = '100vw';
+      document.documentElement.style.overflow = 'hidden';
+      document.documentElement.style.height = '100vh';
+      document.documentElement.style.width = '100vw';
       window.addEventListener('wheel', preventScroll, { passive: false });
       window.addEventListener('touchmove', preventScroll, { passive: false });
       const timer = setTimeout(() => setAnimate(true), 10);
       return () => {
         clearTimeout(timer);
+        document.body.style.overflow = '';
+        document.body.style.height = '';
+        document.body.style.width = '';
+        document.documentElement.style.overflow = '';
+        document.documentElement.style.height = '';
+        document.documentElement.style.width = '';
         window.removeEventListener('wheel', preventScroll);
         window.removeEventListener('touchmove', preventScroll);
       };
     } else {
       setAnimate(false);
       const timer = setTimeout(() => setIsVisible(false), 300);
-      return () => clearTimeout(timer);
+      return () => {
+        clearTimeout(timer);
+        document.body.style.overflow = '';
+        document.body.style.height = '';
+        document.body.style.width = '';
+        document.documentElement.style.overflow = '';
+        document.documentElement.style.height = '';
+        document.documentElement.style.width = '';
+      };
     }
   }, [isOpen]);
 
   const handleConfirm = async () => {
     setIsSubmitting(true);
     try {
-      await onConfirm(); // Allow both sync and async functions
+      await onConfirm();
     } finally {
       setIsSubmitting(false);
     }
@@ -62,15 +82,12 @@ export default function Modal({
 
   return (
     <div
-      className={`fixed inset-0 bg-gray-600 flex items-center justify-center z-50 transition-all duration-300 ease-in-out ${
-        animate
-          ? 'bg-opacity-50 backdrop-blur-sm opacity-100'
-          : 'bg-opacity-0 backdrop-blur-none opacity-0'
-      }`}
+      className="fixed top-0 left-0 w-[100vw] h-[100vh] bg-black/30 backdrop-blur-md flex items-center justify-center p-8 z-[1000] overflow-hidden "
+      style={{ transform: 'none !important' }}
     >
       <div
-        className={`bg-white p-6 rounded-lg shadow-lg w-full max-w-md transition-all duration-300 ease-in-out ${
-          animate ? 'scale-100 opacity-100' : 'scale-0 opacity-0'
+        className={`bg-white p-6 rounded-lg shadow-lg w-full max-w-md  max-h-[90vh] absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 transition-all duration-300 ease-in-out overflow-y-auto ${
+          animate ? 'scale-100 opacity-100' : 'scale-95 opacity-0'
         }`}
       >
         <h3 className="text-lg font-bold text-gray-800 mb-4">{title}</h3>
