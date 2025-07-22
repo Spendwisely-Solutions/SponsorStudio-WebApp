@@ -20,19 +20,27 @@ import { toast } from 'react-hot-toast';
 type Opportunity = Database['public']['Tables']['opportunities']['Row'];
 type Category = Database['public']['Tables']['categories']['Row'];
 
+interface ExtendedOpportunity extends Opportunity {
+  is_vip?: boolean;
+  mou_id?: string;
+  organization_name?: string;
+  organization_address?: string;
+  poc_name?: string;
+  poc_position?: string;
+  media_files?: File[];
+  media_urls?: string[];
+  sponsorship_brochure_file?: File;
+}
+
 interface EventFormProps {
-  formData: Partial<Opportunity> & { media_files?: File[]; media_urls?: string[]; sponsorship_brochure_file?: File };
-  setFormData: React.Dispatch<
-    React.SetStateAction<
-      Partial<Opportunity> & { media_files?: File[]; media_urls?: string[]; sponsorship_brochure_file?: File }
-    >
-  >;
+  formData: Partial<ExtendedOpportunity>;
+  setFormData: React.Dispatch<React.SetStateAction<Partial<ExtendedOpportunity>>>;
   mediaPreviews: string[];
   setMediaPreviews: React.Dispatch<React.SetStateAction<string[]>>;
   isEditing: boolean;
   isSubmitting: boolean;
   categories: Category[];
-  onSubmit: (formData: Partial<Opportunity> & { media_files?: File[]; media_urls?: string[]; sponsorship_brochure_file?: File }) => void;
+  onSubmit: (formData: Partial<ExtendedOpportunity>) => void;
   onClose: () => void;
 }
 
@@ -71,7 +79,7 @@ export default function EventForm({
   onSubmit,
   onClose,
 }: EventFormProps) {
-  const [isMOUAgreed, setIsMOUAgreed] = useState(isEditing ? true : !!(formData as any).mou_id);
+  const [isMOUAgreed, setIsMOUAgreed] = useState(isEditing ? true : !!formData.mou_id);
   const [isMOUSignModalOpen, setIsMOUSignModalOpen] = useState(false);
   const [dragActive, setDragActive] = useState(false);
   const mediaInputRef = useRef<HTMLInputElement>(null);
@@ -250,7 +258,7 @@ export default function EventForm({
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     console.log('Submitting Form:', formData);
-    if (!isEditing && (!isMOUAgreed || !(formData as any).mou_id)) {
+    if (!isEditing && !formData.is_vip && (!isMOUAgreed || !formData.mou_id)) {
       toast.error('You must sign the Memorandum of Understanding to proceed.');
       return;
     }
@@ -415,7 +423,7 @@ export default function EventForm({
                     <input
                       type="number"
                       name="reach"
-                      value={formData.reach ?? ''} // Changed from formData.reach ?? ''
+                      value={formData.reach ?? ''}
                       onChange={handleInputChange}
                       className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
                       placeholder="Expected audience size"
@@ -436,14 +444,14 @@ export default function EventForm({
                         </div>
                         <div className="flex items-center">
                           <span className="text-sm text-gray-600 mr-3 font-medium">
-                            {(formData as any).is_vip ? 'VIP' : 'Basic'}
+                            {formData.is_vip ? 'VIP' : 'Basic'}
                           </span>
                           <label className="relative inline-flex items-center cursor-pointer">
                             <input 
                               type="checkbox"
                               name="is_vip"
-                              checked={!!(formData as any).is_vip}
-                              onChange={(e) => setFormData((prev) => ({ ...prev, is_vip: e.target.checked } as any))}
+                              checked={!!formData.is_vip}
+                              onChange={(e) => setFormData((prev) => ({ ...prev, is_vip: e.target.checked }))}
                               className="sr-only peer"
                             />
                             <div className="w-11 h-6 bg-gray-200 rounded-full peer peer-focus:ring-4 peer-focus:ring-blue-200 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-gradient-to-r from-amber-500 to-yellow-500"></div>
@@ -454,7 +462,7 @@ export default function EventForm({
                       <div className="text-sm space-y-2">
                         <p className="text-gray-600 font-medium">Choose your plan:</p>
 
-                        {!(formData as any).is_vip && (
+                        {!formData.is_vip && (
                           <motion.div 
                             className="mt-2 p-3 bg-gray-50 border border-gray-200 rounded-md"
                             initial={{ opacity: 0, height: 0 }}
@@ -470,7 +478,7 @@ export default function EventForm({
                           </motion.div>
                         )}
                       
-                        {(formData as any).is_vip && (
+                        {formData.is_vip && (
                           <motion.div 
                             className="mt-2 p-4 bg-gradient-to-br from-amber-50 to-yellow-50 border border-amber-200 rounded-md"
                             initial={{ opacity: 0, height: 0 }}
@@ -657,7 +665,7 @@ export default function EventForm({
                       <input
                         type="text"
                         name="organization_name"
-                        value={(formData as any).organization_name ?? ''}
+                        value={formData.organization_name ?? ''}
                         onChange={handleInputChange}
                         className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
                         placeholder="Enter organization name"
@@ -668,7 +676,7 @@ export default function EventForm({
                       <input
                         type="text"
                         name="organization_address"
-                        value={(formData as any).organization_address ?? ''}
+                        value={formData.organization_address ?? ''}
                         onChange={handleInputChange}
                         className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
                         placeholder="Enter complete address"
@@ -679,7 +687,7 @@ export default function EventForm({
                       <input
                         type="text"
                         name="poc_name"
-                        value={(formData as any).poc_name ?? ''}
+                        value={formData.poc_name ?? ''}
                         onChange={handleInputChange}
                         className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
                         placeholder="Enter contact person name"
@@ -690,7 +698,7 @@ export default function EventForm({
                       <input
                         type="text"
                         name="poc_position"
-                        value={(formData as any).poc_position ?? ''}
+                        value={formData.poc_position ?? ''}
                         onChange={handleInputChange}
                         className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
                         placeholder="Enter position/designation"
@@ -873,13 +881,13 @@ export default function EventForm({
                           {mediaPreviews.map((preview, index) => (
                             <div key={`file-preview-${index}`} className="relative group">
                               <div className="relative overflow-hidden rounded-lg border border-gray-200">
-                                {formData.media_files![index].type.startsWith('image/') ? (
+                                {formData.media_files && formData.media_files[index]?.type.startsWith('image/') ? (
                                   <img
                                     src={preview}
                                     alt={`Preview ${index + 1}`}
                                     className="w-full h-32 object-cover"
                                   />
-                                ) : formData.media_files![index].type.startsWith('video/') ? (
+                                ) : formData.media_files && formData.media_files[index]?.type.startsWith('video/') ? (
                                   <video
                                     src={preview}
                                     className="w-full h-32 object-cover"
@@ -1023,7 +1031,7 @@ export default function EventForm({
                 </div>
               </div>
 
-              {!isEditing && (
+              {!isEditing && !formData.is_vip && (
                 <div className="space-y-6">
                   <div className="flex items-center space-x-3 mb-4">
                     <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-semibold ${isMOUAgreed ? 'bg-green-600' : 'bg-red-600'}`}>
@@ -1100,13 +1108,13 @@ export default function EventForm({
                 <motion.button
                   type="submit"
                   className={`px-8 py-3 rounded-lg font-semibold transition-all duration-300 ${
-                    isSubmitting || (!isEditing && !isMOUAgreed) 
+                    isSubmitting || (!isEditing && !isMOUAgreed && !formData.is_vip) 
                       ? 'bg-gray-400 cursor-not-allowed text-white' 
                       : 'bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-md hover:shadow-lg hover:scale-[1.02]'
                   }`}
-                  disabled={isSubmitting || (!isEditing && !isMOUAgreed)}
-                  whileHover={{ scale: isSubmitting || (!isEditing && !isMOUAgreed) ? 1 : 1.02 }}
-                  whileTap={{ scale: isSubmitting || (!isEditing && !isMOUAgreed) ? 1 : 0.98 }}
+                  disabled={isSubmitting || (!isEditing && !isMOUAgreed && !formData.is_vip)}
+                  whileHover={{ scale: isSubmitting || (!isEditing && !isMOUAgreed && !formData.is_vip) ? 1 : 1.02 }}
+                  whileTap={{ scale: isSubmitting || (!isEditing && !isMOUAgreed && !formData.is_vip) ? 1 : 0.98 }}
                 >
                   {isSubmitting ? (
                     <span className="flex items-center">
