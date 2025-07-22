@@ -77,7 +77,6 @@ export default function EventForm({
   const mediaInputRef = useRef<HTMLInputElement>(null);
   const brochureInputRef = useRef<HTMLInputElement>(null);
 
-  // Debugging logs to track state changes
   useEffect(() => {
     console.log('EventForm State:', { formData, isMOUAgreed, isMOUSignModalOpen, mediaPreviews });
   }, [formData, isMOUAgreed, isMOUSignModalOpen, mediaPreviews]);
@@ -234,7 +233,7 @@ export default function EventForm({
   };
 
   const handleMouSigned = (mouId: string) => {
-    console.log('MOU Signed:', mouId); // Debug log
+    console.log('MOU Signed:', mouId);
     try {
       setFormData((prev) => ({
         ...prev,
@@ -250,7 +249,7 @@ export default function EventForm({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('Submitting Form:', formData); // Debug log
+    console.log('Submitting Form:', formData);
     if (!isEditing && (!isMOUAgreed || !(formData as any).mou_id)) {
       toast.error('You must sign the Memorandum of Understanding to proceed.');
       return;
@@ -271,7 +270,6 @@ export default function EventForm({
   const selectedCategory = categories.find(cat => cat.id === formData.category_id);
   const isAdvertisingCategory = selectedCategory && advertisingCategories.includes(selectedCategory.name);
 
-  // Fallback UI in case of rendering error
   if (!formData) {
     console.error('FormData is undefined');
     return (
@@ -417,7 +415,7 @@ export default function EventForm({
                     <input
                       type="number"
                       name="reach"
-                      value={formData.reach ?? ''}
+                      value={formData.reach ?? ''} // Changed from formData.reach ?? ''
                       onChange={handleInputChange}
                       className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors"
                       placeholder="Expected audience size"
@@ -763,7 +761,7 @@ export default function EventForm({
                       </div>
                     </div>
 
-                    {(formData.media_files?.length || formData.media_urls?.length) && (
+                    {(formData.media_files?.length || formData.media_urls?.length) ? (
                       <div className="space-y-4">
                         <div className="bg-white border border-gray-200 rounded-lg p-4">
                           <div className="flex items-center justify-between mb-3">
@@ -919,6 +917,10 @@ export default function EventForm({
                             </div>
                           </div>
                         )}
+                      </div>
+                    ) : (
+                      <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 text-center hidden">
+                        <p className="text-sm font-medium text-gray-600">No media selected</p>
                       </div>
                     )}
                   </div>
@@ -1128,7 +1130,7 @@ export default function EventForm({
           formData={formData}
           onMouSigned={handleMouSigned}
           onCancel={() => {
-            console.log('MOU Sign Modal Cancelled'); // Debug log
+            console.log('MOU Sign Modal Cancelled');
             setIsMOUSignModalOpen(false);
           }}
         />
