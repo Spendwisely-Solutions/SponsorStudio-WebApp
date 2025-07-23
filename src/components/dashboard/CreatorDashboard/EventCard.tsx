@@ -23,6 +23,7 @@ import type { Database } from '../../../lib/database.types';
 
 type Opportunity = Database['public']['Tables']['opportunities']['Row'] & {
   price_range?: { min?: number | null; max?: number | null } | null;
+  mou_url?: string | null;
 };
 type Category = Database['public']['Tables']['categories']['Row'];
 type Match = Database['public']['Tables']['matches']['Row'] & {
@@ -80,18 +81,23 @@ export default function EventCard({
   const [impressionCount, setImpressionCount] = useState<number | null>(null);
   const navigate = useNavigate();
 
-  // Fetch MOU ID from opportunity.mou_id
+  // Fetch MOU ID or URL based on VIP status
   useEffect(() => {
     const fetchMouId = async () => {
       try {
-        if (opportunity.mou_id) {
+        if (opportunity.is_vip && opportunity.mou_url) {
+          // For VIP opportunities, construct full URL with mou_url
+          const baseUrl = 'https://urablfvmqregyvfyaovi.supabase.co/storage/v1/object/public/mou-documents/';
+          setMouId(`${baseUrl}${opportunity.mou_url}`);
+        } else if (opportunity.mou_id) {
+          // For non-VIP opportunities, use mou_id
           setMouId(opportunity.mou_id);
         } else {
-          console.log('No mou_id found for opportunity:', opportunity.id);
+          console.log('No mou_id or mou_url found for opportunity:', opportunity.id);
           setMouId(null);
         }
       } catch (err) {
-        console.error('Unexpected error fetching MOU ID:', err);
+        console.error('Unexpected error fetching MOU ID/URL:', err);
         setMouId(null);
       } finally {
         setLoadingMou(false);
@@ -99,7 +105,7 @@ export default function EventCard({
     };
 
     fetchMouId();
-  }, [opportunity.mou_id, opportunity.id]);
+  }, [opportunity.is_vip, opportunity.mou_url, opportunity.mou_id, opportunity.id]);
 
   // Fetch impression count from impressions table
   useEffect(() => {
@@ -138,7 +144,13 @@ export default function EventCard({
 
   const handleViewMou = () => {
     if (mouId) {
-      navigate('/view-mou', { state: { mouId } });
+      if (opportunity.is_vip) {
+        // For VIP opportunities, open mou_url in a new tab
+        window.open(mouId, '_blank', 'noopener,noreferrer');
+      } else {
+        // For non-VIP opportunities, navigate to view-mou route with mou_id
+        navigate('/view-mou', { state: { mouId } });
+      }
     }
   };
 
@@ -266,7 +278,7 @@ export default function EventCard({
                   ? 'text-gray-200 hover:text-white hover:bg-blue-500/50'
                   : 'text-gray-600 hover:text-white hover:bg-blue-600'
               }`}
-              title="View MOU"
+              title={opportunity.is_vip ? 'View VIP MOU Link' : 'View MOU'}
               variants={buttonVariants}
               whileHover="hover"
               whileTap="tap"
