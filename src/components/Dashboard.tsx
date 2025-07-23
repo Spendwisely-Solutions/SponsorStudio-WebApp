@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
-import { ArrowRight, Building2, BarChart3, FileCheck, MessageSquare, Menu, ChevronRight, X, Home, Calendar, FileText, User, LogOut } from 'lucide-react';
+import { ArrowRight, Building2, BarChart3, FileCheck, MessageSquare, Menu, ChevronRight, X, Home, Calendar, FileText, User, LogOut, BarChart2 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { sendContactEmail } from '../lib/email';
 import { Link, useNavigate } from 'react-router-dom';
@@ -16,6 +16,7 @@ import InfluencerDashboard from './dashboard/InfluencerDashboard';
 import ProfileSettings from './dashboard/ProfileSettings';
 import ScheduledMeetings from './dashboard/ScheduledMeetings';
 import ReportsList from './dashboard/ReportsList';
+import AnalyticsDashboard from './dashboard/AnalyticsDashboard';
 import { signOut } from '../lib/auth';
 import Skeleton from 'react-loading-skeleton';
 import 'react-loading-skeleton/dist/skeleton.css';
@@ -32,7 +33,7 @@ export default function Dashboard() {
   const location = useLocation();
   const { user, profile, loading } = useAuth();
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState<'dashboard' | 'matches' | 'profile' | 'messages' | 'meetings' | 'reports'>(
+  const [activeTab, setActiveTab] = useState<'dashboard' | 'matches' | 'profile' | 'messages' | 'meetings' | 'reports' | 'analytics'>(
     () => (location.state as any)?.activeTab || 'dashboard'
   );
   const [userProfile, setUserProfile] = useState<Database['public']['Tables']['profiles']['Row'] | null>(null);
@@ -336,6 +337,19 @@ export default function Dashboard() {
                 </button>
               </li>
             )}
+            {(isCreator || isInfluencer) && (
+              <li>
+                <button
+                  onClick={() => setActiveTab('analytics')}
+                  className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg ${
+                    activeTab === 'analytics' ? 'bg-blue-50 text-[#2B4B9B]' : 'text-gray-700 hover:bg-gray-100'
+                  }`}
+                >
+                  <BarChart2 className="w-5 h-5" />
+                  <span>Analytics</span>
+                </button>
+              </li>
+            )}
             <li>
               <button
                 onClick={() => setActiveTab('profile')}
@@ -446,6 +460,19 @@ export default function Dashboard() {
                 </button>
               </li>
             )}
+            {(isCreator || isInfluencer) && (
+              <li>
+                <button
+                  onClick={() => { setActiveTab('analytics'); setMobileSidebarOpen(false); }}
+                  className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg ${
+                    activeTab === 'analytics' ? 'bg-blue-50 text-[#2B4B9B]' : 'text-gray-700 hover:bg-gray-100'
+                  }`}
+                >
+                  <BarChart2 className="w-5 h-5" />
+                  <span>Analytics</span>
+                </button>
+              </li>
+            )}
             <li>
               <button
                 onClick={() => { setActiveTab('profile'); setMobileSidebarOpen(false); }}
@@ -479,20 +506,12 @@ export default function Dashboard() {
           >
             <Home className="w-6 h-6 mx-auto" />
           </button>
-          {isBrand ? (
+          {isBrand && (
             <button
               onClick={() => setActiveTab('reports')}
               className={`p-2 rounded-lg ${activeTab === 'reports' ? 'text-[#2B4B9B]' : 'text-gray-500'}`}
             >
               <FileText className="w-6 h-6 mx-auto" />
-            </button>
-          ) : (
-            <button
-              onClick={() => setActiveTab('messages')}
-              className={`p-2 rounded-lg ${activeTab === 'messages' ? 'text-[#2B4B9B]' : 'text-gray-500'}`}
-              style={{display:'none'}}
-            >
-              <MessageSquare className="w-6 h-6 mx-auto" />
             </button>
           )}
           <button
@@ -501,6 +520,14 @@ export default function Dashboard() {
           >
             <Calendar className="w-6 h-6 mx-auto" />
           </button>
+          {(isCreator || isInfluencer) && (
+            <button
+              onClick={() => setActiveTab('analytics')}
+              className={`p-2 rounded-lg ${activeTab === 'analytics' ? 'text-[#2B4B9B]' : 'text-gray-500'}`}
+            >
+              <BarChart2 className="w-6 h-6 mx-auto" />
+            </button>
+          )}
           <button
             onClick={() => setActiveTab('profile')}
             className={`p-2 rounded-lg ${activeTab === 'profile' ? 'text-[#2B4B9B]' : 'text-gray-500'}`}
@@ -553,10 +580,11 @@ export default function Dashboard() {
         {activeTab === 'meetings' && (
           <ScheduledMeetings meetings={meetings} isBrand={isBrand} />
         )}
-        {activeTab === 'reports' && isBrand && (
-          // <div className="bg-white rounded-lg shadow p-6">
-            <ReportsList />
-          // </div>
+        {(activeTab === 'reports' && isBrand) && (
+          <ReportsList />
+        )}
+        {(activeTab === 'analytics' && (isCreator || isInfluencer)) && (
+          <AnalyticsDashboard />
         )}
       </div>
     </div>
