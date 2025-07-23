@@ -46,14 +46,15 @@ type Opportunity = Database['public']['Tables']['opportunities']['Row'] & {
   type: 'opportunity';
   report: Database['public']['Tables']['reports']['Row'] | null;
   mou_id: string | null;
-  impression_count?: number; // Added for impression count
+  mou_url: string | null;
+  impression_count?: number;
 };
 
 type Post = Database['public']['Tables']['posts']['Row'] & {
   influencer_profile: (Database['public']['Tables']['profiles']['Row'] & { email?: string }) | null;
   categories: Database['public']['Tables']['categories']['Row'] | null;
   type: 'post';
-  impression_count?: number; // Added for impression count
+  impression_count?: number;
 };
 
 type CombinedItem = Opportunity | Post;
@@ -91,6 +92,10 @@ export default function Opportunities({ searchTerm, setSearchTerm, stats, setSta
   const [reportFile, setReportFile] = useState<File | null>(null);
   const [reportOpportunityId, setReportOpportunityId] = useState<string | null>(null);
   const [isUpdateReport, setIsUpdateReport] = useState(false);
+  const [isMouModalOpen, setIsMouModalOpen] = useState(false);
+  const [mouFile, setMouFile] = useState<File | null>(null);
+  const [mouOpportunityId, setMouOpportunityId] = useState<string | null>(null);
+  const [isUpdateMou, setIsUpdateMou] = useState(false);
 
   useEffect(() => {
     fetchItems();
@@ -100,7 +105,7 @@ export default function Opportunities({ searchTerm, setSearchTerm, stats, setSta
     try {
       setLoading(true);
 
-      // Fetch opportunities with reports and mou_id
+      // Fetch opportunities with reports and mou_url
       const { data: opportunitiesData, error: opportunitiesError } = await supabase
         .from('opportunities')
         .select(`
@@ -120,14 +125,20 @@ export default function Opportunities({ searchTerm, setSearchTerm, stats, setSta
       if (opportunityIds.length > 0) {
         const { data: impressionsData, error: impressionsError } = await supabase
           .from('impressions')
-          .select('opportunity_id')
-          .in('opportunity_id', opportunityIds);
+          .select('entity_id') // Updated from target_id to entity_id
+          .eq('target_type', 'opportunity')
+          .in('entity_id', opportunityIds);
 
         if (impressionsError) {
           console.warn(`Error fetching opportunity impressions: ${impressionsError.message}`);
+          // Fallback to zero impressions
+          opportunityImpressions = opportunityIds.reduce((acc, id) => {
+            acc[id] = 0;
+            return acc;
+          }, {} as Record<string, number>);
         } else {
           opportunityImpressions = impressionsData?.reduce((acc, curr) => {
-            acc[curr.opportunity_id] = (acc[curr.opportunity_id] || 0) + 1;
+            acc[curr.entity_id] = (acc[curr.entity_id] || 0) + 1;
             return acc;
           }, {} as Record<string, number>) || {};
         }
@@ -139,6 +150,7 @@ export default function Opportunities({ searchTerm, setSearchTerm, stats, setSta
         type: 'opportunity' as const,
         report: opp.report || null,
         mou_id: opp.mou_id || null,
+        mou_url: opp.mou_url || null,
         impression_count: opportunityImpressions[opp.id] || 0
       }));
 
@@ -161,14 +173,20 @@ export default function Opportunities({ searchTerm, setSearchTerm, stats, setSta
       if (postIds.length > 0) {
         const { data: impressionsData, error: impressionsError } = await supabase
           .from('impressions')
-          .select('post_id')
-          .in('post_id', postIds);
+          .select('entity_id') // Updated from target_id to entity_id
+          .eq('target_type', 'post')
+          .in('entity_id', postIds);
 
         if (impressionsError) {
           console.warn(`Error fetching post impressions: ${impressionsError.message}`);
+          // Fallback to zero impressions
+          postImpressions = postIds.reduce((acc, id) => {
+            acc[id] = 0;
+            return acc;
+          }, {} as Record<string, number>);
         } else {
           postImpressions = impressionsData?.reduce((acc, curr) => {
-            acc[curr.post_id] = (acc[curr.post_id] || 0) + 1;
+            acc[curr.entity_id] = (acc[curr.entity_id] || 0) + 1;
             return acc;
           }, {} as Record<string, number>) || {};
         }
@@ -583,6 +601,8 @@ export default function Opportunities({ searchTerm, setSearchTerm, stats, setSta
         });
 
       if (insertError) {
+        // Rollback: Delete uploaded file if database insert fails
+        await supabase.storage.from('reports').remove([filePath]);
         throw new Error(`Failed to insert report record: ${insertError.message}`);
       }
 
@@ -597,6 +617,97 @@ export default function Opportunities({ searchTerm, setSearchTerm, stats, setSta
       setReportFile(null);
       setReportOpportunityId(null);
       setIsUpdateReport(false);
+    }
+  };
+
+  const handleCreateMou = async () => {
+    if (!mouFile || !mouOpportunityId) {
+      toast.error('Please select a PDF file');
+      return;
+    }
+
+    if (mouFile.type !== 'application/pdf') {
+      toast.error('Please upload a valid PDF file');
+      return;
+    }
+
+    if (mouFile.size > 10 * 1024 * 1024) {
+      toast.error('File size must be less than 10MB');
+      return;
+    }
+
+    try {
+      setProcessingAction(mouOpportunityId);
+
+      const { data: existingMou, error: fetchError } = await supabase
+        .from('opportunities')
+        .select('mou_url')
+        .eq('id', mouOpportunityId)
+        .maybeSingle();
+
+      if (fetchError) {
+        throw new Error(`Failed to check existing MOU: ${fetchError.message}`);
+      }
+
+      if (existingMou?.mou_url) {
+        const { error: storageError } = await supabase.storage
+          .from('mou-documents')
+          .remove([existingMou.mou_url]);
+
+        if (storageError) {
+          throw new Error(`Failed to delete existing MOU file: ${storageError.message}`);
+        }
+      }
+
+      const fileName = `${mouOpportunityId}_${Date.now()}.pdf`;
+      const filePath = `${mouOpportunityId}/${fileName}`;
+      const arrayBuffer = await mouFile.arrayBuffer();
+      const fileData = new Uint8Array(arrayBuffer);
+
+      const { error: uploadError } = await supabase.storage
+        .from('mou-documents')
+        .upload(filePath, fileData, {
+          cacheControl: '3600',
+          upsert: false,
+          contentType: 'application/pdf',
+        });
+
+      if (uploadError) {
+        throw new Error(`Failed to upload MOU: ${uploadError.message}`);
+      }
+
+      const { error: updateError } = await supabase
+        .from('opportunities')
+        .update({
+          mou_url: filePath
+        })
+        .eq('id', mouOpportunityId);
+
+      if (updateError) {
+        // Rollback: Delete uploaded file if database update fails
+        await supabase.storage.from('mou-documents').remove([filePath]);
+        throw new Error(`Failed to update MOU URL: ${updateError.message}`);
+      }
+
+      setItems(prevItems =>
+        prevItems.map(item =>
+          item.id === mouOpportunityId && item.type === 'opportunity'
+            ? { ...item, mou_url: filePath }
+            : item
+        )
+      );
+
+      toast.success(`MOU ${isUpdateMou ? 'updated' : 'uploaded'} successfully`);
+      await fetchItems();
+    } catch (error) {
+      console.error('Error handling MOU:', String(error));
+      toast.error(`Failed to ${isUpdateMou ? 'update' : 'upload'} MOU. Please try again.`);
+    } finally {
+      setProcessingAction(null);
+      setIsMouModalOpen(false);
+      setMouFile(null);
+      setMouOpportunityId(null);
+      setIsUpdateMou(false);
     }
   };
 
@@ -623,8 +734,46 @@ export default function Opportunities({ searchTerm, setSearchTerm, stats, setSta
     }
   };
 
+  const openMouModal = async (opportunityId: string) => {
+    try {
+      setMouOpportunityId(opportunityId);
+      setMouFile(null);
+
+      const { data: existingMou, error } = await supabase
+        .from('opportunities')
+        .select('mou_url')
+        .eq('id', opportunityId)
+        .maybeSingle();
+
+      if (error) {
+        throw new Error(`Failed to check existing MOU: ${error.message}`);
+      }
+
+      setIsUpdateMou(!!existingMou?.mou_url);
+      setIsMouModalOpen(true);
+    } catch (error) {
+      console.error('Error opening MOU modal:', String(error));
+      toast.error('Failed to open MOU modal. Please try again.');
+    }
+  };
+
+  const handleViewMou = (mouId: string) => {
+    // Basic UUID format validation
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    if (!uuidRegex.test(mouId)) {
+      toast.error('Invalid MOU ID format');
+      return;
+    }
+    navigate('/view-mou', { state: { mouId } });
+  };
+
   const getReportUrl = (pdfPath: string): string => {
     const { data } = supabase.storage.from('reports').getPublicUrl(pdfPath);
+    return data.publicUrl;
+  };
+
+  const getMouUrl = (pdfPath: string): string => {
+    const { data } = supabase.storage.from('mou-documents').getPublicUrl(pdfPath);
     return data.publicUrl;
   };
 
@@ -925,16 +1074,31 @@ export default function Opportunities({ searchTerm, setSearchTerm, stats, setSta
                               </span>
                             </div>
                           )}
-                          {isOpportunity && (item as Opportunity).mou_id && (
+                          {isOpportunity && (item as Opportunity).is_vip && (item as Opportunity).mou_url && (
                             <div className="flex items-center text-sm text-blue-600">
                               <FileText size={16} className="mr-2 flex-shrink-0" />
-                              <button
-                                onClick={() => navigate('/view-mou', { state: { mouId: (item as Opportunity).mou_id } })}
+                              <a 
+                                href={getMouUrl((item as Opportunity).mou_url!)}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                type="application/pdf"
                                 className="hover:underline flex items-center"
+                              >
+                                View MOU (PDF)
+                                <ExternalLink size={12} className="ml-1" />
+                              </a>
+                            </div>
+                          )}
+                          {isOpportunity && !(item as Opportunity).is_vip && (item as Opportunity).mou_id && (
+                            <div className="flex items-center text-sm text-blue-600">
+                              <FileText size={16} className="mr-2 flex-shrink-0" />
+                              <a 
+                                onClick={() => handleViewMou((item as Opportunity).mou_id!)}
+                                className="hover:underline flex items-center cursor-pointer"
                               >
                                 View MOU
                                 <ExternalLink size={12} className="ml-1" />
-                              </button>
+                              </a>
                             </div>
                           )}
                         </div>
@@ -1156,7 +1320,7 @@ export default function Opportunities({ searchTerm, setSearchTerm, stats, setSta
                                 type="text"
                                 className="flex-1 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                                 value={sheetLinkInput[item.id] || item.sheetlink || ''}
-                                onChange={(e) => setSheetLinkInput(prev => ({ ...prev, [id]: e.target.value }))}
+                                onChange={(e) => setSheetLinkInput(prev => ({ ...prev, [item.id]: e.target.value }))}
                                 placeholder="Enter spreadsheet link..."
                               />
                               <button
@@ -1198,9 +1362,19 @@ export default function Opportunities({ searchTerm, setSearchTerm, stats, setSta
                                   {(item as Opportunity).report ? 'Update Report' : 'Create Report'}
                                 </button>
                               )}
-                              {isOpportunity && (item as Opportunity).mou_id && (
+                              {isOpportunity && (item as Opportunity).is_vip && (
                                 <button
-                                  onClick={() => navigate('/view-mou', { state: { mouId: (item as Opportunity).mou_id } })}
+                                  onClick={() => openMouModal(item.id)}
+                                  disabled={processingAction === item.id}
+                                  className="flex items-center px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-50"
+                                >
+                                  <Upload size={16} className="mr-2" />
+                                  {(item as Opportunity).mou_url ? 'Update MOU' : 'Upload MOU'}
+                                </button>
+                              )}
+                              {isOpportunity && !(item as Opportunity).is_vip && (item as Opportunity).mou_id && (
+                                <button
+                                  onClick={() => handleViewMou((item as Opportunity).mou_id!)}
                                   disabled={processingAction === item.id}
                                   className="flex items-center px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-50"
                                 >
@@ -1271,6 +1445,45 @@ export default function Opportunities({ searchTerm, setSearchTerm, stats, setSta
         confirmText={processingAction ? 'Uploading...' : isUpdateReport ? 'Update' : 'Create'}
         cancelText="Cancel"
         confirmDisabled={processingAction !== null || !reportFile}
+      />
+
+      <Modal
+        isOpen={isMouModalOpen}
+        onClose={() => {
+          setIsMouModalOpen(false);
+          setMouFile(null);
+          setMouOpportunityId(null);
+          setIsUpdateMou(false);
+        }}
+        onConfirm={handleCreateMou}
+        title={isUpdateMou ? 'Update MOU' : 'Upload MOU'}
+        message={
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Select PDF File</label>
+              <div className="flex items-center space-x-3">
+                <label className="flex-1 cursor-pointer bg-gray-100 border border-gray-300 rounded-lg p-3 hover:bg-gray-200">
+                  <input
+                    type="file"
+                    accept="application/pdf"
+                    onChange={(e) => e.target.files && setMouFile(e.target.files[0])}
+                    className="hidden"
+                  />
+                  <div className="flex items-center text-gray-600">
+                    <Upload size={20} className="mr-2" />
+                    <span>{mouFile ? mouFile.name : 'Choose PDF'}</span>
+                  </div>
+                </label>
+              </div>
+              <p className="mt-2 text-sm text-gray-500">
+                Upload a PDF (max 10MB). {isUpdateMou ? 'This will replace the existing MOU.' : 'Each VIP opportunity can have only one MOU.'}
+              </p>
+            </div>
+          </div>
+        }
+        confirmText={processingAction ? 'Uploading...' : isUpdateMou ? 'Update' : 'Upload'}
+        cancelText="Cancel"
+        confirmDisabled={processingAction !== null || !mouFile}
       />
     </div>
   );
