@@ -18,6 +18,8 @@ import SuccessPage from './components/dashboard/CreatorDashboard/Success';
 import Pricing from './components/Pricing';
 import PurchaseCredits from './components/PurchaseCredits';
 import ViewMou from './components/ViewMou';
+import CareerPage from './components/Careers/CareerPage';
+import NotFound from './components/NotFound';
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
@@ -46,8 +48,10 @@ createRoot(document.getElementById('root')!).render(
             } 
           />
           <Route path="/story/:id" element={<SuccessStoryPage />} />
-          
-          <Route path="*" element={<Navigate to="/" replace />} />
+          {/* <Route path="/Careers" element={<CareerPage />} /> */}
+
+          <Route path="*" element={<NotFound />} />
+
         </Routes>
       </Router>
       <Toaster
