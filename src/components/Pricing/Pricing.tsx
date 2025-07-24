@@ -4,7 +4,7 @@ import { Check, X } from "lucide-react";
 import { useRazorpay } from "react-razorpay";
 import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
-import { supabase } from "../lib/supabase";
+import { supabase } from "../../lib/supabase";
 
 interface PricingTier {
   name: string;

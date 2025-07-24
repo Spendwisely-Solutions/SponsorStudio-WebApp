@@ -1,224 +1,82 @@
-import React, { useState, useEffect } from 'react';
-import { X } from 'lucide-react';
-import { supabase } from './lib/supabase';
-import AuthForm from './components/AuthForm';
-import ProfileCompletionDialog from './components/ProfileCompletionDialog';
-import { useAuth } from './contexts/AuthContext';
-import NavBar from './components/HomePage/NavBar';
-import HeroSection from './components/HomePage/HeroSection';
-import HeroSectionNew from './components/HomePage/HeroSectionNew';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { Toaster } from 'react-hot-toast';
+import { AuthProvider } from './contexts/AuthContext';
+import { ModalProvider } from './contexts/ModalContext';
+import Dashboard from './components/Dashboard';
+import AdminLogin from './components/Admin/AdminLogin';
+import AdminDashboard from './components/Admin/Dashboard/AdminDashboard';
+import ProtectedAdminRoute from './components/Admin/ProtectedAdminRoute';
+import SuccessStoryPage from './components/SuccessStoryPage';
+import ProfilePage from './components/ProfilePage';
+import ResetPassword from './components/AuthComponents/ResetPassword';
+import Logout from './components/AuthComponents/Logout';
+import SuccessPage from './components/dashboard/CreatorDashboard/Success';
+import Pricing from './components/Pricing/Pricing';
+import PurchaseCredits from './components/Pricing/PurchaseCredits';
+import ViewMou from './components/Mou/ViewMou';
+import CareerPage from './components/Careers/CareerPage';
+import NotFound from './components/NotFound';
+import Home from './components/HomePage/Home';
 
-import HowWeWorkSection from './components/HomePage/HowWeWorkSection';
-import ClientsSection from './components/HomePage/ClientsSection';
-import PricingSectionStatic from './components/HomePage/PricingStatic';
-import SuccessStoriesSection from './components/HomePage/SuccessStoriesSection';
-import ContactSection from './components/HomePage/ContactSection';
-import Footer from './components/HomePage/Footer';
-import AOS from 'aos';
-import 'aos/dist/aos.css'; // Import AOS styles
-
-// Shared types
-interface Database {
-  public: {
-    Tables: {
-      client_logos: {
-        Row: ClientLogo;
-      };
-      success_stories: {
-        Row: SuccessStory;
-      };
-    };
-  };
-}
-
-interface ClientLogo {
-  id: string;
-  name: string;
-  logo_url: string;
-}
-
-interface SuccessStory {
-  id: string;
-  title: string;
-  preview_image: string;
-  preview_text: string;
-}
-
-interface FormData {
-  name: string;
-  email: string;
-  phone: string;
-  message: string;
-  organization_type: string;
-}
-
-interface User {
-  email?: string;
-  [key: string]: any;
-}
-
-interface Profile {
-  company_name?: string;
-  profile_picture_url?: string;
-  user_type?: string;
-  [key: string]: any;
-}
-
-const App: React.FC = () => {
-  const { user, profile, isProfileComplete, setShowProfileDialog } = useAuth();
-  const [clientLogos, setClientLogos] = useState<ClientLogo[]>([]);
-  const [successStories, setSuccessStories] = useState<SuccessStory[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
-  const [showAllStories, setShowAllStories] = useState<boolean>(false);
-  const [showAuthForm, setShowAuthForm] = useState<boolean>(false);
-  
-  // Add a useEffect to log when showAuthForm state changes
-  useEffect(() => {
-    console.log('Auth form visibility changed:', showAuthForm);
-  }, [showAuthForm]);
-  const [mobileMenuOpen, setMobileMenuOpen] = useState<boolean>(false);
-  const [formData, setFormData] = useState<FormData>({
-    name: '',
-    email: '',
-    phone: '',
-    message: '',
-    organization_type: '',
-  });
-  const [showThankYou, setShowThankYou] = useState<boolean>(false);
-  const [shouldShowProfileDialog, setShouldShowProfileDialog] = useState<boolean>(false);
-
-  useEffect(() => {
-    AOS.init({
-      once: true, // Ensures animations only run once
-    offset: 50, // Triggers animations 100px before element enters viewport
-    });
-  }, []);
-
-  // Initialize and update dialog visibility
-  useEffect(() => {
-    const hasShownDialog = sessionStorage.getItem('profileDialogShown');
-    console.log('Dialog visibility check:', { user, isProfileComplete, hasShownDialog, shouldShowProfileDialog });
-
-    if (!isProfileComplete && user && !hasShownDialog && !shouldShowProfileDialog) {
-      setShouldShowProfileDialog(true);
-      setShowProfileDialog(true);
-    } else if (shouldShowProfileDialog && (isProfileComplete || hasShownDialog)) {
-      setShouldShowProfileDialog(false);
-      setShowProfileDialog(false);
-    }
-  }, [user, isProfileComplete, shouldShowProfileDialog, setShowProfileDialog]);
-
-  // Fetch data (client logos and success stories)
-  useEffect(() => {
-    const fetchData = async () => {
-      setLoading(true);
-      setError(null);
-      try {
-        await Promise.all([fetchClientLogos(), fetchSuccessStories()]);
-      } catch (err) {
-        console.error('Error fetching data:', err);
-        setError('Failed to load data. Please try again later.');
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchData();
-  }, []); // Run only once on mount
-
-  const fetchClientLogos = async () => {
-    const { data, error } = await supabase.from('client_logos').select('*');
-    if (error) {
-      console.error('Error fetching client logos:', error);
-      throw error;
-    }
-    console.log('Client logos fetched:', data);
-    setClientLogos(data || []);
-  };
-
-  const fetchSuccessStories = async () => {
-    const { data, error } = await supabase.from('success_stories').select('*');
-    if (error) {
-      console.error('Error fetching success stories:', error);
-      throw error;
-    }
-    console.log('Success stories fetched:', data);
-    setSuccessStories(data || []);
-  };
-
-  if (error) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-white">
-        <div className="text-center">
-          <h2 className="text-2xl font-bold text-red-600">Error</h2>
-          <p className="mt-2 text-gray-600">{error}</p>
-          <button
-            onClick={() => window.location.reload()}
-            className="mt-4 px-4 py-2 bg-[#2B4B9B] text-white rounded-lg hover:bg-[#1F3A7A]"
-          >
-            Retry
-          </button>
-        </div>
-      </div>
-    );
-  }
-
+function App() {
   return (
-    <div className="min-h-screen bg-white" style={{ overflowX: 'hidden' }}>
-      {showAuthForm && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="relative w-full max-w-md">
-            <button
-              onClick={() => setShowAuthForm(false)}
-              className="absolute top-4 right-4 text-gray-500 hover:text-gray-700 z-10 will-change-transform md:top-3 md:right-10"
-            >
-              <X className="h-6 w-6" />
-            </button>
-            <AuthForm onSuccess={() => setShowAuthForm(false)} onSignUpSuccess={() => setShowAuthForm(false)} />
-          </div>
-        </div>
-      )}
-
-      {shouldShowProfileDialog && !isProfileComplete && (
-        <ProfileCompletionDialog
-          onClose={() => {
-            console.log('Dialog closed explicitly');
-            setShouldShowProfileDialog(false);
-            setShowProfileDialog(false);
-            sessionStorage.setItem('profileDialogShown', 'true');
+    <AuthProvider>
+      <ModalProvider>
+        <Router>
+          <Routes>
+            <Route path="/" element={<Home />} />
+            <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/profile/:userId" element={<ProfilePage />} />
+            <Route path="/admin" element={<AdminLogin />} />
+            <Route path="/reset-password" element={<ResetPassword />} />
+            <Route path="/logout" element={<Logout />} />
+            <Route path="/success" element={<SuccessPage />} />
+            <Route path="/pricing" element={<Pricing />} />
+            <Route path="/purchase" element={<PurchaseCredits />} />
+            <Route path="/view-mou" element={<ViewMou />} />
+            <Route
+              path="/admin/*"
+              element={
+                <ProtectedAdminRoute>
+                  <AdminDashboard />
+                </ProtectedAdminRoute>
+              }
+            />
+            <Route path="/story/:id" element={<SuccessStoryPage />} />
+            {/* <Route path="/Careers" element={<CareerPage />} /> */}
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </Router>
+        <Toaster
+          position="bottom-center"
+          toastOptions={{
+            duration: 4000,
+            style: {
+              background: '#f0faf5',
+              color: '#047857',
+              maxWidth: '500px',
+              padding: '16px',
+              borderRadius: '8px',
+            },
+            success: {
+              duration: 3000,
+              iconTheme: {
+                primary: '#4ade80',
+                secondary: '#fff',
+              },
+            },
+            error: {
+              duration: 4000,
+              iconTheme: {
+                primary: '#ef4444',
+                secondary: '#fff',
+              },
+            },
           }}
         />
-      )}
-
-      <NavBar
-        user={user}
-        profile={profile}
-        isProfileComplete={isProfileComplete}
-        setShowAuthForm={setShowAuthForm}
-        mobileMenuOpen={mobileMenuOpen}
-        setMobileMenuOpen={setMobileMenuOpen}
-      />
-      {/* <HeroSection user={user} setShowAuthForm={setShowAuthForm} /> */}
-      <HeroSectionNew user={user} setShowAuthForm={setShowAuthForm} />
-      <HowWeWorkSection />
-      <ClientsSection loading={loading} clientLogos={clientLogos} />
-      {/* <PricingSectionStatic /> */}
-      <SuccessStoriesSection
-        loading={loading}
-        successStories={successStories}
-        showAllStories={showAllStories}
-        setShowAllStories={setShowAllStories}
-      />
-      <ContactSection
-        formData={formData}
-        setFormData={setFormData}
-        showThankYou={showThankYou}
-        setShowThankYou={setShowThankYou}
-      />
-      <Footer />
-    </div>
+      </ModalProvider>
+    </AuthProvider>
   );
-};
+}
 
 export default App;
-export type { Database, ClientLogo, SuccessStory, FormData, User, Profile };

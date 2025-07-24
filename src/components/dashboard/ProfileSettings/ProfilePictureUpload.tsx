@@ -1,6 +1,6 @@
 import React, { useState, useRef } from 'react';
 import { Upload, X } from 'lucide-react';
-import { uploadProfilePicture } from '../lib/auth';
+import { uploadProfilePicture } from '../../../lib/auth';
 
 interface ProfilePictureUploadProps {
   currentPictureUrl: string | null;

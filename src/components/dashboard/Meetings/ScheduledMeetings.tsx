@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Calendar, CalendarPlus, CheckCircle, Clock, Frown, Sparkles, Video } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import type { Database } from '../../lib/database.types';
+import type { Database } from '../../../lib/database.types';
 
 type Match = Database['public']['Tables']['matches']['Row'] & {
   opportunities?: Database['public']['Tables']['opportunities']['Row'] & {

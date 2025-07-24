@@ -3,7 +3,7 @@ import { updateProfile } from '../lib/auth';
 import { useAuth } from '../contexts/AuthContext';
 import type { Database } from '../lib/database.types';
 import { Save, X } from 'lucide-react';
-import ProfilePictureUpload from './ProfilePictureUpload';
+import ProfilePictureUpload from './dashboard/ProfileSettings/ProfilePictureUpload';
 
 type Profile = Database['public']['Tables']['profiles']['Row'];
 

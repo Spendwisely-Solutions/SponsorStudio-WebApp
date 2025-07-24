@@ -1,13 +1,13 @@
 import React, { useState, useCallback, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { updateProfile } from '../../lib/auth';
-import { useAuth } from '../../contexts/AuthContext';
-import { supabase } from '../../lib/supabase';
-import type { Database } from '../../lib/database.types';
+import { updateProfile } from '../../../lib/auth';
+import { useAuth } from '../../../contexts/AuthContext';
+import { supabase } from '../../../lib/supabase';
+import type { Database } from '../../../lib/database.types';
 import { Save, X, Camera, SquarePen, Crop } from 'lucide-react';
 import Cropper from 'react-easy-crop';
 import { Area } from 'react-easy-crop/types';
-import { CustomModal } from '../../components/CustomModal';
+import { CustomModal } from '../../CustomModal';
 import toast from 'react-hot-toast';
 import emailjs from '@emailjs/browser';
 

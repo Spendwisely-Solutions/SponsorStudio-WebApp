@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { useAuth } from '../../contexts/AuthContext';
+import { useAuth } from '../../../contexts/AuthContext';
 import { Routes, Route, Link, useNavigate } from 'react-router-dom';
-import { signOut } from '../../lib/auth';
-import { supabase } from '../../lib/supabase';
+import { signOut } from '../../../lib/auth';
+import { supabase } from '../../../lib/supabase';
 import { 
   CheckCircle, 
   XCircle, 

@@ -1,9 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Printer } from 'lucide-react';
-import { supabase } from '../lib/supabase';
-import type { Database } from '../lib/database.types';
-import sreesign from '../assets/Mou/sreehari-sign.png';
+import { supabase } from '../../lib/supabase';
+import type { Database } from '../../lib/database.types';
+import sreesign from '../../assets/Mou/sreehari-sign.png';
 
 type MouDocument = Database['public']['Tables']['mou_documents']['Row'];
 
