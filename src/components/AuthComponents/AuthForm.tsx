@@ -2,9 +2,9 @@ import React, { useState } from 'react';
 import { Eye, EyeOff } from 'lucide-react';
 import PhoneInput from 'react-phone-number-input';
 import 'react-phone-number-input/style.css';
-import { signIn, signUp } from '../lib/auth';
-import { supabase } from '../lib/supabase';
-import type { Database } from '../lib/database.types';
+import { signIn, signUp } from '../../lib/auth';
+import { supabase } from '../../lib/supabase';
+import type { Database } from '../../lib/database.types';
 import toast from 'react-hot-toast';
 
 type UserType = Database['public']['Tables']['profiles']['Row']['user_type'];

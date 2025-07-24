@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useRazorpay } from 'react-razorpay';
 import axios from 'axios';
-import { supabase } from '../lib/supabase';
+import { supabase } from '../../lib/supabase';
 import { motion } from 'framer-motion';
 import { Check, Star, Zap, Shield, Clock, ArrowLeft, CreditCard, Gift, Sparkles } from 'lucide-react';
 

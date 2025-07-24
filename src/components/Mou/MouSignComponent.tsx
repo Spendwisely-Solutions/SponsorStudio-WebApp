@@ -1,10 +1,10 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { X, Upload, Pen, Image as ImageIcon, Trash2 } from 'lucide-react';
-import type { Database } from '../../../lib/database.types';
-import { supabase } from '../../../lib/supabase';
+import type { Database } from '../../lib/database.types';
+import { supabase } from '../../lib/supabase';
 import { toast } from 'react-hot-toast';
 
-import sreeSign from "../../../assets/Mou/sreehari-sign.png"
+import sreeSign from "../../assets/Mou/sreehari-sign.png"
 
 type Opportunity = Database['public']['Tables']['opportunities']['Row'];
 

@@ -1,14 +1,14 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { supabase } from '../../lib/supabase';
+import { supabase } from '../../../lib/supabase';
 import toast from 'react-hot-toast';
 import { format, subDays } from 'date-fns';
-import type { Database } from '../../lib/database.types';
-import { useAuth } from '../../contexts/AuthContext';
-import Header from './Reports/Header';
-import Filters from './Reports/Filters';
-import GeneralReports from './Reports/GeneralReports';
-import RiskAnalysisReports from './Reports/RiskAnalysisReports';
-import Pagination from './Reports/Pagination';
+import type { Database } from '../../../lib/database.types';
+import { useAuth } from '../../../contexts/AuthContext';
+import Header from './Header';
+import Filters from './Filters';
+import GeneralReports from './GeneralReports';
+import RiskAnalysisReports from './RiskAnalysisReports';
+import Pagination from './Pagination';
 import { motion } from 'framer-motion';
 
 // Type definitions

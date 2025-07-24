@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { supabase } from '../../lib/supabase';
+import { supabase } from '../../../lib/supabase';
 import toast from 'react-hot-toast';
-import Modal from '../../components/Modal';
+import Modal from '../../Modal';
 import { 
   AlertTriangle, 
   Calendar, 
@@ -38,7 +38,7 @@ import {
   Sparkles,
   Eye
 } from 'lucide-react';
-import type { Database } from '../../lib/database.types';
+import type { Database } from '../../../lib/database.types';
 
 type Opportunity = Database['public']['Tables']['opportunities']['Row'] & {
   creator_profile: (Database['public']['Tables']['profiles']['Row'] & { email?: string }) | null;

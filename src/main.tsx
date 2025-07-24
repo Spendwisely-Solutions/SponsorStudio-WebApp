@@ -1,87 +1,10 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { AuthProvider } from './contexts/AuthContext';
-import { ModalProvider } from './contexts/ModalContext';
-import { Toaster } from 'react-hot-toast';
 import App from './App';
-import Dashboard from './components/Dashboard';
-import AdminLogin from './components/AdminLogin';
-import AdminDashboard from './components/dashboard/AdminDashboard';
-import ProtectedAdminRoute from './components/ProtectedAdminRoute';
-import SuccessStoryPage from './components/SuccessStoryPage';
-import ProfilePage from './components/ProfilePage';
 import './index.css';
-import ResetPassword from './components/ResetPassword';
-import Logout from './components/Logout';
-import SuccessPage from './components/dashboard/CreatorDashboard/Success';
-import Pricing from './components/Pricing';
-import PurchaseCredits from './components/PurchaseCredits';
-import ViewMou from './components/ViewMou';
-import CareerPage from './components/Careers/CareerPage';
-import NotFound from './components/NotFound';
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <AuthProvider>
-      <ModalProvider>
-      <Router>
-        <Routes>
-          <Route path="/" element={<App />} />
-          <Route path="/dashboard" element={<Dashboard />} />
-          <Route path="/profile/:userId" element={<ProfilePage />} />
-          <Route path="/admin" element={<AdminLogin />} />
-          <Route path="/reset-password" element={<ResetPassword />} />
-          <Route path="/logout" element={<Logout />} />
-          <Route path="/success" element={<SuccessPage />} />
-          <Route path='/pricing' element={<Pricing />} />
-          <Route path='/purchase' element={<PurchaseCredits />} />
-          <Route path='/view-mou' element={<ViewMou />} />
-          
-
-          <Route 
-            path="/admin/*" 
-            element={
-              <ProtectedAdminRoute>
-                <AdminDashboard />
-              </ProtectedAdminRoute>
-            } 
-          />
-          <Route path="/story/:id" element={<SuccessStoryPage />} />
-          {/* <Route path="/Careers" element={<CareerPage />} /> */}
-
-          <Route path="*" element={<NotFound />} />
-
-        </Routes>
-      </Router>
-      <Toaster
-        position="bottom-center"
-        toastOptions={{
-          duration: 4000,
-          style: {
-            background: '#f0faf5',
-            color: '#047857',
-            maxWidth: '500px',
-            padding: '16px',
-            borderRadius: '8px',
-          },
-          success: {
-            duration: 3000,
-            iconTheme: {
-              primary: '#4ade80',
-              secondary: '#fff',
-            },
-          },
-          error: {
-            duration: 4000,
-            iconTheme: {
-              primary: '#ef4444',
-              secondary: '#fff',
-            },
-          },
-        }}
-      />
-      </ModalProvider>
-    </AuthProvider>
+    <App />
   </StrictMode>
 );

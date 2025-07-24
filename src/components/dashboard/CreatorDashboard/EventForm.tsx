@@ -14,7 +14,7 @@ import {
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import type { Database } from '../../../lib/database.types';
-import MouSignComponent from './MouSignComponent';
+import MouSignComponent from '../../Mou/MouSignComponent';
 import { toast } from 'react-hot-toast';
 
 type Opportunity = Database['public']['Tables']['opportunities']['Row'];
