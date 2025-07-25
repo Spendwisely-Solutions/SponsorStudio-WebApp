@@ -64,7 +64,7 @@ export default function AdminLogin() {
           <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
             <p>{error}</p>
             {error.includes('Invalid credentials') && (
-              <p className="mt-2 text-sm">
+              <p className="mt-2 text-sm hidden">
                 Need to create an admin account?{' '}
                 <Link to="/admin/signup" className="font-medium text-red-700 hover:text-red-800 underline">
                   Sign up here
@@ -133,7 +133,7 @@ export default function AdminLogin() {
               {loading ? 'Signing in...' : 'Sign In'}
             </button>
 
-            <p className="mt-4 text-center text-sm text-gray-600">
+            <p className="mt-4 text-center text-sm text-gray-600 hidden">
               First time here?{' '}
               <Link to="/admin/signup" className="font-medium text-[#2B4B9B] hover:text-[#1a2f61]">
                 Create admin account

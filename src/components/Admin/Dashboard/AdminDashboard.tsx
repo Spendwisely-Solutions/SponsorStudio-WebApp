@@ -22,6 +22,7 @@ import Opportunities from './Opportunities';
 import MatchedOpportunities from './MatchedOpportunities';
 import ManageUsers from './ManageUsers';
 import RiskAnalysisRequests from './RiskAnalysisRequests';
+import ManageBlogs from './ManageBlogs';
 
 export default function AdminDashboard() {
   const navigate = useNavigate();
@@ -138,6 +139,13 @@ export default function AdminDashboard() {
             >
               <UserCog className="w-5 h-5 mr-3" />
               Manage Users
+            </Link>
+            <Link
+              to="/admin/manage-blogs"
+              className="flex items-center px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg"
+            >
+              <ClipboardList className="w-5 h-5 mr-3" />
+              Manage Blogs
             </Link>
             <Link
               to="/admin/settings"
@@ -299,6 +307,12 @@ export default function AdminDashboard() {
                 searchTerm={searchTerm}
                 setSearchTerm={setSearchTerm}
               />
+            }
+          />
+          <Route
+            path="/Manage-blogs"
+            element={
+              <ManageBlogs />
             }
           />
           <Route
