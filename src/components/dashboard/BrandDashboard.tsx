@@ -157,7 +157,7 @@ export default function BrandDashboard({ onUpdateProfile }: BrandDashboardProps)
   };
 
   const fetchCategories = async () => {
-    const { data, error } = await supabase.from('post_categories').select('id, name');
+    const { data, error } = await supabase.from('categories').select('id, name');
     if (error) {
       console.error('Error fetching categories:', error);
       toast.error('Failed to load categories.');
@@ -934,15 +934,15 @@ export default function BrandDashboard({ onUpdateProfile }: BrandDashboardProps)
 
             {/* Add Credits Button */}
             <button
-              className="flex items-center gap-1 px-2 py-1 sm:px-4 sm:py-2 bg-[#2B4B9B] text-white rounded-lg hover:bg-[#1a2f61] transition-all duration-200"
+              className="flex items-center gap-1 px-4 py-2 sm:px-4 sm:py-2 bg-[#2B4B9B] text-white rounded-lg hover:bg-[#1a2f61] transition-all duration-200 w-32 h-12 sm:w-auto sm:h-auto"
               onClick={() => {
                 window.location.href = '/purchase';
               }}
             >
-              <svg className="w-3 h-3 sm:w-3.5 sm:h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-5 h-5 sm:w-3.5 sm:h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
               </svg>
-              <span className="text-xs sm:text-sm font-medium">Add Credits</span>
+              <span className="text-sm sm:text-sm font-medium">Add Credits</span>
             </button>
           </div>
         </div>
@@ -957,37 +957,37 @@ export default function BrandDashboard({ onUpdateProfile }: BrandDashboardProps)
             color: '#1f2937',
             borderRadius: '8px',
             padding: '0',
-            fontSize: '11px',
-            maxWidth: '280px',
+            fontSize: '14px',
+            maxWidth: '360px',
             zIndex: 1000,
             boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)',
           }}
           html={`
-            <div class="p-2.5">
-              <h3 class="font-bold text-gray-800 text-xs sm:text-sm border-b border-gray-100 pb-1 mb-1.5">Credit Usage</h3>
-              <div class="space-y-1">
+            <div class="p-4">
+              <h3 class="font-bold text-gray-800 text-base sm:text-lg border-b border-gray-100 pb-2 mb-3">Credit Usage</h3>
+              <div class="space-y-2">
                 <div class="flex items-center justify-between">
-                  <span class="text-[10px] sm:text-xs text-gray-700">Like/Interest</span>
-                  <span class="font-bold text-red-600 text-[10px] sm:text-xs">50 credits</span>
+                  <span class="text-[15px] sm:text-base text-gray-700">Like/Interest</span>
+                  <span class="font-bold text-red-600 text-[15px] sm:text-base">50 credits</span>
                 </div>
                 <div class="flex items-center justify-between">
-                  <span class="text-[10px] sm:text-xs text-gray-700">Unlock Brochure</span>
-                  <span class="font-bold text-blue-600 text-[10px] sm:text-xs">100 credits</span>
+                  <span class="text-[15px] sm:text-base text-gray-700">Unlock Brochure</span>
+                  <span class="font-bold text-blue-600 text-[15px] sm:text-base">100 credits</span>
                 </div>
                 <div class="flex items-center justify-between">
-                  <span class="text-[10px] sm:text-xs text-gray-700">Post Event Report</span>
-                  <span class="font-bold text-green-600 text-[10px] sm:text-xs">100 credits</span>
+                  <span class="text-[15px] sm:text-base text-gray-700">Post Event Report</span>
+                  <span class="font-bold text-green-600 text-[15px] sm:text-base">100 credits</span>
                 </div>
                 <div class="flex items-center justify-between">
-                  <span class="text-[10px] sm:text-xs text-gray-700">Revive Opportunities</span>
-                  <span class="font-bold text-orange-600 text-[10px] sm:text-xs">300 credits</span>
+                  <span class="text-[15px] sm:text-base text-gray-700">Revive Opportunities</span>
+                  <span class="font-bold text-orange-600 text-[15px] sm:text-base">300 credits</span>
                 </div>
                 <div class="flex items-center justify-between">
-                  <span class="text-[10px] sm:text-xs text-gray-700">Risk Analysis Report</span>
-                  <span class="font-bold text-purple-600 text-[10px] sm:text-xs">500 credits</span>
+                  <span class="text-[15px] sm:text-base text-gray-700">Risk Analysis Report</span>
+                  <span class="font-bold text-purple-600 text-[15px] sm:text-base">500 credits</span>
                 </div>
               </div>
-              <p class="text-[9px] sm:text-[10px] text-gray-500 text-center mt-1.5 pt-1 border-t border-gray-100">
+              <p class="text-[13px] sm:text-[14px] text-gray-500 text-center mt-2 pt-2 border-t border-gray-100">
                 Credits are deducted when actions are completed
               </p>
             </div>
@@ -1035,8 +1035,8 @@ export default function BrandDashboard({ onUpdateProfile }: BrandDashboardProps)
             color: '#1f2937',
             borderRadius: '8px',
             padding: '0',
-            fontSize: '11px',
-            maxWidth: '250px',
+            fontSize: '14px',
+            maxWidth: '320px',
             zIndex: 1000,
             boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)',
           }}

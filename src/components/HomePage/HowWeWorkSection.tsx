@@ -3,7 +3,20 @@ import { Play } from 'lucide-react';
 
 const HowWeWorkSection: React.FC = () => {
   const [isPlaying, setIsPlaying] = useState(false);
-  
+  const [videoType, setVideoType] = useState<'brands' | 'providers'>('brands');
+
+  // Video sources
+  const videoSources = {
+    brands: [
+      { src: '', type: 'video/webm' },
+      { src: '', type: 'video/mp4' }
+    ],
+    providers: [
+      { src: '', type: 'video/webm' },
+      { src: '', type: 'video/mp4' }
+    ]
+  };
+
   const handlePlayVideo = () => {
     setIsPlaying(true);
     const videoElement = document.getElementById('howWeWorkVideo') as HTMLVideoElement;
@@ -28,19 +41,36 @@ const HowWeWorkSection: React.FC = () => {
           >
             How We Work
           </h2>
-          
-          {/* Feature badges */}
-          <div className="flex flex-wrap gap-3 justify-center mt-8 mb-10">
-            <div className="feature-badge flex items-center gap-2 bg-gradient-to-r from-blue-50 to-indigo-50 px-4 py-2 rounded-full border border-blue-200/50 shadow-sm">
-              <span className="text-sm font-medium text-blue-800">Simple Process</span>
-            </div>
-            <div className="feature-badge flex items-center gap-2 bg-gradient-to-r from-green-50 to-emerald-50 px-4 py-2 rounded-full border border-green-200/50 shadow-sm">
-              <span className="text-sm font-medium text-green-800">Smart Technology</span>
-            </div>
-            <div className="feature-badge flex items-center gap-2 bg-gradient-to-r from-purple-50 to-pink-50 px-4 py-2 rounded-full border border-purple-200/50 shadow-sm">
-              <span className="text-sm font-medium text-purple-800">Proven Results</span>
+          {/* Pill-style toggle for video type with explanation */}
+          <div className="flex flex-col items-center mt-8 mb-4">
+            <span className="mb-2 text-base text-gray-700 font-medium">Are you a</span>
+            <div className="relative flex items-center w-80 h-12 bg-gray-100 rounded-full shadow-inner border border-gray-200">
+              <span
+                className="absolute top-1 left-1 h-10 rounded-full transition-all duration-300 shadow-md"
+                style={{
+                  background: '#2563eb',
+                  transform: videoType === 'brands' ? 'translateX(0)' : 'translateX(160px)',
+                  width: 'calc(50% - 12px)',
+                  zIndex: 1,
+                }}
+              ></span>
+              <button
+                className={`flex-1 h-full rounded-full font-medium text-base z-10 transition-colors duration-200 focus:outline-none ${videoType === 'brands' ? 'text-white' : 'text-blue-700'}`}
+                style={{ background: 'transparent', marginRight: '2px' }}
+                onClick={() => { setVideoType('brands'); setIsPlaying(false); }}
+              >
+                Brand
+              </button>
+              <button
+                className={`flex-1 h-full rounded-full font-medium text-base z-10 transition-colors duration-200 focus:outline-none ${videoType === 'providers' ? 'text-white' : 'text-blue-700'}`}
+                style={{ background: 'transparent', marginLeft: '2px' }}
+                onClick={() => { setVideoType('providers'); setIsPlaying(false); }}
+              >
+                Event
+              </button>
             </div>
           </div>
+          
           
           <p
             className="mt-6 max-w-2xl mx-auto text-xl sm:text-2xl text-gray-600 leading-relaxed font-light"
@@ -58,8 +88,8 @@ const HowWeWorkSection: React.FC = () => {
           data-aos-delay="200"
          
         >
-          {/* Video container with aspect ratio */}
-          <div className="relative pb-[56.25%] bg-gray-900">
+          {/* Video container with reduced height (16:7 aspect ratio) */}
+          <div className="relative bg-gray-900 pb-[43.75%]">
             {!isPlaying && (
               <div className="absolute inset-0 flex items-center justify-center z-10">
                 <div className="absolute inset-0 bg-gradient-to-r from-blue-900/60 to-indigo-900/60 backdrop-blur-sm"></div>
@@ -84,9 +114,11 @@ const HowWeWorkSection: React.FC = () => {
               controls={isPlaying}
               playsInline
               preload="metadata"
+              key={videoType}
             >
-              <source src="https://storage.googleapis.com/webfundamentals-assets/videos/chrome.webm" type="video/webm" />
-              <source src="https://storage.googleapis.com/webfundamentals-assets/videos/chrome.mp4" type="video/mp4" />
+              {videoSources[videoType].map((source, idx) => (
+                <source key={source.type + idx} src={source.src} type={source.type} />
+              ))}
               Your browser does not support the video tag.
             </video>
           </div>
