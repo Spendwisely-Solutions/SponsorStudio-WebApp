@@ -16,6 +16,7 @@ import ContactSection from '../../components/HomePage/ContactSection';
 import Footer from '../../components/HomePage/Footer';
 import AOS from 'aos';
 import 'aos/dist/aos.css'; // Import AOS styles
+import TrendingEvents from './TrendingEvents';
 
 // Shared types
 interface Database {
@@ -200,6 +201,7 @@ const Home: React.FC = () => {
       />
       {/* <HeroSection user={user} setShowAuthForm={setShowAuthForm} /> */}
       <HeroSectionNew user={user} setShowAuthForm={setShowAuthForm} />
+      <TrendingEvents />
       <HowWeWorkSection />
       <ClientsSection loading={loading} clientLogos={clientLogos} />
       {/* <PricingSectionStatic /> */}
