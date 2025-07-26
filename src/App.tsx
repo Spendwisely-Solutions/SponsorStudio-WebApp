@@ -17,7 +17,6 @@ import ViewMou from './components/Mou/ViewMou';
 import CareerPage from './components/Careers/CareerPage';
 import NotFound from './components/NotFound';
 import Home from './components/HomePage/Home';
-
 function App() {
   return (
     <AuthProvider>
