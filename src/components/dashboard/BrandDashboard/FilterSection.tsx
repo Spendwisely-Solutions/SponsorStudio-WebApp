@@ -133,26 +133,6 @@ const FilterSection: React.FC<FilterSectionProps> = ({
               </select>
             </div>
 
-            {/* Ad Type filter for Discover tab only */}
-            {activeTab === 'discover' && (
-              <div className="min-w-0">
-                <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 truncate">
-                  Ad Type
-                </label>
-                <select
-                  value={adTypeFilter}
-                  onChange={(e) => setAdTypeFilter(e.target.value)}
-                  className="w-full px-2 sm:px-3 py-1.5 sm:py-2 border border-gray-300 rounded-lg focus:ring-[#2B4B9B] focus:border-[#2B4B9B] text-xs sm:text-sm"
-                >
-                  <option value="">All Types</option>
-                  <option value="digital">Digital Displays</option>
-                  <option value="static">Static Displays</option>
-                  <option value="video">Video Ads</option>
-                  <option value="interactive">Interactive Displays</option>
-                </select>
-              </div>
-            )}
-
             {/* Status filter for Matches tab */}
             {activeTab === 'matches' && (
               <div className="min-w-0">

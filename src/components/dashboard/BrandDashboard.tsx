@@ -157,7 +157,7 @@ export default function BrandDashboard({ onUpdateProfile }: BrandDashboardProps)
   };
 
   const fetchCategories = async () => {
-    const { data, error } = await supabase.from('post_categories').select('id, name');
+    const { data, error } = await supabase.from('categories').select('id, name');
     if (error) {
       console.error('Error fetching categories:', error);
       toast.error('Failed to load categories.');
