@@ -225,17 +225,23 @@ const OpportunityCard: React.FC<OpportunityCardProps> = memo(
       };
     }, [opportunity.id, isMuted, selectedMedia, isSwipePending]);
 
-    const handleToggleMute = (e?: React.MouseEvent | React.TouchEvent) => {
+    // Improved mute/unmute toggle for mobile and desktop
+    const handleToggleMute = (e?: React.MouseEvent | React.TouchEvent | React.PointerEvent) => {
       if (e) {
-        e.preventDefault();
-        e.stopPropagation();
+        // Use pointer events for best cross-device support
+        if ('preventDefault' in e) e.preventDefault();
+        if ('stopPropagation' in e) e.stopPropagation();
       }
-
       if (videoRef.current) {
+        // Always update state and video element
         const newMuteState = !isMuted;
-        videoRef.current.muted = newMuteState;
         setIsMuted(newMuteState);
+        videoRef.current.muted = newMuteState;
         setShowMuteIndicator(true);
+        // For mobile browsers, try to play after mute toggle
+        if (videoRef.current.paused) {
+          videoRef.current.play().catch(() => {});
+        }
         console.log(`handleToggleMute: Video ${newMuteState ? 'muted' : 'unmuted'}`);
       }
     };
@@ -340,6 +346,8 @@ const OpportunityCard: React.FC<OpportunityCardProps> = memo(
 
       const isVideo = /\.(mp4|webm|ogg)$/i.test(selectedMedia);
 
+      // Use only onClick for mute button, and use onPointerDown for video only on mobile
+      const isMobile = typeof window !== 'undefined' && window.matchMedia('(pointer: coarse)').matches;
       return (
         <motion.div
           key={selectedMedia}
@@ -356,8 +364,7 @@ const OpportunityCard: React.FC<OpportunityCardProps> = memo(
                 muted={isMuted}
                 playsInline
                 className="w-full h-full object-cover"
-                onTouchStart={handleToggleMute}
-                onClick={handleToggleMute}
+                {...(isMobile ? { onPointerDown: handleToggleMute } : { onClick: handleToggleMute })}
               >
                 <source src={selectedMedia} type="video/mp4" />
                 Your browser does not support the video tag.
@@ -370,7 +377,6 @@ const OpportunityCard: React.FC<OpportunityCardProps> = memo(
               >
                 <button
                   onClick={handleToggleMute}
-                  onTouchStart={handleToggleMute}
                   className="p-2 bg-gray-200/70 rounded-full hover:bg-gray-300/90 transition-colors duration-200"
                   aria-label={isMuted ? 'Unmute' : 'Mute'}
                 >
