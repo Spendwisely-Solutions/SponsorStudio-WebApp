@@ -202,7 +202,7 @@ const Home: React.FC = () => {
       {/* <HeroSection user={user} setShowAuthForm={setShowAuthForm} /> */}
       <HeroSectionNew user={user} setShowAuthForm={setShowAuthForm} />
       <TrendingEvents />
-      <HowWeWorkSection />
+      {/* <HowWeWorkSection /> */}
       <ClientsSection loading={loading} clientLogos={clientLogos} />
       {/* <PricingSectionStatic /> */}
       <SuccessStoriesSection

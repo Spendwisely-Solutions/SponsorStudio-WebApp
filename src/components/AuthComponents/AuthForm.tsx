@@ -432,9 +432,9 @@ export default function AuthForm({ onSuccess, onSignUpSuccess }: AuthFormProps) 
                 disabled={loading}
               >
                 <option value="brand">Brand</option>
-                <option value="agency">Marketing Agency</option>
-                <option value="influencer">Influencer</option>
-                <option value="event_organizer">Opportunity Provider</option>
+                {/* <option value="agency">Marketing Agency</option> */}
+                {/* <option value="influencer">Influencer</option> */}
+                <option value="event_organizer">Event Organizer</option>
               </select>
             </div>
           )}
