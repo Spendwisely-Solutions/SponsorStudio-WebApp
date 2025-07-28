@@ -125,9 +125,8 @@ export default function Opportunities({ searchTerm, setSearchTerm, stats, setSta
       if (opportunityIds.length > 0) {
         const { data: impressionsData, error: impressionsError } = await supabase
           .from('impressions')
-          .select('entity_id') // Updated from target_id to entity_id
-          .eq('target_type', 'opportunity')
-          .in('entity_id', opportunityIds);
+          .select('opportunity_id, user_id')
+          .in('opportunity_id', opportunityIds);
 
         if (impressionsError) {
           console.warn(`Error fetching opportunity impressions: ${impressionsError.message}`);
@@ -137,10 +136,17 @@ export default function Opportunities({ searchTerm, setSearchTerm, stats, setSta
             return acc;
           }, {} as Record<string, number>);
         } else {
-          opportunityImpressions = impressionsData?.reduce((acc, curr) => {
-            acc[curr.entity_id] = (acc[curr.entity_id] || 0) + 1;
+          // Count unique user_id per opportunity_id
+          const impressionMap: Record<string, Set<string>> = {};
+          impressionsData?.forEach((row: { opportunity_id: string, user_id: string }) => {
+            if (!row.opportunity_id || !row.user_id) return;
+            if (!impressionMap[row.opportunity_id]) impressionMap[row.opportunity_id] = new Set();
+            impressionMap[row.opportunity_id].add(row.user_id);
+          });
+          opportunityImpressions = opportunityIds.reduce((acc, id) => {
+            acc[id] = impressionMap[id]?.size || 0;
             return acc;
-          }, {} as Record<string, number>) || {};
+          }, {} as Record<string, number>);
         }
       }
 
