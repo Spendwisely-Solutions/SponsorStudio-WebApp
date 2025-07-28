@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { createClient } from '@supabase/supabase-js';
 import Modal from '../../Modal';
+import compressMedia from '../../../utils/compressMedia';
 
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
@@ -38,6 +39,7 @@ function ManageClientsLogos() {
   const [editName, setEditName] = useState('');
   const [editLogoUrl, setEditLogoUrl] = useState('');
   const [uploading, setUploading] = useState(false);
+  const [compressionInfo, setCompressionInfo] = useState<{ originalSize?: number; compressedSize?: number; previewUrl?: string } | null>(null);
 
   useEffect(() => {
     fetchLogos();
@@ -53,22 +55,35 @@ function ManageClientsLogos() {
   async function handleAddLogo() {
     if (!name || !file) return;
     setUploading(true);
-    const fileName = `${Date.now()}_${file.name}`;
-    const { error: uploadError } = await supabase.storage.from('client-logos').upload(fileName, file);
-    if (uploadError) {
-      alert('Upload failed');
+    try {
+      // Compress image before upload
+      const compressedFile = await compressMedia(file, { maxSizeMB: 0.15, maxWidthOrHeight: 400 });
+      setCompressionInfo({
+        originalSize: file.size,
+        compressedSize: compressedFile.size,
+        previewUrl: URL.createObjectURL(compressedFile),
+      });
+      const fileName = `${Date.now()}_${file.name}`;
+      const { error: uploadError } = await supabase.storage.from('client-logos').upload(fileName, compressedFile);
+      if (uploadError) {
+        alert('Upload failed');
+        setUploading(false);
+        return;
+      }
+      const { data: urlData } = supabase.storage.from('client-logos').getPublicUrl(fileName);
+      const logoUrl = urlData.publicUrl;
+      const { error: insertError } = await supabase.from('client_logos').insert({ name, logo_url: logoUrl });
+      if (insertError) alert('Insert failed');
+      setName('');
+      setFile(null);
       setUploading(false);
-      return;
+      setShowUploadModal(false);
+      setCompressionInfo(null);
+      fetchLogos();
+    } catch (err) {
+      alert('Compression failed');
+      setUploading(false);
     }
-    const { data: urlData } = supabase.storage.from('client-logos').getPublicUrl(fileName);
-    const logoUrl = urlData.publicUrl;
-    const { error: insertError } = await supabase.from('client_logos').insert({ name, logo_url: logoUrl });
-    if (insertError) alert('Insert failed');
-    setName('');
-    setFile(null);
-    setUploading(false);
-    setShowUploadModal(false);
-    fetchLogos();
   }
 
   async function handleDeleteLogo() {
@@ -92,11 +107,22 @@ function ManageClientsLogos() {
   async function handleEditLogo() {
     let newLogoUrl = editLogoUrl;
     if (file) {
-      const fileName = `${Date.now()}_${file.name}`;
-      const { error: uploadError } = await supabase.storage.from('client-logos').upload(fileName, file);
-      if (!uploadError) {
-        const { data: urlData } = supabase.storage.from('client-logos').getPublicUrl(fileName);
-        newLogoUrl = urlData.publicUrl;
+      try {
+        // Compress image before upload
+        const compressedFile = await compressMedia(file, { maxSizeMB: 0.15, maxWidthOrHeight: 400 });
+        setCompressionInfo({
+          originalSize: file.size,
+          compressedSize: compressedFile.size,
+          previewUrl: URL.createObjectURL(compressedFile),
+        });
+        const fileName = `${Date.now()}_${file.name}`;
+        const { error: uploadError } = await supabase.storage.from('client-logos').upload(fileName, compressedFile);
+        if (!uploadError) {
+          const { data: urlData } = supabase.storage.from('client-logos').getPublicUrl(fileName);
+          newLogoUrl = urlData.publicUrl;
+        }
+      } catch (err) {
+        alert('Compression failed');
       }
     }
     await supabase.from('client_logos').update({ name: editName, logo_url: newLogoUrl }).eq('id', editId);
@@ -105,6 +131,7 @@ function ManageClientsLogos() {
     setEditLogoUrl('');
     setFile(null);
     setShowUploadModal(false);
+    setCompressionInfo(null);
     fetchLogos();
   }
 
@@ -176,7 +203,7 @@ function ManageClientsLogos() {
       {/* Upload/Edit Modal */}
       <Modal
         isOpen={showUploadModal}
-        onClose={() => { setShowUploadModal(false); setEditId(null); setEditName(''); setEditLogoUrl(''); setFile(null); setName(''); }}
+        onClose={() => { setShowUploadModal(false); setEditId(null); setEditName(''); setEditLogoUrl(''); setFile(null); setName(''); setCompressionInfo(null); }}
         onConfirm={editId ? handleEditLogo : handleAddLogo}
         title={editId ? 'Update Logo' : 'Add New Logo'}
         message={
@@ -192,10 +219,45 @@ function ManageClientsLogos() {
             <input
               type="file"
               accept="image/*"
-              onChange={e => setFile(e.target.files?.[0] || null)}
+              onChange={async e => {
+                const selectedFile = e.target.files?.[0] || null;
+                setFile(selectedFile);
+                if (selectedFile) {
+                  try {
+                    const compressedFile = await compressMedia(selectedFile, { maxSizeMB: 0.15, maxWidthOrHeight: 400 });
+                    setCompressionInfo({
+                      originalSize: selectedFile.size,
+                      compressedSize: compressedFile.size,
+                      previewUrl: URL.createObjectURL(compressedFile),
+                    });
+                  } catch {
+                    setCompressionInfo(null);
+                  }
+                } else {
+                  setCompressionInfo(null);
+                }
+              }}
               className="border p-2 rounded w-full"
             />
-            {editId && editLogoUrl && (
+            {compressionInfo && (
+              <div className="bg-gray-50 rounded-lg p-3 mt-2 flex flex-col items-center">
+                <div className="text-sm text-gray-700 mb-2">Compression Results:</div>
+                <div className="flex gap-4 items-center">
+                  <div>
+                    <div className="text-xs text-gray-500">Original Size</div>
+                    <div className="font-semibold">{(compressionInfo.originalSize! / 1024).toFixed(1)} KB</div>
+                  </div>
+                  <div>
+                    <div className="text-xs text-gray-500">Compressed Size</div>
+                    <div className="font-semibold">{(compressionInfo.compressedSize! / 1024).toFixed(1)} KB</div>
+                  </div>
+                </div>
+                {compressionInfo.previewUrl && (
+                  <img src={compressionInfo.previewUrl} alt="Compressed Preview" className="h-16 w-16 object-contain mt-3 rounded shadow" />
+                )}
+              </div>
+            )}
+            {editId && editLogoUrl && !compressionInfo && (
               <img src={editLogoUrl} alt={editName} className="h-16 w-16 object-contain mx-auto" />
             )}
           </div>
