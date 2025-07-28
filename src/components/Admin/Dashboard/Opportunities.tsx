@@ -110,7 +110,7 @@ export default function Opportunities({ searchTerm, setSearchTerm, stats, setSta
         .from('opportunities')
         .select(`
           *,
-          creator_profile:creator_id (*),
+          creator_profile:creator_id (*, email),
           categories:category_id (*),
           report:reports!reports_opportunity_id_fkey (id, pdf_path, filename, created_at)
         `);
@@ -157,7 +157,11 @@ export default function Opportunities({ searchTerm, setSearchTerm, stats, setSta
         report: opp.report || null,
         mou_id: opp.mou_id || null,
         mou_url: opp.mou_url || null,
-        impression_count: opportunityImpressions[opp.id] || 0
+        impression_count: opportunityImpressions[opp.id] || 0,
+        creator_profile: opp.creator_profile ? {
+          ...opp.creator_profile,
+          email: opp.creator_profile.email || 'Not set'
+        } : null
       }));
 
       // Fetch posts
@@ -165,7 +169,7 @@ export default function Opportunities({ searchTerm, setSearchTerm, stats, setSta
         .from('posts')
         .select(`
           *,
-          influencer_profile:influencer_id (*),
+          influencer_profile:influencer_id (*, email),
           categories:category_id (*)
         `);
 
@@ -179,7 +183,7 @@ export default function Opportunities({ searchTerm, setSearchTerm, stats, setSta
       if (postIds.length > 0) {
         const { data: impressionsData, error: impressionsError } = await supabase
           .from('impressions')
-          .select('entity_id') // Updated from target_id to entity_id
+          .select('entity_id')
           .eq('target_type', 'post')
           .in('entity_id', postIds);
 
@@ -202,7 +206,11 @@ export default function Opportunities({ searchTerm, setSearchTerm, stats, setSta
         ...post,
         verification_status: post.verification_status?.trim().toLowerCase() ?? 'pending',
         type: 'post' as const,
-        impression_count: postImpressions[post.id] || 0
+        impression_count: postImpressions[post.id] || 0,
+        influencer_profile: post.influencer_profile ? {
+          ...post.influencer_profile,
+          email: post.influencer_profile.email || 'Not set'
+        } : null
       }));
 
       // Combine and filter data
@@ -217,51 +225,7 @@ export default function Opportunities({ searchTerm, setSearchTerm, stats, setSta
         ? combinedData 
         : combinedData.filter(item => item.verification_status === filter);
 
-      // Fetch emails for creators and influencers
-      const itemsWithEmails = await Promise.all(
-        filteredData.map(async (item: CombinedItem) => {
-          const userId = item.type === 'opportunity' ? item.creator_id : item.influencer_id;
-          if (!userId) {
-            return {
-              ...item,
-              [item.type === 'opportunity' ? 'creator_profile' : 'influencer_profile']: {
-                ...(item.type === 'opportunity' ? item.creator_profile : item.influencer_profile),
-                email: 'Not set'
-              }
-            };
-          }
-
-          try {
-            const { data: emailData, error: emailError } = await supabase.functions.invoke('get-user-email', {
-              body: { userId }
-            });
-
-            if (emailError) {
-              console.warn(`Error fetching email for user ${userId}: ${emailError.message}`);
-              return {
-                ...item,
-                [item.type === 'opportunity' ? 'creator_profile' : 'influencer_profile']: {
-                  ...(item.type === 'opportunity' ? item.creator_profile : item.influencer_profile),
-                  email: 'Not set'
-                }
-              };
-            }
-
-            return {
-              ...item,
-              [item.type === 'opportunity' ? 'creator_profile' : 'influencer_profile']: {
-                ...(item.type === 'opportunity' ? item.creator_profile : item.influencer_profile),
-                email: emailData?.email || 'Not set'
-              }
-            };
-          } catch (error) {
-            console.warn(`Failed to fetch email for user ${userId}: ${String(error)}`);
-            return item;
-          }
-        })
-      );
-
-      setItems(itemsWithEmails);
+      setItems(filteredData);
 
       // Update stats
       const { data: opportunitiesStats, error: opportunitiesStatsError } = await supabase
