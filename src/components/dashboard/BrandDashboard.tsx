@@ -18,6 +18,7 @@ import OpportunityCard from './BrandDashboard/OpportunityCard';
 import InfluencerPostCard from './BrandDashboard/InfluencerPostCard';
 import type { Opportunity, Post, Category, Match } from './BrandDashboard/types';
 import coinIcon from '../../assets/dashboard/coin.png';
+import { useLocation } from 'react-router-dom'; // Import useLocation
 
 interface BrandDashboardProps {
   onUpdateProfile: () => void;
@@ -25,6 +26,7 @@ interface BrandDashboardProps {
 
 export default function BrandDashboard({ onUpdateProfile }: BrandDashboardProps) {
   const { user, profile } = useAuth();
+  const location = useLocation(); // Hook to access URL
   const [opportunities, setOpportunities] = useState<Opportunity[]>([]);
   const [posts, setPosts] = useState<Post[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
@@ -51,6 +53,13 @@ export default function BrandDashboard({ onUpdateProfile }: BrandDashboardProps)
 
   const isInitialLoad = useRef(true);
   const hasRefreshed = useRef(false);
+
+  // Extract search query from URL on mount
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const searchParam = params.get('search') || '';
+    setSearchQuery(searchParam);
+  }, [location.search]);
 
   useEffect(() => {
     console.log('BrandDashboard: user:', user, 'profile:', profile, 'activeTab:', activeTab);
@@ -128,17 +137,17 @@ export default function BrandDashboard({ onUpdateProfile }: BrandDashboardProps)
     }
     setTouchStartY(0);
   };
-  
+
   // Prevent horizontal overflow
   useEffect(() => {
     const handleResize = () => {
       document.body.style.overflowX = 'hidden';
       document.documentElement.style.overflowX = 'hidden';
     };
-    
+
     handleResize();
     window.addEventListener('resize', handleResize);
-    
+
     return () => {
       window.removeEventListener('resize', handleResize);
     };
@@ -765,6 +774,8 @@ export default function BrandDashboard({ onUpdateProfile }: BrandDashboardProps)
     setPriceRangeFilter('');
     setLocationSearch('');
     setSearchQuery('');
+    // Clear URL query parameters
+    window.history.replaceState(null, '', '/dashboard');
   };
 
   const handleAnimationComplete = (id: string) => {
@@ -818,9 +829,9 @@ export default function BrandDashboard({ onUpdateProfile }: BrandDashboardProps)
           </div>
           <Skeleton width={120} height={40} className="sm:w-32 sm:h-12 rounded-xl" />
         </div>
-        
+
         <ProfileAlert companyName={profile?.company_name || undefined} onUpdateProfile={onUpdateProfile} />
-        
+
         {/* Loading Header */}
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-4 sm:mb-6">
           <Skeleton width={200} height={28} className="sm:h-8 mb-2 sm:mb-0" />
@@ -829,7 +840,7 @@ export default function BrandDashboard({ onUpdateProfile }: BrandDashboardProps)
             <Skeleton width={200} height={36} className="sm:h-10 rounded-lg" />
           </div>
         </div>
-        
+
         {/* Loading Tabs */}
         <div className="mb-4 sm:mb-6 border-b border-gray-200">
           <div className="flex flex-row gap-2 sm:gap-6 overflow-x-auto">
@@ -838,7 +849,7 @@ export default function BrandDashboard({ onUpdateProfile }: BrandDashboardProps)
             ))}
           </div>
         </div>
-        
+
         {/* Loading Card */}
         <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
           <Skeleton height={200} className="sm:h-80" />
@@ -863,21 +874,25 @@ export default function BrandDashboard({ onUpdateProfile }: BrandDashboardProps)
   console.log(`Rendering BrandDashboard with credits: ${credits}, access_token: ${(user as any)?.access_token ? 'present' : 'missing'}`);
 
   return (
-    <div 
+    <div
       className="min-h-screen bg-gray-50 px-2 sm:px-4 lg:px-6 py-3 sm:py-4 w-full max-w-[100vw] overflow-x-hidden"
       onTouchStart={handleTouchStart}
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
       style={{
         transform: `translateY(${Math.min(pullDistance / 3, 50)}px)`,
-        transition: pullDistance === 0 ? 'transform 0.3s ease-out' : 'none'
+        transition: pullDistance === 0 ? 'transform 0.3s ease-out' : 'none',
       }}
     >
       {/* Pull-to-refresh indicator */}
       {pullDistance > 50 && (
         <div className="fixed top-0 left-0 right-0 z-50 flex justify-center pt-4">
           <div className="bg-white rounded-full shadow-lg px-4 py-2 flex items-center space-x-2">
-            <div className={`w-4 h-4 border-2 border-blue-600 rounded-full ${pullDistance > 100 || isRefreshing ? 'animate-spin border-t-transparent' : ''}`}></div>
+            <div
+              className={`w-4 h-4 border-2 border-blue-600 rounded-full ${
+                pullDistance > 100 || isRefreshing ? 'animate-spin border-t-transparent' : ''
+              }`}
+            ></div>
             <span className="text-sm font-medium text-gray-700">
               {isRefreshing ? 'Refreshing...' : pullDistance > 100 ? 'Release to refresh' : 'Pull to refresh'}
             </span>
@@ -898,7 +913,12 @@ export default function BrandDashboard({ onUpdateProfile }: BrandDashboardProps)
             stroke="currentColor"
             viewBox="0 0 24 24"
           >
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+            />
           </svg>
         </button>
       </div>
@@ -996,7 +1016,7 @@ export default function BrandDashboard({ onUpdateProfile }: BrandDashboardProps)
       </motion.div>
 
       <ProfileAlert companyName={profile?.company_name || undefined} onUpdateProfile={onUpdateProfile} />
-      
+
       {/* Sticky Header for Mobile */}
       <div className="sticky top-0 z-30 bg-gray-50/95 backdrop-blur-sm border-b border-gray-200 -mx-2 px-2 py-2 mb-4 sm:hidden w-[calc(100%+16px)] overflow-hidden">
         <div className="flex items-center justify-center w-full">
@@ -1025,7 +1045,8 @@ export default function BrandDashboard({ onUpdateProfile }: BrandDashboardProps)
               <span className="font-semibold">{credits ?? 'N/A'}</span>
             </div> */}
           </div>
-        </div>          {/* Mobile Credit Information Tooltip */}
+        </div>
+        {/* Mobile Credit Information Tooltip */}
         <Tooltip
           id="credits-info-tooltip-mobile"
           place="bottom"
@@ -1072,7 +1093,7 @@ export default function BrandDashboard({ onUpdateProfile }: BrandDashboardProps)
           `}
         />
       </div>
-      
+
       <FilterSection
         showFilters={showFilters}
         categories={categories}
@@ -1090,206 +1111,177 @@ export default function BrandDashboard({ onUpdateProfile }: BrandDashboardProps)
         toggleFilters={() => setShowFilters(!showFilters)}
         isInfluencerTab={activeTab === 'influencers'}
         activeTab={activeTab}
-      />    <TabsSection
-      activeTab={activeTab}
-      setActiveTab={setActiveTab}
-      pendingMatches={pendingMatches}
-    />
-    <MatchNotification
-      showMatchSuccess={showMatchSuccess}
-      matchedOpportunity={matchedOpportunity}
-      isInfluencerTab={activeTab === 'influencers'}
-    />
-    
-    <AnimatePresence mode="wait">
-      {activeTab === 'discover' && (
-        <motion.div 
-          className="pb-20 sm:pb-8"
-          key="discover-tab"
-          initial={{ opacity: 0, x: 20 }}
-          animate={{ opacity: 1, x: 0 }}
-          exit={{ opacity: 0, x: -20 }}
-          transition={{ duration: 0.3, ease: "easeInOut" }}
-        >
-          {opportunities.length === 0 ? (
-            <NoResultsCard
-              type="events"
-              resetFilters={resetFilters}
-              resetDislikedEvents={handleResetDislikedOpportunities}
-            />
-          ) : (
-            <div className="min-h-screen">
-              <AnimatePresence>
-                {opportunities
-                  .filter((opportunity) => opportunity.id !== pendingLikeId)
-                  .slice(0, 1)
-                  .map((opportunity) => (
-                    <OpportunityCard
-                      key={opportunity.id}
-                      opportunity={{
-                        ...opportunity,
-                        location: opportunity.location || '',
-                        start_date: opportunity.start_date || undefined,
-                        end_date: opportunity.end_date || undefined,
-                        description: opportunity.description || '',
-                        media_urls: opportunity.media_urls || undefined,
-                        sponsorship_brochure_url: opportunity.sponsorship_brochure_url || undefined,
-                        category_id: opportunity.category_id || undefined,
-                        price_range: opportunity.price_range || undefined
-                      }}
-                      onLike={async (id: string) => {
-                        setSwipeActions((prev) => ({ ...prev, [id]: 'like' }));
-                        await handleLike(id, 'opportunity');
-                      }}
-                      onReject={(id: string) => {
-                        setSwipeActions((prev) => ({ ...prev, [id]: 'dislike' }));
-                        handleReject(id, 'opportunity');
-                      }}
-                      swipeAction={swipeActions[opportunity.id] || null}
-                      onAnimationComplete={handleAnimationComplete}
-                      showFullDetails={showFullDetails}
-                      setShowFullDetails={setShowFullDetails}
-                      credits={credits ?? 0}
-                      deductCredits={deductCredits}
-                    />
-                  ))}
-              </AnimatePresence>
-              {opportunities.length === 1 && !pendingLikeId && (
-                <div className="w-full min-h-[60vh] flex items-center justify-center bg-gradient-to-br from-blue-50 to-white rounded-2xl border border-blue-100 mx-2 sm:mx-0">
-                  <div className="text-center p-6 sm:p-8 max-w-md">
-                    <div className="w-16 h-16 sm:w-20 sm:h-20 mx-auto mb-4 sm:mb-6 bg-gradient-to-br from-blue-100 to-blue-200 rounded-full flex items-center justify-center shadow-lg">
-                      <Search className="w-8 h-8 sm:w-10 sm:h-10 text-blue-600" />
-                    </div>
-                    <h3 className="text-lg sm:text-xl font-semibold text-gray-800 mb-3">
-                      That's all for now! 🎉
-                    </h3>
-                    <p className="text-sm sm:text-base text-gray-600 mb-4 sm:mb-6 leading-relaxed">
-                      You've explored all available events matching your criteria. New opportunities are added regularly.
-                    </p>
-                    <div className="flex flex-col sm:flex-row gap-3 justify-center">
-                      <button
-                        onClick={resetFilters}
-                        className="px-4 sm:px-6 py-2.5 sm:py-3 bg-[#2B4B9B] text-white rounded-xl hover:bg-[#1a2f61] text-sm sm:text-base font-medium transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105"
-                      >
-                        Reset Filters
-                      </button>
-                      <button
-                        onClick={() => setActiveTab('influencers')}
-                        className="px-4 sm:px-6 py-2.5 sm:py-3 bg-purple-600 text-white rounded-xl hover:bg-purple-700 text-sm sm:text-base font-medium transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105"
-                      >
-                        Try Influencers
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
-        </motion.div>
-      )}
-      {activeTab === 'influencers' && (
-        <motion.div 
-          className="pb-20 sm:pb-8"
-          key="influencers-tab"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1, x: 0 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.3, ease: "easeInOut" }}
-        >
-          {loading ? (
-            <div className="min-h-[60vh] flex items-center justify-center bg-white rounded-2xl shadow-lg mx-2 sm:mx-0">
-              <div className="text-center p-6 sm:p-8">
-                <div className="w-12 h-12 sm:w-16 sm:h-16 mx-auto mb-4 border-4 border-purple-200 border-t-purple-600 rounded-full animate-spin"></div>
-                <p className="text-gray-600 text-sm sm:text-base font-medium">Discovering amazing influencer posts...</p>
+      />
+      <TabsSection
+        activeTab={activeTab}
+        setActiveTab={setActiveTab}
+        pendingMatches={pendingMatches}
+      />
+      <MatchNotification
+        showMatchSuccess={showMatchSuccess}
+        matchedOpportunity={matchedOpportunity}
+        isInfluencerTab={activeTab === 'influencers'}
+      />
+
+      <AnimatePresence mode="wait">
+        {activeTab === 'discover' && (
+          <motion.div
+            className="pb-20 sm:pb-8"
+            key="discover-tab"
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -20 }}
+            transition={{ duration: 0.3, ease: 'easeInOut' }}
+          >
+            {opportunities.length === 0 ? (
+              <NoResultsCard
+                type="events"
+                resetFilters={resetFilters}
+                resetDislikedEvents={handleResetDislikedOpportunities}
+              />
+            ) : (
+              <div className="min-h-screen">
+                <AnimatePresence>
+                  {opportunities
+                    .filter((opportunity) => opportunity.id !== pendingLikeId)
+                    .slice(0, 1)
+                    .map((opportunity) => (
+                      <OpportunityCard
+                        key={opportunity.id}
+                        opportunity={{
+                          ...opportunity,
+                          location: opportunity.location || '',
+                          start_date: opportunity.start_date || undefined,
+                          end_date: opportunity.end_date || undefined,
+                          description: opportunity.description || '',
+                          media_urls: opportunity.media_urls || undefined,
+                          sponsorship_brochure_url: opportunity.sponsorship_brochure_url || undefined,
+                          category_id: opportunity.category_id || undefined,
+                          price_range: opportunity.price_range || undefined,
+                        }}
+                        onLike={async (id: string) => {
+                          setSwipeActions((prev) => ({ ...prev, [id]: 'like' }));
+                          await handleLike(id, 'opportunity');
+                        }}
+                        onReject={(id: string) => {
+                          setSwipeActions((prev) => ({ ...prev, [id]: 'dislike' }));
+                          handleReject(id, 'opportunity');
+                        }}
+                        swipeAction={swipeActions[opportunity.id] || null}
+                        onAnimationComplete={handleAnimationComplete}
+                        showFullDetails={showFullDetails}
+                        setShowFullDetails={setShowFullDetails}
+                        credits={credits ?? 0}
+                        deductCredits={deductCredits}
+                      />
+                    ))}
+                </AnimatePresence>
+            
               </div>
-            </div>
-          ) : posts.length === 0 ? (
-            <NoResultsCard
-              type="influencer posts"
-              resetFilters={resetFilters}
-              resetDislikedPosts={handleResetDislikedPosts}
-            />
-          ) : (
-            <div className="min-h-[calc(100vh-150px)] sm:min-h-[calc(100vh-100px)]">
-              <AnimatePresence>
-                {posts
-                  .filter((post) => post.id !== pendingLikeId)
-                  .slice(0, 1)
-                  .map((post) => (
-                    <InfluencerPostCard
-                      key={post.id}
-                      post={post}
-                      onLike={async (id: string) => {
-                        setSwipeActions((prev) => ({ ...prev, [id]: 'like' }));
-                        await handleLike(id, 'post');
-                      }}
-                      onReject={(id: string) => {
-                        setSwipeActions((prev) => ({ ...prev, [id]: 'dislike' }));
-                        handleReject(id, 'post');
-                      }}
-                      swipeAction={swipeActions[post.id] || null}
-                      onAnimationComplete={handleAnimationComplete}
-                      credits={credits ?? 0}
-                      deductCredits={deductCredits}
-                      showFullDetails={showFullDetails}
-                      setShowFullDetails={setShowFullDetails}
-                    />
-                  ))}
-              </AnimatePresence>
-              {posts.filter((post) => post.id !== pendingLikeId).length === 0 && (
-                <div className="w-full min-h-[60vh] flex items-center justify-center bg-gradient-to-br from-purple-50 to-white rounded-2xl border border-purple-100 mx-2 sm:mx-0">
-                  <div className="text-center p-6 sm:p-8 max-w-md">
-                    <div className="w-16 h-16 sm:w-20 sm:h-20 mx-auto mb-4 sm:mb-6 bg-gradient-to-br from-purple-100 to-purple-200 rounded-full flex items-center justify-center shadow-lg">
-                      <Search className="w-8 h-8 sm:w-10 sm:h-10 text-purple-600" />
-                    </div>
-                    <h3 className="text-lg sm:text-xl font-semibold text-gray-800 mb-3">
-                      All caught up! ✨
-                    </h3>
-                    <p className="text-sm sm:text-base text-gray-600 mb-4 sm:mb-6 leading-relaxed">
-                      You've explored all available influencer posts. Check back later for fresh content!
-                    </p>
-                    <div className="flex flex-col sm:flex-row gap-3 justify-center">
-                      <button
-                        onClick={resetFilters}
-                        className="px-4 sm:px-6 py-2.5 sm:py-3 bg-[#2B4B9B] text-white rounded-xl hover:bg-[#1a2f61] text-sm sm:text-base font-medium transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105"
-                      >
-                        Reset Filters
-                      </button>
-                      <button
-                        onClick={handleResetDislikedPosts}
-                        className="px-4 sm:px-6 py-2.5 sm:py-3 bg-purple-600 text-white rounded-xl hover:bg-purple-700 text-sm sm:text-base font-medium transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105"
-                      >
-                        Revive Posts (300 credits)
-                      </button>
+            )}
+          </motion.div>
+        )}
+        {activeTab === 'influencers' && (
+          <motion.div
+            className="pb-20 sm:pb-8"
+            key="influencers-tab"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.3, ease: 'easeInOut' }}
+          >
+            {loading ? (
+              <div className="min-h-[60vh] flex items-center justify-center bg-white rounded-2xl shadow-lg mx-2 sm:mx-0">
+                <div className="text-center p-6 sm:p-8">
+                  <div className="w-12 h-12 sm:w-16 sm:h-16 mx-auto mb-4 border-4 border-purple-200 border-t-purple-600 rounded-full animate-spin"></div>
+                  <p className="text-gray-600 text-sm sm:text-base font-medium">Discovering amazing influencer posts...</p>
+                </div>
+              </div>
+            ) : posts.length === 0 ? (
+              <NoResultsCard
+                type="influencer posts"
+                resetFilters={resetFilters}
+                resetDislikedPosts={handleResetDislikedPosts}
+              />
+            ) : (
+              <div className="min-h-[calc(100vh-150px)] sm:min-h-[calc(100vh-100px)]">
+                <AnimatePresence>
+                  {posts
+                    .filter((post) => post.id !== pendingLikeId)
+                    .slice(0, 1)
+                    .map((post) => (
+                      <InfluencerPostCard
+                        key={post.id}
+                        post={post}
+                        onLike={async (id: string) => {
+                          setSwipeActions((prev) => ({ ...prev, [id]: 'like' }));
+                          await handleLike(id, 'post');
+                        }}
+                        onReject={(id: string) => {
+                          setSwipeActions((prev) => ({ ...prev, [id]: 'dislike' }));
+                          handleReject(id, 'post');
+                        }}
+                        swipeAction={swipeActions[post.id] || null}
+                        onAnimationComplete={handleAnimationComplete}
+                        credits={credits ?? 0}
+                        deductCredits={deductCredits}
+                        showFullDetails={showFullDetails}
+                        setShowFullDetails={setShowFullDetails}
+                      />
+                    ))}
+                </AnimatePresence>
+                {posts.filter((post) => post.id !== pendingLikeId).length === 0 && (
+                  <div className="w-full min-h-[60vh] flex items-center justify-center bg-gradient-to-br from-purple-50 to-white rounded-2xl border border-purple-100 mx-2 sm:mx-0">
+                    <div className="text-center p-6 sm:p-8 max-w-md">
+                      <div className="w-16 h-16 sm:w-20 sm:h-20 mx-auto mb-4 sm:mb-6 bg-gradient-to-br from-purple-100 to-purple-200 rounded-full flex items-center justify-center shadow-lg">
+                        <Search className="w-8 h-8 sm:w-10 sm:h-10 text-purple-600" />
+                      </div>
+                      <h3 className="text-lg sm:text-xl font-semibold text-gray-800 mb-3">All caught up! ✨</h3>
+                      <p className="text-sm sm:text-base text-gray-600 mb-4 sm:mb-6 leading-relaxed">
+                        You've explored all available influencer posts. Check back later for fresh content!
+                      </p>
+                      <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                        <button
+                          onClick={resetFilters}
+                          className="px-4 sm:px-6 py-2.5 sm:py-3 bg-[#2B4B9B] text-white rounded-xl hover:bg-[#1a2f61] text-sm sm:text-base font-medium transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105"
+                        >
+                          Reset Filters
+                        </button>
+                        <button
+                          onClick={handleResetDislikedPosts}
+                          className="px-4 sm:px-6 py-2.5 sm:py-3 bg-purple-600 text-white rounded-xl hover:bg-purple-700 text-sm sm:text-base font-medium transition-all duration-300 shadow-lg hover:shadow-xl transform hover:scale-105"
+                        >
+                          Revive Posts (300 credits)
+                        </button>
+                      </div>
                     </div>
                   </div>
-                </div>
-              )}
-            </div>
-          )}
-        </motion.div>
-      )}
-      {activeTab === 'matches' && (
-        <motion.div 
-          className="pb-20 sm:pb-8"
-          key="matches-tab"
-          initial={{ opacity: 0, x: -20 }}
-          animate={{ opacity: 1, x: 0 }}
-          exit={{ opacity: 0, x: 20 }}
-          transition={{ duration: 0.3, ease: "easeInOut" }}
-        >
-          <MatchesSection
-            matches={matches}
-            pendingMatches={pendingMatches}
-            acceptedMatches={acceptedMatches}
-            rejectedMatches={rejectedMatches}
-            setActiveTab={setActiveTab}
-            generateGoogleCalendarLink={generateGoogleCalendarLink}
-            deductCredits={deductCredits}
-          />
-        </motion.div>
-      )}
-    </AnimatePresence>
+                )}
+              </div>
+            )}
+          </motion.div>
+        )}
+        {activeTab === 'matches' && (
+          <motion.div
+            className="pb-20 sm:pb-8"
+            key="matches-tab"
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: 20 }}
+            transition={{ duration: 0.3, ease: 'easeInOut' }}
+          >
+            <MatchesSection
+              matches={matches}
+              pendingMatches={pendingMatches}
+              acceptedMatches={acceptedMatches}
+              rejectedMatches={rejectedMatches}
+              setActiveTab={setActiveTab}
+              generateGoogleCalendarLink={generateGoogleCalendarLink}
+              deductCredits={deductCredits}
+            />
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

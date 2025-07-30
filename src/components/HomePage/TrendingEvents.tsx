@@ -131,10 +131,36 @@ function TrendingEvents() {
                   }
                 }
 
+                // Track mouse/touch movement to distinguish click vs drag
+                let startX = 0, startY = 0, moved = false;
+                const threshold = 10; // px
+                const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+                  moved = false;
+                  if (e.pointerType === 'touch' || e.pointerType === 'mouse') {
+                    startX = e.clientX;
+                    startY = e.clientY;
+                  }
+                };
+                const handlePointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
+                  if (e.pointerType === 'touch' || e.pointerType === 'mouse') {
+                    if (Math.abs(e.clientX - startX) > threshold || Math.abs(e.clientY - startY) > threshold) {
+                      moved = true;
+                    }
+                  }
+                };
+                const handlePointerUp = (e: React.PointerEvent<HTMLDivElement>) => {
+                  if (!moved) {
+                    const searchParam = encodeURIComponent(event.title);
+                    window.location.href = `/dashboard?search=${searchParam}`;
+                  }
+                };
                 return (
                   <div
                     key={event.title + (event.start_date || idx)}
-                    className="px-2 outline-none"
+                    className="px-2 outline-none cursor-pointer"
+                    onPointerDown={handlePointerDown}
+                    onPointerMove={handlePointerMove}
+                    onPointerUp={handlePointerUp}
                   >
                     <div
                       className="bg-white/90 rounded-3xl shadow-xl border border-blue-100/40 backdrop-blur-md px-4 py-6 flex flex-col items-center transition-transform duration-500 ease-[cubic-bezier(.4,0,.2,1)] animate-cardin mb-12"

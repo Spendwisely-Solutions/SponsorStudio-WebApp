@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Search, Filter, X } from 'lucide-react';
 import type { Category } from './types';
+import { useLocation } from 'react-router-dom'; // Import useLocation
 
 interface FilterSectionProps {
   showFilters: boolean;
@@ -39,12 +40,24 @@ const FilterSection: React.FC<FilterSectionProps> = ({
   isInfluencerTab,
   activeTab = 'discover',
 }) => {
+  const location = useLocation();
   const [showSearch, setShowSearch] = useState(false);
+
+  // Show search input if there's a search query in the URL or state
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const searchParam = params.get('search') || '';
+    if (searchParam || searchQuery) {
+      setShowSearch(true);
+    }
+  }, [location.search, searchQuery]);
 
   const handleSearchToggle = () => {
     setShowSearch(!showSearch);
     if (showSearch) {
       setSearchQuery('');
+      // Clear search query from URL
+      window.history.replaceState(null, '', '/dashboard');
     }
   };
 
@@ -52,7 +65,7 @@ const FilterSection: React.FC<FilterSectionProps> = ({
     <>
       <div className="flex flex-col space-y-2 max-w-full overflow-hidden">
         <div className="flex justify-between items-center w-full mb-3">
-          <h1 className="text-lg sm:text-2xl font-bold text-gray-800 truncate mr-2 ">
+          <h1 className="text-lg sm:text-2xl font-bold text-gray-800 truncate mr-2">
             Brand Dashboard
           </h1>
           <div className="flex items-center gap-1.5 flex-shrink-0">
@@ -76,19 +89,31 @@ const FilterSection: React.FC<FilterSectionProps> = ({
             </button>
           </div>
         </div>
-        
+
         {/* Search Input Field */}
         {showSearch && (
           <div className="relative w-full overflow-hidden">
             <input
               type="text"
               placeholder={
-                activeTab === 'influencers' ? "Search posts..." : 
-                activeTab === 'matches' ? "Search matches..." : 
-                "Search opportunities..."
+                activeTab === 'influencers'
+                  ? 'Search posts...'
+                  : activeTab === 'matches'
+                  ? 'Search matches...'
+                  : 'Search opportunities...'
               }
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              onChange={(e) => {
+                setSearchQuery(e.target.value);
+                // Update URL with search query
+                const params = new URLSearchParams(location.search);
+                if (e.target.value) {
+                  params.set('search', e.target.value);
+                } else {
+                  params.delete('search');
+                }
+                window.history.replaceState(null, '', `/dashboard${params.toString() ? `?${params.toString()}` : ''}`);
+              }}
               className="w-full pl-8 pr-3 py-1.5 sm:py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#2B4B9B] focus:border-[#2B4B9B] text-sm shadow-sm transition-all duration-200"
               autoFocus
             />
@@ -101,10 +126,8 @@ const FilterSection: React.FC<FilterSectionProps> = ({
         <div className="bg-white p-2.5 sm:p-4 rounded-lg shadow-sm mb-4 max-w-full overflow-hidden">
           <div className="flex justify-between items-center mb-3 sm:mb-4">
             <h3 className="font-medium text-xs sm:text-sm truncate pr-2">
-              Filter {
-                activeTab === 'influencers' ? 'Influencer Posts' : 
-                activeTab === 'matches' ? 'Matches' : 'Opportunities'
-              }
+              Filter{' '}
+              {activeTab === 'influencers' ? 'Influencer Posts' : activeTab === 'matches' ? 'Matches' : 'Opportunities'}
             </h3>
             <button
               onClick={resetFilters}
@@ -114,11 +137,8 @@ const FilterSection: React.FC<FilterSectionProps> = ({
             </button>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4">
-            {/* Category filter for all tabs */}
             <div className="min-w-0">
-              <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 truncate">
-                Category
-              </label>
+              <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 truncate">Category</label>
               <select
                 value={selectedCategory}
                 onChange={(e) => setSelectedCategory(e.target.value)}
@@ -133,14 +153,11 @@ const FilterSection: React.FC<FilterSectionProps> = ({
               </select>
             </div>
 
-            {/* Status filter for Matches tab */}
             {activeTab === 'matches' && (
               <div className="min-w-0">
-                <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 truncate">
-                  Status
-                </label>
+                <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 truncate">Status</label>
                 <select
-                  value={adTypeFilter} 
+                  value={adTypeFilter}
                   onChange={(e) => setAdTypeFilter(e.target.value)}
                   className="w-full px-2 sm:px-3 py-1.5 sm:py-2 border border-gray-300 rounded-lg focus:ring-[#2B4B9B] focus:border-[#2B4B9B] text-xs sm:text-sm"
                 >
@@ -152,12 +169,9 @@ const FilterSection: React.FC<FilterSectionProps> = ({
               </div>
             )}
 
-            {/* Content type filter for Influencers tab */}
             {activeTab === 'influencers' && (
               <div className="min-w-0">
-                <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 truncate">
-                  Content Type
-                </label>
+                <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 truncate">Content Type</label>
                 <select
                   value={adTypeFilter}
                   onChange={(e) => setAdTypeFilter(e.target.value)}
@@ -172,7 +186,6 @@ const FilterSection: React.FC<FilterSectionProps> = ({
               </div>
             )}
 
-            {/* Price Range filter for all tabs */}
             <div className="min-w-0">
               <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 truncate">
                 {activeTab === 'matches' ? 'Budget Range' : 'Price Range'}
@@ -192,11 +205,8 @@ const FilterSection: React.FC<FilterSectionProps> = ({
               </select>
             </div>
 
-            {/* Location filter for all tabs */}
             <div className="min-w-0">
-              <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 truncate">
-                Location
-              </label>
+              <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 truncate">Location</label>
               <input
                 type="text"
                 value={locationSearch}
@@ -205,8 +215,7 @@ const FilterSection: React.FC<FilterSectionProps> = ({
                 className="w-full px-2 sm:px-3 py-1.5 sm:py-2 border border-gray-300 rounded-lg focus:ring-[#2B4B9B] focus:border-[#2B4B9B] text-xs sm:text-sm"
               />
             </div>
-            
-            {/* Date filter specifically for Matches tab */}
+
             {activeTab === 'matches' && (
               <div className="min-w-0">
                 <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 truncate">
@@ -221,18 +230,28 @@ const FilterSection: React.FC<FilterSectionProps> = ({
           </div>
 
           <div className="mt-3 sm:mt-4 min-w-0">
-            <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 truncate">
-              Search
-            </label>
+            <label className="block text-xs sm:text-sm font-medium text-gray-700 mb-1 truncate">Search</label>
             <div className="relative overflow-hidden">
               <input
                 type="text"
                 value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
+                onChange={(e) => {
+                  setSearchQuery(e.target.value);
+                  // Update URL with search query
+                  const params = new URLSearchParams(location.search);
+                  if (e.target.value) {
+                    params.set('search', e.target.value);
+                  } else {
+                    params.delete('search');
+                  }
+                  window.history.replaceState(null, '', `/dashboard${params.toString() ? `?${params.toString()}` : ''}`);
+                }}
                 placeholder={
-                  activeTab === 'influencers' ? "Search by influencer name or content..." :
-                  activeTab === 'matches' ? "Search by event name or brand..." :
-                  "Search by title or description..."
+                  activeTab === 'influencers'
+                    ? 'Search by influencer name or content...'
+                    : activeTab === 'matches'
+                    ? 'Search by event name or brand...'
+                    : 'Search by title or description...'
                 }
                 className="w-full pl-7 pr-3 py-1.5 sm:py-2 border border-gray-300 rounded-lg focus:ring-[#2B4B9B] focus:border-[#2B4B9B] text-xs sm:text-sm"
               />
