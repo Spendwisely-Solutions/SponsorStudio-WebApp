@@ -49,6 +49,8 @@ export default function AuthForm({ onSuccess, onSignUpSuccess }: AuthFormProps) 
       const { user, profile: userProfile } = await signIn(email, password);
       toast.success('Welcome back!');
       onSuccess();
+      // Redirect to dashboard
+      window.location.href = '/dashboard';
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'An error occurred during sign in';
       setError(errorMessage);
@@ -99,6 +101,8 @@ export default function AuthForm({ onSuccess, onSignUpSuccess }: AuthFormProps) 
       toast.success('Account created successfully');
       if (onSignUpSuccess) onSignUpSuccess();
       onSuccess();
+      // Redirect to dashboard
+      window.location.href = '/dashboard';
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'An error occurred during sign up';
       setError(errorMessage);
@@ -432,8 +436,6 @@ export default function AuthForm({ onSuccess, onSignUpSuccess }: AuthFormProps) 
                 disabled={loading}
               >
                 <option value="brand">Brand</option>
-                {/* <option value="agency">Marketing Agency</option> */}
-                {/* <option value="influencer">Influencer</option> */}
                 <option value="event_organizer">Event Organizer</option>
               </select>
             </div>

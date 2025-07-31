@@ -200,13 +200,12 @@ const ContactForm: React.FC<ContactFormProps> = ({ formData, setFormData, showTh
               >
                 Name
               </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none">
+              <div className="relative flex flex-col">
+                <div className="absolute inset-y-0 bottom-5 left-0 flex items-center pl-4 pointer-events-none">
                   <User className={`h-5 w-5 ${formErrors.name ? 'text-red-400' : 'text-gray-400'}`} />
                 </div>
                 <input
                   type="text"
-           data-aos-duration="500"
                   value={safeFormData.name}
                   onChange={(e) => {
                     setFormData({ ...safeFormData, name: e.target.value });
@@ -223,13 +222,15 @@ const ContactForm: React.FC<ContactFormProps> = ({ formData, setFormData, showTh
                   } bg-white pl-12 pr-4 py-3 text-gray-900 placeholder-gray-400 focus:outline-none text-lg sm:text-base transition-all duration-200`}
                   required
                 />
-                {formErrors.name && (
-                  <p className="mt-1 text-red-500 text-sm">{formErrors.name}</p>
-                )}
+                <div style={{ minHeight: '22px' }}>
+                  {formErrors.name && (
+                    <p className="mt-1 text-red-500 text-sm">{formErrors.name}</p>
+                  )}
+                </div>
               </div>
             </div>
             <div
-           data-aos-duration="500"
+              data-aos-duration="500"
               data-aos="fade-up"
               data-aos-delay="70"
             >
@@ -239,8 +240,8 @@ const ContactForm: React.FC<ContactFormProps> = ({ formData, setFormData, showTh
               >
                 Email
               </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none">
+              <div className="relative flex flex-col">
+                <div className="absolute inset-y-0 bottom-5  left-0 flex items-center pl-4 pointer-events-none">
                   <Mail className={`h-5 w-5 ${formErrors.email ? 'text-red-400' : 'text-gray-400'}`} />
                 </div>
                 <input
@@ -262,9 +263,11 @@ const ContactForm: React.FC<ContactFormProps> = ({ formData, setFormData, showTh
                   } bg-white pl-12 pr-4 py-3 text-gray-900 placeholder-gray-400 focus:outline-none text-lg sm:text-base transition-all duration-200`}
                   required
                 />
-                {formErrors.email && (
-                  <p className="mt-1 text-red-500 text-sm">{formErrors.email}</p>
-                )}
+                <div style={{ minHeight: '22px' }}>
+                  {formErrors.email && (
+                    <p className="mt-1 text-red-500 text-sm">{formErrors.email}</p>
+                  )}
+                </div>
               </div>
             </div>
             <div
@@ -307,8 +310,8 @@ const ContactForm: React.FC<ContactFormProps> = ({ formData, setFormData, showTh
               >
                 I am a
               </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none">
+              <div className="relative flex flex-col">
+                <div className="absolute inset-y-0 bottom-5 left-0 flex items-center pl-4 pointer-events-none">
                   <Building2 className={`h-5 w-5 ${formErrors.organization_type ? 'text-red-400' : 'text-gray-400'}`} />
                 </div>
                 <select
@@ -339,9 +342,11 @@ const ContactForm: React.FC<ContactFormProps> = ({ formData, setFormData, showTh
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                   </svg>
                 </div>
-                {formErrors.organization_type && (
-                  <p className="mt-1 text-red-500 text-sm">{formErrors.organization_type}</p>
-                )}
+                <div style={{ minHeight: '22px' }}>
+                  {formErrors.organization_type && (
+                    <p className="mt-1 text-red-500 text-sm">{formErrors.organization_type}</p>
+                  )}
+                </div>
               </div>
             </div>
             <div 
@@ -355,8 +360,8 @@ const ContactForm: React.FC<ContactFormProps> = ({ formData, setFormData, showTh
               >
                 Message
               </label>
-              <div className="relative">
-                <div className="absolute top-3 left-4 pointer-events-none">
+              <div className="relative flex flex-col">
+                <div className="absolute top-5 left-4 pointer-events-none">
                   <MessageSquare className={`h-5 w-5 ${formErrors.message ? 'text-red-400' : 'text-gray-400'}`} />
                 </div>
                 <textarea
@@ -378,9 +383,11 @@ const ContactForm: React.FC<ContactFormProps> = ({ formData, setFormData, showTh
                   } bg-white pl-12 pr-4 py-3 text-gray-900 placeholder-gray-400 focus:outline-none text-lg sm:text-base transition-all duration-200`}
                   required
                 />
-                {formErrors.message && (
-                  <p className="mt-1 text-red-500 text-sm">{formErrors.message}</p>
-                )}
+                <div style={{ minHeight: '22px' }}>
+                  {formErrors.message && (
+                    <p className="mt-1 text-red-500 text-sm">{formErrors.message}</p>
+                  )}
+                </div>
               </div>
             </div>
             <div 
