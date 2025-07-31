@@ -190,7 +190,7 @@ const HeroSection: React.FC<HeroSectionProps> = ({ user, setShowAuthForm }) => {
                     <ArrowRight className="ml-2 sm:ml-3 h-4 sm:h-5 w-4 sm:w-5 group-hover:translate-x-1 transition-transform duration-200" />
                   </button>
                 )}
-                <a href="#about-video" className="flex-1 sm:flex-none">
+                <a href="#about-video" className="flex-1 sm:flex-none hidden">
                 <button className="group inline-flex items-center px-4 sm:px-8 py-3 sm:py-4 bg-white/80 backdrop-blur-sm text-gray-700 text-base sm:text-lg font-semibold rounded-2xl border-2 border-gray-200/50 hover:border-blue-300 hover:bg-blue-50/50 transition-all duration-300 shadow-lg hover:shadow-xl w-full justify-center">
                   <div className="w-8 sm:w-10 h-8 sm:h-10 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-full flex items-center justify-center mr-2 sm:mr-3 group-hover:scale-110 transition-transform duration-200">
                     <Play className="w-3 sm:w-4 h-3 sm:h-4 text-white ml-0.5" fill="currentColor" />
