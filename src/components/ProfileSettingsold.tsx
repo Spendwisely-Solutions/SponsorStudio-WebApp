@@ -207,7 +207,6 @@ export default function ProfileSettings({ profile }: ProfileSettingsProps) {
         }
       });
 
-      console.log('Submitting cleaned formData:', JSON.stringify(cleanedData, null, 2));
       await updateProfile(cleanedData);
       setSuccess(true);
       setTimeout(() => setSuccess(false), 3000);

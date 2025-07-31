@@ -42,7 +42,6 @@ export const sendContactEmail = async (formData: {
     toast.success('Message sent successfully!');
     return true;
   } catch (error) {
-    console.error('Error sending email:', error);
     toast.error('Failed to send message. Please try again.');
     return false;
   }

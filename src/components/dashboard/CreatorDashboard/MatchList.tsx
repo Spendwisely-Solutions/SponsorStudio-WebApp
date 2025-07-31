@@ -56,19 +56,6 @@ export default function MatchList({
   const [selectedOpportunityId, setSelectedOpportunityId] = useState<string | null>(null);
   const { Razorpay } = useRazorpay();
 
-  // Log matches for debugging
-  useEffect(() => {
-    console.log('Matches received:', matches);
-    matches.forEach((match, index) => {
-      console.log(`Match ${index}:`, {
-        id: match.id,
-        opportunity_id: match.opportunity_id,
-        opportunities: match.opportunities,
-        profiles: match.profiles,
-      });
-    });
-  }, [matches]);
-
   // Check payment status
   useEffect(() => {
     const checkPayments = async () => {
@@ -76,16 +63,13 @@ export default function MatchList({
       setPaymentCheckError(null);
       const uniqueOpportunityIds = [...new Set(matches.map(match => match.opportunities?.id || match.opportunity_id).filter(id => id))];
 
-      console.log('Unique opportunity IDs for payment check:', uniqueOpportunityIds);
 
       if (uniqueOpportunityIds.length === 0) {
-        console.log('No valid opportunity IDs found');
         setLoadingPayments(false);
         return;
       }
 
       try {
-        console.log('Checking payment status for opportunities:', uniqueOpportunityIds);
         const { data, error } = await supabase
           .from('payments')
           .select('id, status, opportunity_id')
@@ -103,10 +87,8 @@ export default function MatchList({
         uniqueOpportunityIds.forEach(oppId => {
           const payment = data.find(p => p.opportunity_id === oppId && p.status === 'paid');
           statusMap[oppId] = !!payment;
-          console.log(`Opportunity ${oppId} payment status: ${statusMap[oppId] ? 'paid' : 'unpaid'}`);
         });
 
-        console.log('Payment status map:', statusMap);
         setPaymentStatus(statusMap);
         setPaymentInitiated({});
         setPaymentError({});
@@ -140,7 +122,6 @@ export default function MatchList({
       }
 
       if (existingPayment) {
-        console.log(`Opportunity ${opportunityId} already paid`);
         setPaymentStatus(prev => ({
           ...prev,
           [opportunityId]: true,
@@ -197,7 +178,6 @@ export default function MatchList({
             });
 
             if (verifyResponse.data.success) {
-              console.log(`Payment verified for opportunity ${opportunityId}`);
               const { error: updateError } = await supabase
                 .from('payments')
                 .update({
@@ -211,12 +191,10 @@ export default function MatchList({
 
               setPaymentStatus(prev => {
                 const newStatus = { ...prev, [opportunityId]: true };
-                console.log(`Payment status updated to paid for ${opportunityId}:`, newStatus);
                 return newStatus;
               });
               setPaymentError(prev => ({ ...prev, [opportunityId]: null }));
             } else {
-              console.log(`Payment verification failed for ${opportunityId}`);
               await supabase
                 .from('payments')
                 .update({ status: 'unpaid' })
@@ -246,7 +224,6 @@ export default function MatchList({
 
       const razorpay = new Razorpay(options);
       razorpay.on('payment.failed', async (response) => {
-        console.log(`Payment failed for ${opportunityId}:`, response.error.description);
         await supabase
           .from('payments')
           .update({ status: 'unpaid' })
@@ -284,7 +261,6 @@ export default function MatchList({
     return acc;
   }, {} as Record<string, Match[]>);
 
-  console.log('Matches by opportunity:', matchesByOpportunity);
 
   const toggleOpportunity = (oppId: string) => {
     setSelectedOpportunityId(selectedOpportunityId === oppId ? null : oppId);

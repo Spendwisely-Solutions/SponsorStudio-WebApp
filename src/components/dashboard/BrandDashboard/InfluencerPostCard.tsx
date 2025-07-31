@@ -35,13 +35,11 @@ const useSwipeAnimation = (
   const handleDragEnd = async (_event: any, info: any) => {
     const swipeThreshold = 100;
     setIsSwipePending(true);
-    console.log(`handleDragEnd: Swipe offset x=${info.offset.x}, credits=${credits}`);
 
     try {
       if (Math.abs(info.offset.x) > swipeThreshold) {
         if (info.offset.x > swipeThreshold) {
           if (credits < 50) {
-            console.log('handleDragEnd: Insufficient credits for like');
             toast.error('Insufficient credits! You need 50 credits to like a post.', {
               duration: 4000,
               position: 'top-center',
@@ -50,14 +48,11 @@ const useSwipeAnimation = (
             setIsSwipePending(false);
             return;
           }
-          console.log('handleDragEnd: Triggering onLike');
           await onLike();
         } else if (info.offset.x < -swipeThreshold) {
-          console.log('handleDragEnd: Triggering onReject');
           onReject();
         }
       } else {
-        console.log('handleDragEnd: Resetting position (swipe below threshold)');
         x.set(0);
       }
     } catch (error) {
@@ -90,7 +85,6 @@ const InfluencerPostCard: React.FC<InfluencerPostCardProps> = memo(
     const videoRef = useRef<HTMLVideoElement>(null);
 
     useEffect(() => {
-      console.log(`InfluencerPostCard: Mounted with credits=${credits}, post.id=${post.id}`);
       x.set(0);
     }, [post.id, x, credits]);
 
@@ -194,22 +188,18 @@ const InfluencerPostCard: React.FC<InfluencerPostCardProps> = memo(
         videoRef.current.muted = newMuteState;
         setIsMuted(newMuteState);
         setShowMuteIndicator(true);
-        console.log(`handleToggleMute: Video ${newMuteState ? 'muted' : 'unmuted'}`);
       }
     };
 
     const handleButtonAction = async (action: 'like' | 'dislike') => {
       if (isSwipePending) {
-        console.log(`handleButtonAction: Action ${action} blocked due to pending swipe`);
         return;
       }
       setIsSwipePending(true);
-      console.log(`handleButtonAction: Triggering ${action}, credits=${credits}`);
 
       try {
         if (action === 'like') {
           if (credits < 50) {
-            console.log('handleButtonAction: Insufficient credits for like');
             toast.error('Insufficient credits! You need 50 credits to like a post.', {
               duration: 4000,
               position: 'top-center',

@@ -66,16 +66,13 @@ export default function MatchList({ onRefresh }: MatchListProps) {
       setPaymentCheckError(null);
       const uniquePostIds = [...new Set(matches.map(match => match.posts?.id || match.post_id).filter(id => id))];
 
-      console.log('Unique post IDs for payment check:', uniquePostIds);
 
       if (uniquePostIds.length === 0) {
-        console.log('No valid post IDs found');
         setLoadingPayments(false);
         return;
       }
 
       try {
-        console.log('Checking payment status for posts:', uniquePostIds);
         const { data, error } = await supabase
           .from('payments')
           .select('id, status, post_id')
@@ -94,11 +91,9 @@ export default function MatchList({ onRefresh }: MatchListProps) {
           if (postId) {
             const payment = data.find(p => p.post_id === postId && p.status === 'paid');
             statusMap[postId] = !!payment;
-            console.log(`Post ${postId} payment status: ${statusMap[postId] ? 'paid' : 'unpaid'}`);
           }
         });
 
-        console.log('Payment status map:', statusMap);
         setPaymentStatus(statusMap);
         setPaymentInitiated({});
         setPaymentError({});
@@ -135,7 +130,6 @@ export default function MatchList({ onRefresh }: MatchListProps) {
       }
 
       if (!userPosts || userPosts.length === 0) {
-        console.log('No posts found for user');
         setMatches([]);
         return;
       }
@@ -159,7 +153,6 @@ export default function MatchList({ onRefresh }: MatchListProps) {
         return;
       }
 
-      console.log('Fetched matches:', data);
       setMatches(data || []);
     } catch (error) {
       console.error('Unexpected error fetching matches:', error);
@@ -215,7 +208,6 @@ export default function MatchList({ onRefresh }: MatchListProps) {
       }
 
       if (existingPayment) {
-        console.log(`Post ${postId} already paid`);
         setPaymentStatus(prev => ({
           ...prev,
           [postId]: true,
@@ -272,7 +264,6 @@ export default function MatchList({ onRefresh }: MatchListProps) {
             });
 
             if (verifyResponse.data.success) {
-              console.log(`Payment verified for post ${postId}`);
               const { error: updateError } = await supabase
                 .from('payments')
                 .update({
@@ -286,12 +277,10 @@ export default function MatchList({ onRefresh }: MatchListProps) {
 
               setPaymentStatus(prev => {
                 const newStatus = { ...prev, [postId]: true };
-                console.log(`Payment status updated to paid for ${postId}:`, newStatus);
                 return newStatus;
               });
               setPaymentError(prev => ({ ...prev, [postId]: null }));
             } else {
-              console.log(`Payment verification failed for ${postId}`);
               await supabase
                 .from('payments')
                 .update({ status: 'unpaid' })
@@ -321,7 +310,6 @@ export default function MatchList({ onRefresh }: MatchListProps) {
 
       const razorpay = new Razorpay(options);
       razorpay.on('payment.failed', async (response: any) => {
-        console.log(`Payment failed for ${postId}:`, response.error.description);
         await supabase
           .from('payments')
           .update({ status: 'unpaid' })

@@ -93,7 +93,6 @@ export default function EventCard({
           // For non-VIP opportunities, use mou_id
           setMouId(opportunity.mou_id);
         } else {
-          console.log('No mou_id or mou_url found for opportunity:', opportunity.id);
           setMouId(null);
         }
       } catch (err) {

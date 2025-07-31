@@ -95,7 +95,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       setProfile(data || null);
     } catch (error) {
-      console.error('Error fetching profile:', error);
       setProfile(null);
       toast.error('Failed to fetch user profile');
     } finally {

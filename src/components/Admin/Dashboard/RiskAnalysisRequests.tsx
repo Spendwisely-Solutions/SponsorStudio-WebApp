@@ -72,7 +72,6 @@ const RiskAnalysisRequests = ({ searchTerm, setSearchTerm }) => {
       return;
     }
 
-    console.log('File details:', { name: file.name, type: file.type, size: file.size });
 
     if (file.type !== 'application/pdf') {
       toast.error('Only PDF files are allowed');
@@ -88,7 +87,6 @@ const RiskAnalysisRequests = ({ searchTerm, setSearchTerm }) => {
 
     try {
       const fileName = `${requestId}_${Date.now()}_${file.name}`;
-      console.log('Uploading file:', fileName);
 
       // Read file as ArrayBuffer and convert to Uint8Array
       const arrayBuffer = await file.arrayBuffer();
@@ -103,15 +101,11 @@ const RiskAnalysisRequests = ({ searchTerm, setSearchTerm }) => {
 
       if (uploadError) throw uploadError;
 
-      console.log('Upload response:', 'Success');
-
       const { data: urlData } = supabase.storage
         .from('risk-analysis-reports')
         .getPublicUrl(fileName);
 
       if (!urlData?.publicUrl) throw new Error('Failed to get public URL');
-
-      console.log('Uploaded file public URL:', urlData.publicUrl);
 
       await handleUpdateRequest(requestId, {
         report_url: urlData.publicUrl,
