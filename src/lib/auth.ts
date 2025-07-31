@@ -243,7 +243,6 @@ export async function updateProfile(data: Partial<Profile>) {
       }
     }
 
-    console.log('Updating profile with data:', JSON.stringify(updateData, null, 2));
 
     const { error, data: updatedData, status } = await supabase
       .from('profiles')

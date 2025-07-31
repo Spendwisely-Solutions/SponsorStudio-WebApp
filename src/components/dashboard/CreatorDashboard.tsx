@@ -199,7 +199,6 @@ export default function CreatorDashboard({ onUpdateProfile }: BrandDashboardProp
           )
           .subscribe((status: string, err: any) => {
             if (status === 'SUBSCRIBED') {
-              console.log('Real-time subscription active');
             } else if (err) {
               console.error('Subscription error:', err);
             }

@@ -152,7 +152,6 @@ export default function Dashboard() {
       
       setIsLoading(false);
     } catch (error) {
-      console.error('Error fetching user data:', error);
       setIsLoading(false);
     }
   };
@@ -162,7 +161,6 @@ export default function Dashboard() {
       await signOut();
       navigate('/');
     } catch (error) {
-      console.error('Error signing out:', error);
     }
   };
 

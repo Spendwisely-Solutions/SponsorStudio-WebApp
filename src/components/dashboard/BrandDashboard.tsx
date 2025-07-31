@@ -3,10 +3,9 @@ import { supabase } from '../../lib/supabase';
 import { useAuth } from '../../contexts/AuthContext';
 import { AnimatePresence, motion } from 'framer-motion';
 import { sendMatchNotification } from '../../lib/email';
-import { Search, Info } from 'lucide-react';
+import { Search } from 'lucide-react';
 import Skeleton from 'react-loading-skeleton';
 import 'react-loading-skeleton/dist/skeleton.css';
-import { Tooltip } from 'react-tooltip';
 import toast from 'react-hot-toast';
 import ProfileAlert from './BrandDashboard/ProfileAlert';
 import FilterSection from './BrandDashboard/FilterSection';
@@ -16,9 +15,9 @@ import MatchesSection from './BrandDashboard/MatchesSection';
 import NoResultsCard from './BrandDashboard/NoResultsCard';
 import OpportunityCard from './BrandDashboard/OpportunityCard';
 import InfluencerPostCard from './BrandDashboard/InfluencerPostCard';
+import CreditBar from './BrandDashboard/CreditBar'; // Import the new CreditBar component
 import type { Opportunity, Post, Category, Match } from './BrandDashboard/types';
-import coinIcon from '../../assets/dashboard/coin.png';
-import { useLocation } from 'react-router-dom'; // Import useLocation
+import { useLocation } from 'react-router-dom';
 
 interface BrandDashboardProps {
   onUpdateProfile: () => void;
@@ -26,7 +25,7 @@ interface BrandDashboardProps {
 
 export default function BrandDashboard({ onUpdateProfile }: BrandDashboardProps) {
   const { user, profile } = useAuth();
-  const location = useLocation(); // Hook to access URL
+  const location = useLocation();
   const [opportunities, setOpportunities] = useState<Opportunity[]>([]);
   const [posts, setPosts] = useState<Post[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
@@ -62,13 +61,11 @@ export default function BrandDashboard({ onUpdateProfile }: BrandDashboardProps)
   }, [location.search]);
 
   useEffect(() => {
-    console.log('BrandDashboard: user:', user, 'profile:', profile, 'activeTab:', activeTab);
     if (user) {
       const isNewUser = !profile?.company_name;
 
       const timer = setTimeout(() => {
         if (isInitialLoad.current && loading && isNewUser && !hasRefreshed.current) {
-          console.log('Initial load taking too long, triggering auto-refresh');
           hasRefreshed.current = true;
           window.location.reload();
         }
@@ -87,7 +84,6 @@ export default function BrandDashboard({ onUpdateProfile }: BrandDashboardProps)
   }, [user, profile]);
 
   useEffect(() => {
-    console.log('BrandDashboard: posts updated:', posts);
   }, [posts]);
 
   useEffect(() => {
@@ -172,7 +168,6 @@ export default function BrandDashboard({ onUpdateProfile }: BrandDashboardProps)
       toast.error('Failed to load categories.');
       return;
     }
-    console.log('fetchCategories: Categories:', data);
     setCategories(data || []);
   };
 
@@ -297,13 +292,11 @@ export default function BrandDashboard({ onUpdateProfile }: BrandDashboardProps)
           return;
         }
 
-        console.log('fetchPosts: Disliked posts:', profileData?.disliked_posts);
         if (profileData?.disliked_posts?.length > 0) {
           query = query.not('id', 'in', `(${profileData.disliked_posts.join(',')})`);
         }
       }
 
-      console.log('fetchPosts: Filters:', { selectedCategory, priceRangeFilter, locationSearch, searchQuery });
       if (selectedCategory) {
         query = query.eq('category_id', selectedCategory);
       }
@@ -321,20 +314,17 @@ export default function BrandDashboard({ onUpdateProfile }: BrandDashboardProps)
       }
 
       const { data, error } = await query;
-      console.log('fetchPosts: Raw data:', data, 'Error:', error);
       if (error) {
         console.error('fetchPosts: Error fetching posts:', error);
         toast.error('Failed to load posts: ' + error.message);
         return;
       }
 
-      // Transform data to include category
       const transformedPosts = data.map((post) => ({
         ...post,
         category: post.post_categories || null,
       }));
 
-      console.log('fetchPosts: Transformed posts:', transformedPosts);
       setPosts(transformedPosts || []);
     } catch (error) {
       console.error('fetchPosts: Unexpected error:', error);
@@ -345,7 +335,6 @@ export default function BrandDashboard({ onUpdateProfile }: BrandDashboardProps)
   };
 
   useEffect(() => {
-    console.log('useEffect: activeTab:', activeTab);
     if (user) {
       if (activeTab === 'discover') {
         fetchOpportunities();
@@ -365,7 +354,6 @@ export default function BrandDashboard({ onUpdateProfile }: BrandDashboardProps)
         .single();
       if (error) throw error;
       setCredits(data.credits ?? null);
-      console.log(`fetchProfile: Updated local credits to ${data.credits}`);
       return data;
     } catch (error) {
       console.error('Error fetching profile:', error);
@@ -375,14 +363,12 @@ export default function BrandDashboard({ onUpdateProfile }: BrandDashboardProps)
   };
 
   const refreshToken = async () => {
-    console.log('refreshToken: Attempting to refresh session');
     try {
       const { data, error } = await supabase.auth.refreshSession();
       if (error) throw error;
       if (!data.session?.access_token) {
         throw new Error('No access token in refreshed session');
       }
-      console.log('refreshToken: Session refreshed successfully');
       return data.session.access_token;
     } catch (error) {
       console.error('refreshToken: Failed to refresh session:', error);
@@ -401,7 +387,6 @@ export default function BrandDashboard({ onUpdateProfile }: BrandDashboardProps)
     }
 
     if ((credits ?? 0) < creditsToDeduct) {
-      console.log(`deductCredits: Insufficient credits, need ${creditsToDeduct}, have ${credits}`);
       setShakeCredits(true);
       toast.error(`Insufficient credits! You need ${creditsToDeduct} credits to perform this action.`, {
         duration: 4000,
@@ -413,12 +398,10 @@ export default function BrandDashboard({ onUpdateProfile }: BrandDashboardProps)
 
     const originalCredits = credits;
     setCredits((prev) => (prev ?? 0) - creditsToDeduct);
-    console.log(`deductCredits: Optimistically updated credits to ${(credits ?? 0) - creditsToDeduct}`);
 
     try {
       let accessToken = (user as any).access_token;
       if (!accessToken) {
-        console.log('deductCredits: No access token, attempting refresh');
         accessToken = await refreshToken();
       }
 
@@ -469,16 +452,13 @@ export default function BrandDashboard({ onUpdateProfile }: BrandDashboardProps)
       }
 
       const data = await response.json();
-      console.log('deductCredits: Credits deducted successfully:', data);
 
       const serverProfile = await fetchProfile();
       if (serverProfile && serverProfile.credits !== credits) {
-        console.log(`deductCredits: Server credits (${serverProfile.credits}) differ from local (${credits}), syncing`);
         setCredits(serverProfile.credits ?? null);
       }
     } catch (error: any) {
       setCredits(originalCredits);
-      console.log(`deductCredits: Restored credits to ${originalCredits} due to failure`);
       if (error.message === 'Invalid JWT') {
         toast.error('Session expired. Please log in again.', {
           duration: 4000,
@@ -503,8 +483,6 @@ export default function BrandDashboard({ onUpdateProfile }: BrandDashboardProps)
       });
       return;
     }
-
-    console.log(`handleLike: Attempting to like ${type} with ID ${id}, credits: ${credits}`);
     setPendingLikeId(id);
 
     let item: Opportunity | Post | null = null;
@@ -562,7 +540,6 @@ export default function BrandDashboard({ onUpdateProfile }: BrandDashboardProps)
               opportunityData.calendly_link,
               opportunityData.sponsorship_brochure_url
             );
-            console.log('handleLike: Match notification sent');
 
             setMatchedOpportunity(opportunityData);
             setShowMatchSuccess(true);
@@ -619,7 +596,6 @@ export default function BrandDashboard({ onUpdateProfile }: BrandDashboardProps)
               undefined,
               undefined
             );
-            console.log('handleLike: Match notification sent for post');
 
             setShowMatchSuccess(true);
 
@@ -631,7 +607,6 @@ export default function BrandDashboard({ onUpdateProfile }: BrandDashboardProps)
           }
         }
       }
-      console.log(`handleLike: Successfully liked ${type} with ID ${id}`);
     } catch (error: any) {
       console.error('handleLike: Error:', error);
       if (type === 'opportunity') {
@@ -645,7 +620,6 @@ export default function BrandDashboard({ onUpdateProfile }: BrandDashboardProps)
   };
 
   const handleReject = async (id: string, type: 'opportunity' | 'post') => {
-    console.log(`handleReject: Rejecting ${type} with ID ${id}`);
     if (!user) {
       console.error('handleReject: User not available');
       toast.error('Please log in to perform this action.', {
@@ -672,7 +646,6 @@ export default function BrandDashboard({ onUpdateProfile }: BrandDashboardProps)
       } else {
         setPosts(posts.filter((post) => post.id !== id));
       }
-      console.log(`handleReject: Successfully recorded dislike for ${type} with ID ${id}`);
     } catch (error) {
       console.error('handleReject: Error:', error);
       toast.error('Failed to record dislike. Please try again.', {
@@ -704,7 +677,6 @@ export default function BrandDashboard({ onUpdateProfile }: BrandDashboardProps)
       }
 
       await fetchOpportunities();
-      console.log('handleResetDislikedOpportunities: Successfully reset disliked opportunities');
       toast.success('Disliked opportunities revived.', {
         duration: 4000,
         position: 'bottom-right',
@@ -747,7 +719,6 @@ export default function BrandDashboard({ onUpdateProfile }: BrandDashboardProps)
       }
 
       await fetchPosts();
-      console.log('handleResetDislikedPosts: Successfully reset disliked posts');
       toast.success('Disliked posts revived.', {
         duration: 4000,
         position: 'bottom-right',
@@ -774,12 +745,10 @@ export default function BrandDashboard({ onUpdateProfile }: BrandDashboardProps)
     setPriceRangeFilter('');
     setLocationSearch('');
     setSearchQuery('');
-    // Clear URL query parameters
     window.history.replaceState(null, '', '/dashboard');
   };
 
   const handleAnimationComplete = (id: string) => {
-    console.log('handleAnimationComplete: ID:', id);
     setSwipeActions((prev) => ({ ...prev, [id]: null }));
   };
 
@@ -832,7 +801,6 @@ export default function BrandDashboard({ onUpdateProfile }: BrandDashboardProps)
 
         <ProfileAlert companyName={profile?.company_name || undefined} onUpdateProfile={onUpdateProfile} />
 
-        {/* Loading Header */}
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center mb-4 sm:mb-6">
           <Skeleton width={200} height={28} className="sm:h-8 mb-2 sm:mb-0" />
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:space-x-2">
@@ -841,7 +809,6 @@ export default function BrandDashboard({ onUpdateProfile }: BrandDashboardProps)
           </div>
         </div>
 
-        {/* Loading Tabs */}
         <div className="mb-4 sm:mb-6 border-b border-gray-200">
           <div className="flex flex-row gap-2 sm:gap-6 overflow-x-auto">
             {Array(3).fill(0).map((_, index) => (
@@ -850,7 +817,6 @@ export default function BrandDashboard({ onUpdateProfile }: BrandDashboardProps)
           </div>
         </div>
 
-        {/* Loading Card */}
         <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
           <Skeleton height={200} className="sm:h-80" />
           <div className="p-4 sm:p-6">
@@ -871,8 +837,6 @@ export default function BrandDashboard({ onUpdateProfile }: BrandDashboardProps)
     );
   }
 
-  console.log(`Rendering BrandDashboard with credits: ${credits}, access_token: ${(user as any)?.access_token ? 'present' : 'missing'}`);
-
   return (
     <div
       className="min-h-screen bg-gray-50 px-2 sm:px-4 lg:px-6 py-3 sm:py-4 w-full max-w-[100vw] overflow-x-hidden"
@@ -884,7 +848,6 @@ export default function BrandDashboard({ onUpdateProfile }: BrandDashboardProps)
         transition: pullDistance === 0 ? 'transform 0.3s ease-out' : 'none',
       }}
     >
-      {/* Pull-to-refresh indicator */}
       {pullDistance > 50 && (
         <div className="fixed top-0 left-0 right-0 z-50 flex justify-center pt-4">
           <div className="bg-white rounded-full shadow-lg px-4 py-2 flex items-center space-x-2">
@@ -900,7 +863,6 @@ export default function BrandDashboard({ onUpdateProfile }: BrandDashboardProps)
         </div>
       )}
 
-      {/* Mobile Refresh Button - Fixed Position */}
       <div className="fixed bottom-6 right-4 z-40 sm:hidden">
         <button
           onClick={handleRefresh}
@@ -922,102 +884,17 @@ export default function BrandDashboard({ onUpdateProfile }: BrandDashboardProps)
           </svg>
         </button>
       </div>
-      {/* Simplified Credit Bar */}
-      <motion.div
-        className="mb-3 sm:mb-5 bg-white p-2.5 sm:p-4 rounded-xl shadow-sm border border-gray-200 transition-all duration-300 hover:shadow-md overflow-hidden"
-        animate={shakeCredits ? { x: [0, -10, 10, -10, 10, 0], transition: { duration: 0.5 } } : {}}
-      >
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          {/* Credit Balance */}
-          <div className="flex items-center space-x-2 sm:space-x-3.5 min-w-0">
-            <div className="w-7 h-7 sm:w-10 sm:h-10 bg-blue-50 rounded-lg flex items-center justify-center flex-shrink-0">
-              <img src={coinIcon} alt="Credits" className="w-3.5 h-3.5 sm:w-5 sm:h-5" />
-            </div>
-            <div className="min-w-0">
-              <span className="text-base sm:text-xl font-bold text-gray-800 whitespace-nowrap">
-                {credits ?? 'N/A'} <span className="text-xs sm:text-sm text-gray-500 font-normal">credits</span>
-              </span>
-            </div>
-          </div>
 
-          {/* Action Buttons */}
-          <div className="flex items-center gap-1 sm:gap-3 flex-shrink-0">
-            {/* How Credits Work Button */}
-            <button
-              className="flex items-center gap-1 p-1 sm:p-2 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-lg transition-all duration-200"
-              data-tooltip-id="credits-info-tooltip"
-              title="How credits work"
-            >
-              <Info className="w-4 h-4 sm:w-5 sm:h-5" />
-              <span className="text-xs sm:text-sm font-medium hidden sm:inline">How Credits Work</span>
-            </button>
-
-            {/* Add Credits Button */}
-            <button
-              className="flex items-center gap-1 px-4 py-2 sm:px-4 sm:py-2 bg-[#2B4B9B] text-white rounded-lg hover:bg-[#1a2f61] transition-all duration-200 w-32 h-12 sm:w-auto sm:h-auto"
-              onClick={() => {
-                window.location.href = '/purchase';
-              }}
-            >
-              <svg className="w-5 h-5 sm:w-3.5 sm:h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-              </svg>
-              <span className="text-sm sm:text-sm font-medium">Add Credits</span>
-            </button>
-          </div>
-        </div>
-
-        {/* Credit Information Tooltip */}
-        <Tooltip
-          id="credits-info-tooltip"
-          place="bottom"
-          className="!bg-white !text-gray-800 !shadow-lg !border !border-gray-200 !rounded-lg !p-0 !opacity-100"
-          style={{
-            backgroundColor: '#ffffff',
-            color: '#1f2937',
-            borderRadius: '8px',
-            padding: '0',
-            fontSize: '14px',
-            maxWidth: '360px',
-            zIndex: 1000,
-            boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)',
-          }}
-          html={`
-            <div class="p-4">
-              <h3 class="font-bold text-gray-800 text-base sm:text-lg border-b border-gray-100 pb-2 mb-3">Credit Usage</h3>
-              <div class="space-y-2">
-                <div class="flex items-center justify-between">
-                  <span class="text-[15px] sm:text-base text-gray-700">Like/Interest</span>
-                  <span class="font-bold text-red-600 text-[15px] sm:text-base">50 credits</span>
-                </div>
-                <div class="flex items-center justify-between">
-                  <span class="text-[15px] sm:text-base text-gray-700">Unlock Brochure</span>
-                  <span class="font-bold text-blue-600 text-[15px] sm:text-base">100 credits</span>
-                </div>
-                <div class="flex items-center justify-between">
-                  <span class="text-[15px] sm:text-base text-gray-700">Post Event Report</span>
-                  <span class="font-bold text-green-600 text-[15px] sm:text-base">100 credits</span>
-                </div>
-                <div class="flex items-center justify-between">
-                  <span class="text-[15px] sm:text-base text-gray-700">Revive Opportunities</span>
-                  <span class="font-bold text-orange-600 text-[15px] sm:text-base">300 credits</span>
-                </div>
-                <div class="flex items-center justify-between">
-                  <span class="text-[15px] sm:text-base text-gray-700">Risk Analysis Report</span>
-                  <span class="font-bold text-purple-600 text-[15px] sm:text-base">500 credits</span>
-                </div>
-              </div>
-              <p class="text-[13px] sm:text-[14px] text-gray-500 text-center mt-2 pt-2 border-t border-gray-100">
-                Credits are deducted when actions are completed
-              </p>
-            </div>
-          `}
-        />
-      </motion.div>
+      <CreditBar
+        credits={credits}
+        shakeCredits={shakeCredits}
+        onAddCredits={() => {
+          window.location.href = '/purchase';
+        }}
+      />
 
       <ProfileAlert companyName={profile?.company_name || undefined} onUpdateProfile={onUpdateProfile} />
 
-      {/* Sticky Header for Mobile */}
       <div className="sticky top-0 z-30 bg-gray-50/95 backdrop-blur-sm border-b border-gray-200 -mx-2 px-2 py-2 mb-4 sm:hidden w-[calc(100%+16px)] overflow-hidden">
         <div className="flex items-center justify-center w-full">
           <div className="flex items-center space-x-1.5 min-w-0">
@@ -1030,68 +907,7 @@ export default function BrandDashboard({ onUpdateProfile }: BrandDashboardProps)
               </span>
             )}
           </div>
-          <div className="flex items-center gap-1.5 text-xs text-gray-600 flex-shrink-0">
-            {/* How Credits Work Button */}
-            {/* <button
-              className="flex items-center text-blue-600"
-              data-tooltip-id="credits-info-tooltip-mobile"
-              title="How credits work"
-            >
-              <Info className="w-3 h-3" />
-            </button>
-             */}
-            {/* <div className="flex items-center gap-0.5">
-              <img src={coinIcon} alt="Credits" className="w-3.5 h-3.5" />
-              <span className="font-semibold">{credits ?? 'N/A'}</span>
-            </div> */}
-          </div>
         </div>
-        {/* Mobile Credit Information Tooltip */}
-        <Tooltip
-          id="credits-info-tooltip-mobile"
-          place="bottom"
-          className="!bg-white !text-gray-800 !shadow-lg !border !border-gray-200 !rounded-lg !p-0 !opacity-100"
-          style={{
-            backgroundColor: '#ffffff',
-            color: '#1f2937',
-            borderRadius: '8px',
-            padding: '0',
-            fontSize: '14px',
-            maxWidth: '320px',
-            zIndex: 1000,
-            boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)',
-          }}
-          html={`
-            <div class="p-2.5">
-              <h3 class="font-bold text-gray-800 text-xs border-b border-gray-100 pb-1 mb-1.5">Credit Usage</h3>
-              <div class="space-y-1">
-                <div class="flex items-center justify-between">
-                  <span class="text-[10px] text-gray-700">Like/Interest</span>
-                  <span class="font-bold text-red-600 text-[10px]">50 credits</span>
-                </div>
-                <div class="flex items-center justify-between">
-                  <span class="text-[10px] text-gray-700">Unlock Brochure</span>
-                  <span class="font-bold text-blue-600 text-[10px]">100 credits</span>
-                </div>
-                <div class="flex items-center justify-between">
-                  <span class="text-[10px] text-gray-700">Post Event Report</span>
-                  <span class="font-bold text-green-600 text-[10px]">100 credits</span>
-                </div>
-                <div class="flex items-center justify-between">
-                  <span class="text-[10px] text-gray-700">Revive Opportunities</span>
-                  <span class="font-bold text-orange-600 text-[10px]">300 credits</span>
-                </div>
-                <div class="flex items-center justify-between">
-                  <span class="text-[10px] text-gray-700">Risk Analysis Report</span>
-                  <span class="font-bold text-purple-600 text-[10px]">500 credits</span>
-                </div>
-              </div>
-              <p class="text-[9px] text-gray-500 text-center mt-1.5 pt-1 border-t border-gray-100">
-                Credits are deducted when actions are completed
-              </p>
-            </div>
-          `}
-        />
       </div>
 
       <FilterSection
@@ -1176,7 +992,6 @@ export default function BrandDashboard({ onUpdateProfile }: BrandDashboardProps)
                       />
                     ))}
                 </AnimatePresence>
-            
               </div>
             )}
           </motion.div>

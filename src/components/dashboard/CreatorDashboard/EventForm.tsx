@@ -86,7 +86,6 @@ export default function EventForm({
   const brochureInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    console.log('EventForm State:', { formData, isMOUAgreed, isMOUSignModalOpen, mediaPreviews });
   }, [formData, isMOUAgreed, isMOUSignModalOpen, mediaPreviews]);
 
   const handleInputChange = (
@@ -241,7 +240,6 @@ export default function EventForm({
   };
 
   const handleMouSigned = (mouId: string) => {
-    console.log('MOU Signed:', mouId);
     try {
       setFormData((prev) => ({
         ...prev,
@@ -257,7 +255,6 @@ export default function EventForm({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('Submitting Form:', formData);
     if (!isEditing && !formData.is_vip && (!isMOUAgreed || !formData.mou_id)) {
       toast.error('You must sign the Memorandum of Understanding to proceed.');
       return;
@@ -1138,7 +1135,6 @@ export default function EventForm({
           formData={formData}
           onMouSigned={handleMouSigned}
           onCancel={() => {
-            console.log('MOU Sign Modal Cancelled');
             setIsMOUSignModalOpen(false);
           }}
         />

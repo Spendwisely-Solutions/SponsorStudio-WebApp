@@ -219,7 +219,6 @@ const NavBar: React.FC<NavBarProps> = ({
                 onClick={(e) => {
                   e.preventDefault();
                   e.stopPropagation();
-                  console.log('Sign In button clicked, showing auth form');
                   setShowAuthForm(true);
                 }}
                 className="nav-item bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-medium text-sm lg:text-base px-6 py-2.5 rounded-full shadow-md hover:shadow-lg transition-all duration-300 transform will-change-transform flex items-center"
@@ -326,7 +325,6 @@ const NavBar: React.FC<NavBarProps> = ({
                   onClick={(e) => {
                     e.preventDefault();
                     e.stopPropagation();
-                    console.log('Mobile sign-in button clicked');
                     setShowAuthForm(true);
                     setMobileMenuOpen(false);
                   }}

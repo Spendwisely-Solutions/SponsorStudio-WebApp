@@ -24,7 +24,6 @@ export default function SuccessStoryPage() {
         .single();
 
       if (storyError || !storyData) {
-        console.error('Error fetching story:', storyError);
         return;
       }
 

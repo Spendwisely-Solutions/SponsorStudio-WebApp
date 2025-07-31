@@ -232,7 +232,6 @@ export default function InfluencerDashboard() {
   const handleEditPost = async (post: any) => {
     setShowForm(true);
     // TODO: Implement edit functionality
-    console.log('Edit post:', post);
   };
 
   const handleDeletePost = async (postId: string) => {

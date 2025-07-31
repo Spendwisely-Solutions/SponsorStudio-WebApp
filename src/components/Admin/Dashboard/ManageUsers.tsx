@@ -77,7 +77,7 @@ export default function ManageUsers({ searchTerm: externalSearchTerm, setSearchT
       setLoading(true);
       setError(null);
 
-      console.log('Fetching users from Supabase...');
+ 
       const { data: profilesData, error: profilesError } = await supabase
         .from('profiles')
         .select('*')
@@ -87,8 +87,6 @@ export default function ManageUsers({ searchTerm: externalSearchTerm, setSearchT
         console.error('Supabase fetch error (profiles):', profilesError);
         throw new Error(`Failed to fetch profiles: ${profilesError.message}`);
       }
-
-      console.log('Profiles data from Supabase:', profilesData);
 
       if (!profilesData || profilesData.length === 0) {
         console.warn('No profiles data returned from Supabase');
@@ -129,7 +127,6 @@ export default function ManageUsers({ searchTerm: externalSearchTerm, setSearchT
         count,
       }));
 
-      console.log('User type counts from Supabase:', counts);
       setUserTypeCounts(counts);
     } catch (error) {
       console.error('Error in fetchUserTypeCounts:', error);
@@ -240,22 +237,10 @@ export default function ManageUsers({ searchTerm: externalSearchTerm, setSearchT
       (user.location?.toLowerCase().includes(searchTerm.toLowerCase()) || false) ||
       (user.phone_number?.toLowerCase().includes(searchTerm.toLowerCase()) || false);
 
-    console.log(`Filtering user ID ${user.id}:`, {
-      contact_person_name: user.contact_person_name,
-      company_name: user.company_name,
-      email: user.email,
-      website: user.website,
-      industry: user.industry,
-      company_size: user.company_size,
-      location: user.location,
-      phone_number: user.phone_number,
-      matchesSearchTerm,
-    });
 
     return matchesSearchTerm;
   });
 
-  console.log('Filtered users:', filteredUsers);
 
   return (
     <div className="relative w-full">

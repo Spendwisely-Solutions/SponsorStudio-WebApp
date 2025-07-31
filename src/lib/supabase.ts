@@ -32,8 +32,3 @@ export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
     fetch: (...args) => fetch(...args)
   }
 });
-
-// Test the connection
-supabase.from('opportunities').select('count', { count: 'exact', head: true })
-  .then(() => console.log('Supabase connection successful'))
-  .catch(error => console.error('Supabase connection error:', error));

@@ -76,7 +76,6 @@ const Home: React.FC = () => {
   
   // Add a useEffect to log when showAuthForm state changes
   useEffect(() => {
-    console.log('Auth form visibility changed:', showAuthForm);
   }, [showAuthForm]);
   const [mobileMenuOpen, setMobileMenuOpen] = useState<boolean>(false);
   const [formData, setFormData] = useState<FormData>({
@@ -99,7 +98,6 @@ const Home: React.FC = () => {
   // Initialize and update dialog visibility
   useEffect(() => {
     const hasShownDialog = sessionStorage.getItem('profileDialogShown');
-    console.log('Dialog visibility check:', { user, isProfileComplete, hasShownDialog, shouldShowProfileDialog });
 
     if (!isProfileComplete && user && !hasShownDialog && !shouldShowProfileDialog) {
       setShouldShowProfileDialog(true);
@@ -133,7 +131,6 @@ const Home: React.FC = () => {
       console.error('Error fetching client logos:', error);
       throw error;
     }
-    console.log('Client logos fetched:', data);
     setClientLogos(data || []);
   };
 
@@ -143,7 +140,6 @@ const Home: React.FC = () => {
       console.error('Error fetching success stories:', error);
       throw error;
     }
-    console.log('Success stories fetched:', data);
     setSuccessStories(data || []);
   };
 
@@ -183,7 +179,6 @@ const Home: React.FC = () => {
       {shouldShowProfileDialog && !isProfileComplete && (
         <ProfileCompletionDialog
           onClose={() => {
-            console.log('Dialog closed explicitly');
             setShouldShowProfileDialog(false);
             setShowProfileDialog(false);
             sessionStorage.setItem('profileDialogShown', 'true');

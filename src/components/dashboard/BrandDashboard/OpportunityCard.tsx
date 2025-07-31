@@ -58,13 +58,11 @@ const useSwipeAnimation = (
   const handleDragEnd = async (event: any, info: any) => {
     const swipeThreshold = 100;
     setIsSwipePending(true);
-    console.log(`handleDragEnd: Swipe offset x=${info.offset.x}, credits=${credits}`);
 
     try {
       if (Math.abs(info.offset.x) > swipeThreshold) {
         if (info.offset.x > swipeThreshold) {
           if (credits < 50) {
-            console.log('handleDragEnd: Insufficient credits for like');
             toast.error('Insufficient credits! Please add more credits to like.', {
               duration: 4000,
               position: 'top-center',
@@ -77,14 +75,11 @@ const useSwipeAnimation = (
             setIsSwipePending(false);
             return;
           }
-          console.log('handleDragEnd: Triggering onLike');
           await onLike();
         } else if (info.offset.x < -swipeThreshold) {
-          console.log('handleDragEnd: Triggering onReject');
           onReject();
         }
       } else {
-        console.log('handleDragEnd: Resetting position (swipe below threshold)');
         x.set(0, {
           type: 'spring',
           stiffness: 300,
@@ -118,7 +113,6 @@ const useImpressionTracking = (opportunityId: string, userId: string | null) => 
         if (entry.isIntersecting && !hasTracked.current) {
           try {
             hasTracked.current = true;
-            console.log(`useImpressionTracking: Recording impression for opportunity ${opportunityId}, user ${userId}`);
             const { error } = await supabase
               .from('impressions')
               .insert({
@@ -129,13 +123,11 @@ const useImpressionTracking = (opportunityId: string, userId: string | null) => 
 
             if (error) {
               if (error.code === '23505') {
-                console.log('useImpressionTracking: Impression already recorded for this user and opportunity');
               } else {
                 console.error('useImpressionTracking: Error recording impression:', error);
                 toast.error('Failed to record impression.');
               }
             } else {
-              console.log('useImpressionTracking: Impression recorded successfully');
             }
           } catch (err) {
             console.error('useImpressionTracking: Unexpected error:', err);
@@ -194,7 +186,6 @@ const OpportunityCard: React.FC<OpportunityCardProps> = memo(
 
           const brochuresUnlocked = data?.brochures_unlocked || [];
           setIsBrochureUnlocked(brochuresUnlocked.includes(opportunity.id));
-          console.log(`checkBrochureUnlocked: Brochure unlocked status for opportunity ${opportunity.id}: ${brochuresUnlocked.includes(opportunity.id)}`);
         } catch (err) {
           console.error('checkBrochureUnlocked: Unexpected error:', err);
         }
@@ -204,7 +195,6 @@ const OpportunityCard: React.FC<OpportunityCardProps> = memo(
     }, [opportunity.id, user?.id]);
 
     useEffect(() => {
-      console.log(`OpportunityCard: Mounted with credits=${credits}, opportunity.id=${opportunity.id}`);
       x.set(0);
     }, [opportunity.id, x, credits]);
 
@@ -266,22 +256,18 @@ const OpportunityCard: React.FC<OpportunityCardProps> = memo(
         if (videoRef.current.paused) {
           videoRef.current.play().catch(() => {});
         }
-        console.log(`handleToggleMute: Video ${newMuteState ? 'muted' : 'unmuted'}`);
       }
     };
 
     const handleButtonAction = async (action: 'like' | 'dislike') => {
       if (isSwipePending) {
-        console.log(`handleButtonAction: Action ${action} blocked due to pending swipe`);
         return;
       }
       setIsSwipePending(true);
-      console.log(`handleButtonAction: Triggering ${action}, credits=${credits}`);
 
       try {
         if (action === 'like') {
           if (credits < 50) {
-            console.log('handleButtonAction: Insufficient credits for like');
             toast.error('Insufficient credits! Please add more credits to like.', {
               duration: 4000,
               position: 'top-center',
@@ -312,7 +298,6 @@ const OpportunityCard: React.FC<OpportunityCardProps> = memo(
 
     const handleUnlockBrochure = async () => {
       if (credits < 100) {
-        console.log('handleUnlockBrochure: Insufficient credits for brochure');
         toast.error('Insufficient credits! You need 100 credits to unlock the brochure.', {
           duration: 4000,
           position: 'top-center',
@@ -321,7 +306,6 @@ const OpportunityCard: React.FC<OpportunityCardProps> = memo(
       }
 
       if (!user?.id) {
-        console.log('handleUnlockBrochure: No user logged in');
         toast.error('You must be logged in to unlock the brochure.', {
           duration: 4000,
           position: 'top-center',
@@ -331,8 +315,6 @@ const OpportunityCard: React.FC<OpportunityCardProps> = memo(
 
       setIsUnlocking(true);
       try {
-        console.log('handleUnlockBrochure: Attempting to deduct 100 credits and update brochures_unlocked');
-        
         // Deduct credits
         await deductCredits(100);
 
@@ -365,7 +347,6 @@ const OpportunityCard: React.FC<OpportunityCardProps> = memo(
           duration: 4000,
           position: 'top-center',
         });
-        console.log('handleUnlockBrochure: Brochure unlocked and added to profile');
       } catch (error: any) {
         console.error('handleUnlockBrochure: Error:', error);
         toast.error('Failed to unlock brochure. Please try again.', {
@@ -391,7 +372,6 @@ const OpportunityCard: React.FC<OpportunityCardProps> = memo(
           });
         });
       }
-      console.log(`handleMediaSelect: Selected media ${mediaUrl}`);
     };
 
     const mediaContent = useMemo(() => {

@@ -53,8 +53,6 @@ const PricingSectionStatic: React.FC<PricingSectionStaticProps> = ({ user }) => 
       once: false, // Animate every time the element enters the viewport
       offset: 100, // Trigger animation 100px before the element enters the viewport
     });
-    console.log("PricingSectionStatic mounted with AOS initialized");
-    console.log("opportunityPricingSteps:", opportunityPricingSteps);
   }, []);
 
   return (
@@ -127,7 +125,6 @@ const PricingSectionStatic: React.FC<PricingSectionStaticProps> = ({ user }) => 
                 }`}
                 data-aos="zoom-in-up"
                 data-aos-delay={index * 100}
-                onMouseEnter={() => console.log(`Hovered over ${step.name}`)}
               >
                 <div className="p-8 h-full flex flex-col">
                   {step.isHighlighted && (

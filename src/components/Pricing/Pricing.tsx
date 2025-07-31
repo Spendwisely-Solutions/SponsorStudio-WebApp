@@ -145,7 +145,6 @@ const Pricing: React.FC = () => {
         const { data: profile, error: profileError } = profileResponse;
 
         if (authError || !user) {
-          console.log("No authenticated user found");
           navigate("/login");
           setLoading(false);
           return;
@@ -159,7 +158,6 @@ const Pricing: React.FC = () => {
         }
 
         if (profile.user_type !== "brand") {
-          console.log(`User ${user.id} is not a brand, user_type: ${profile.user_type}`);
           setIsBrand(false);
           navigate("/unauthorized");
           setLoading(false);
@@ -182,7 +180,6 @@ const Pricing: React.FC = () => {
         }
 
         if (!subscriptions) {
-          console.log(`No subscription found for user ${user.id}, creating Free plan`);
           const { data: newSubscription, error: insertError } = await supabase
             .from("subscriptions")
             .insert({
@@ -207,7 +204,6 @@ const Pricing: React.FC = () => {
         }
 
         const statusMap: Record<string, string> = {};
-        console.log("Subscription found/created:", subscriptions);
         statusMap[subscriptions.plan_name] = subscriptions.status;
         setCurrentPlan(subscriptions.plan_name);
         setPaymentStatus((prev) => ({ ...prev, ...statusMap }));
@@ -228,12 +224,10 @@ const Pricing: React.FC = () => {
     maxAttempts = 5,
     interval = 3000
   ) => {
-    console.log(`Checking subscription status for ${subscriptionId}, tier: ${tierName}`);
     let attempts = 0;
 
     while (attempts < maxAttempts) {
       attempts++;
-      console.log(`Attempt ${attempts}/${maxAttempts} for subscriptionId: ${subscriptionId}`);
 
       try {
         const response = await axios.post(
@@ -241,7 +235,6 @@ const Pricing: React.FC = () => {
           { subscriptionId }
         );
 
-        console.log("Check subscription response:", response.data);
 
         if (response.data.success && response.data.status === "active") {
           const { data: { user } } = await supabase.auth.getUser();
@@ -264,10 +257,8 @@ const Pricing: React.FC = () => {
           setPaymentStatus((prev) => ({ ...prev, [tierName]: "active" }));
           setPaymentError((prev) => ({ ...prev, [tierName]: null }));
           setCurrentPlan(tierName);
-          console.log(`Payment confirmed for ${tierName}, subscriptionId: ${subscriptionId}`);
           return true;
         } else if (response.data.success) {
-          console.log(`Subscription status: ${response.data.status}, retrying...`);
         } else {
           console.error("Check subscription error:", response.data.error);
         }
@@ -301,7 +292,6 @@ const Pricing: React.FC = () => {
       }
 
       if (tier.name === "Free") {
-        console.log(`Initiating Free plan for user ${user.id}`);
         setPaymentInitiated((prev) => ({ ...prev, [tier.name]: true }));
         const { data, error } = await supabase
           .from("subscriptions")
@@ -327,7 +317,6 @@ const Pricing: React.FC = () => {
           throw new Error("Failed to set Free plan");
         }
 
-        console.log(`Free plan set for user ${user.id}:`, data);
         setPaymentStatus((prev) => ({ ...prev, [tier.name]: "active" }));
         setPaymentError((prev) => ({ ...prev, [tier.name]: null }));
         setCurrentPlan("Free");
@@ -356,7 +345,6 @@ const Pricing: React.FC = () => {
       setLockedBillingCycle("monthly");
 
       if (isUpgrade && existingSubscriptionId && originalPlan !== "Free") {
-        console.log(`Cancelling existing subscription ${existingSubscriptionId} for user ${user.id}`);
         try {
           const response = await axios.post(
             "https://payment-gateway-serverless-lac.vercel.app/api/cancel-subscription",
@@ -367,7 +355,6 @@ const Pricing: React.FC = () => {
             throw new Error(response.data.error || "Failed to cancel existing subscription");
           }
 
-          console.log(`Cancelled subscription ${existingSubscriptionId}:`, response.data.data);
 
           const { error: updateError } = await supabase
             .from("subscriptions")
@@ -390,12 +377,6 @@ const Pricing: React.FC = () => {
 
       const planAmount = tier.monthlyPrice;
       const billingCycle = "monthly";
-      console.log("Initiating subscription:", {
-        plan_name: tier.name,
-        billing_cycle: billingCycle,
-        planAmount,
-        user_id: user.id,
-      });
 
       const response = await axios.post(
         "https://payment-gateway-serverless-lac.vercel.app/api/post-subscription",
@@ -426,13 +407,6 @@ const Pricing: React.FC = () => {
         throw new Error("Plan amount mismatch between client and server");
       }
 
-      console.log(`Upserting subscription for user ${user.id}:`, {
-        plan_name: tier.name,
-        amount: planAmount * 100,
-        subscriptionId,
-        orderId,
-      });
-
       const { data, error: upsertError } = await supabase
         .from("subscriptions")
         .upsert(
@@ -457,7 +431,6 @@ const Pricing: React.FC = () => {
         throw new Error("Failed to update subscription record");
       }
 
-      console.log(`Subscription upserted for user ${user.id}:`, data);
 
       const options = {
         key: import.meta.env.VITE_RAZORPAY_KEY_ID,
@@ -469,7 +442,6 @@ const Pricing: React.FC = () => {
         subscription_id: subscriptionId,
         handler: async (response: any) => {
           try {
-            console.log("Razorpay payment response:", JSON.stringify(response, null, 2));
             setPaymentError((prev) => ({ ...prev, [tier.name]: null }));
             await checkSubscriptionStatus(subscriptionId, tier.name);
           } catch (error: any) {
@@ -496,7 +468,6 @@ const Pricing: React.FC = () => {
         },
       };
 
-      console.log("Razorpay options:", JSON.stringify(options, null, 2));
       const razorpay = new Razorpay(options);
       razorpay.on("payment.failed", async (response: any) => {
         console.error("Payment failed:", response.error);

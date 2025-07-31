@@ -116,7 +116,6 @@ const MouSignComponent: React.FC<MouSignComponentProps> = ({ formData, onMouSign
     let isDebouncing = false;
     return async () => {
       if (isDebouncing) {
-        console.log('Debounce: Submission blocked, already processing');
         return;
       }
       isDebouncing = true;
@@ -130,9 +129,7 @@ const MouSignComponent: React.FC<MouSignComponentProps> = ({ formData, onMouSign
 
   const handleAgreeAndSave = useCallback(async () => {
     submitCount.current += 1;
-    console.log(`MouSignComponent handleAgreeAndSave called, attempt #${submitCount.current}, hasProcessed: ${hasProcessed}`);
     if (hasProcessed) {
-      console.log('Agree and Save blocked: Already processed');
       return;
     }
     if (!formData.organization_name || !formData.organization_address || !formData.poc_name || !formData.poc_position) {
@@ -143,20 +140,16 @@ const MouSignComponent: React.FC<MouSignComponentProps> = ({ formData, onMouSign
     setHasProcessed(true);
     try {
       // Step 1: Authenticate user
-      console.log('Authenticating user...');
       const { data: { user }, error: authError } = await timeout(supabase.auth.getUser(), 5000);
       if (authError || !user) {
         throw new Error('User not authenticated. Please log in.');
       }
-      console.log('Authenticated user:', user.id);
       // Step 2: Upload signature if provided
       let signatureUrl = null;
       if (signatureFile) {
-        console.log('Uploading signature...');
         setUploadingSignature(true);
         try {
           signatureUrl = await uploadSignatureToSupabase(signatureFile);
-          console.log('Signature uploaded:', signatureUrl);
         } catch (signatureError) {
           console.error('Signature upload failed:', signatureError);
           // Continue without signature if upload fails
@@ -165,7 +158,6 @@ const MouSignComponent: React.FC<MouSignComponentProps> = ({ formData, onMouSign
         }
       }
       // Step 3: Insert MOU details
-      console.log('Inserting MOU metadata...');
       const mouId = crypto.randomUUID();
       const mouData = {
         id: mouId,
@@ -188,9 +180,7 @@ const MouSignComponent: React.FC<MouSignComponentProps> = ({ formData, onMouSign
       if (mouInsertError || !mou) {
         throw new Error(`Failed to save MOU details: ${mouInsertError?.message || 'No data returned'}`);
       }
-      console.log('MOU metadata saved, ID:', mou.id);
       // Step 4: Trigger callback
-      console.log('Calling onMouSigned with mouId:', mou.id);
       onMouSigned(mou.id);
     } catch (error: any) {
       console.error('MOU saving failed:', error);
@@ -404,7 +394,6 @@ const MouSignComponent: React.FC<MouSignComponentProps> = ({ formData, onMouSign
           </h2>
           <button
             onClick={() => {
-              console.log('Cancel button clicked');
               setIsProcessing(false);
               setHasProcessed(false);
               onCancel();
@@ -520,7 +509,6 @@ const MouSignComponent: React.FC<MouSignComponentProps> = ({ formData, onMouSign
         <div className="flex justify-end space-x-2">
           <button
             onClick={() => {
-              console.log('Cancel button clicked');
               setIsProcessing(false);
               setHasProcessed(false);
               onCancel();

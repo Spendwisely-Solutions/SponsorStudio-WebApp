@@ -18,11 +18,9 @@ const ResetPassword: React.FC = () => {
   const isVerifyingRef = useRef<boolean>(false);
 
   useEffect(() => {
-    console.log('useEffect triggered at:', new Date().toISOString());
 
     // Prevent multiple verifications
     if (isVerifyingRef.current || isTokenValid) {
-      console.log('Skipping verification: already verifying or token valid');
       return;
     }
 
@@ -35,23 +33,15 @@ const ResetPassword: React.FC = () => {
     const accessToken = hashParams.get('access_token') || queryParams.get('access_token');
     const tokenType = hashParams.get('type') || queryParams.get('type');
 
-    console.log('Access Token:', accessToken);
-    console.log('Token Type:', tokenType);
-    console.log('URL Hash:', location.hash);
-    console.log('URL Search:', location.search);
-
     const verifyToken = async () => {
-      console.log('verifyToken started at:', new Date().toISOString());
 
       if (!accessToken || tokenType !== 'recovery') {
-        console.log('Token validation failed, setting error');
         setError('Invalid or missing reset token. Please use the link from your email.');
         setVerifying(false);
         isVerifyingRef.current = false;
         return;
       }
 
-      console.log('Proceeding to Supabase session verification');
       try {
         const { data, error } = await supabase.auth.setSession({
           access_token: accessToken,
@@ -66,7 +56,6 @@ const ResetPassword: React.FC = () => {
           return;
         }
 
-        console.log('Session Set Successfully:', data.session);
         setError(''); // Clear any existing error
         setIsTokenValid(true);
         setVerifying(false);
@@ -83,13 +72,11 @@ const ResetPassword: React.FC = () => {
 
     // Cleanup to reset verification flag
     return () => {
-      console.log('useEffect cleanup at:', new Date().toISOString());
     };
   }, [location, isTokenValid]);
 
   // Show toast only when form cannot render and error exists
   useEffect(() => {
-    console.log('Toast useEffect - Verifying:', verifying, 'IsTokenValid:', isTokenValid, 'Error:', error);
     if (!verifying && !isTokenValid && error) {
       toast.error(error);
     }

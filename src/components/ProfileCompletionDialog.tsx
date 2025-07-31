@@ -56,7 +56,6 @@ export default function ProfileCompletionDialog({ onClose }: ProfileCompletionDi
           <a
             href="/dashboard"
             onClick={() => {
-              console.log('Update Profile clicked, dialog remains open');
               // Dialog stays open until explicit close
             }}
             className="px-4 py-2 bg-[#2B4B9B] text-white rounded-lg hover:bg-[#1a2f61] text-center"

@@ -45,7 +45,6 @@ const ProfilePage = () => {
         setUserData(data);
       } catch (error) {
         toast.error('Error loading profile');
-        console.error(error);
       } finally {
         setLoading(false);
       }
@@ -91,7 +90,6 @@ const ProfilePage = () => {
         setInstagramData(data.data.user);
       } catch (error) {
         toast.error('Error fetching Instagram data');
-        console.error(error);
         setInstagramData(null);
       } finally {
         setLoadingInstagram(false);
