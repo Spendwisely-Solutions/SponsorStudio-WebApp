@@ -143,7 +143,7 @@ const useImpressionTracking = (opportunityId: string, userId: string | null) => 
           }
         }
       },
-      { threshold: 0.5 } // Trigger when 50% of the card is visible
+      { threshold: 0.5 }
     );
 
     observer.observe(cardRef.current);
@@ -174,6 +174,34 @@ const OpportunityCard: React.FC<OpportunityCardProps> = memo(
     const [isUnlocking, setIsUnlocking] = useState(false);
     const videoRef = useRef<HTMLVideoElement>(null);
     const cardRef = useImpressionTracking(opportunity.id, user?.id || null);
+
+    // Check if brochure is already unlocked when component mounts
+    useEffect(() => {
+      const checkBrochureUnlocked = async () => {
+        if (!user?.id || !opportunity.id) return;
+
+        try {
+          const { data, error } = await supabase
+            .from('profiles')
+            .select('brochures_unlocked')
+            .eq('id', user.id)
+            .single();
+
+          if (error) {
+            console.error('checkBrochureUnlocked: Error fetching profile:', error);
+            return;
+          }
+
+          const brochuresUnlocked = data?.brochures_unlocked || [];
+          setIsBrochureUnlocked(brochuresUnlocked.includes(opportunity.id));
+          console.log(`checkBrochureUnlocked: Brochure unlocked status for opportunity ${opportunity.id}: ${brochuresUnlocked.includes(opportunity.id)}`);
+        } catch (err) {
+          console.error('checkBrochureUnlocked: Unexpected error:', err);
+        }
+      };
+
+      checkBrochureUnlocked();
+    }, [opportunity.id, user?.id]);
 
     useEffect(() => {
       console.log(`OpportunityCard: Mounted with credits=${credits}, opportunity.id=${opportunity.id}`);
@@ -225,20 +253,16 @@ const OpportunityCard: React.FC<OpportunityCardProps> = memo(
       };
     }, [opportunity.id, isMuted, selectedMedia, isSwipePending]);
 
-    // Improved mute/unmute toggle for mobile and desktop
     const handleToggleMute = (e?: React.MouseEvent | React.TouchEvent | React.PointerEvent) => {
       if (e) {
-        // Use pointer events for best cross-device support
         if ('preventDefault' in e) e.preventDefault();
         if ('stopPropagation' in e) e.stopPropagation();
       }
       if (videoRef.current) {
-        // Always update state and video element
         const newMuteState = !isMuted;
         setIsMuted(newMuteState);
         videoRef.current.muted = newMuteState;
         setShowMuteIndicator(true);
-        // For mobile browsers, try to play after mute toggle
         if (videoRef.current.paused) {
           videoRef.current.play().catch(() => {});
         }
@@ -296,18 +320,58 @@ const OpportunityCard: React.FC<OpportunityCardProps> = memo(
         return;
       }
 
+      if (!user?.id) {
+        console.log('handleUnlockBrochure: No user logged in');
+        toast.error('You must be logged in to unlock the brochure.', {
+          duration: 4000,
+          position: 'top-center',
+        });
+        return;
+      }
+
       setIsUnlocking(true);
       try {
-        console.log('handleUnlockBrochure: Attempting to deduct 100 credits');
+        console.log('handleUnlockBrochure: Attempting to deduct 100 credits and update brochures_unlocked');
+        
+        // Deduct credits
         await deductCredits(100);
+
+        // Update brochures_unlocked array
+        const { data: profileData, error: profileError } = await supabase
+          .from('profiles')
+          .select('brochures_unlocked')
+          .eq('id', user.id)
+          .single();
+
+        if (profileError) {
+          throw profileError;
+        }
+
+        const currentUnlocked = profileData?.brochures_unlocked || [];
+        if (!currentUnlocked.includes(opportunity.id)) {
+          const updatedUnlocked = [...currentUnlocked, opportunity.id];
+          const { error: updateError } = await supabase
+            .from('profiles')
+            .update({ brochures_unlocked: updatedUnlocked })
+            .eq('id', user.id);
+
+          if (updateError) {
+            throw updateError;
+          }
+        }
+
         setIsBrochureUnlocked(true);
         toast.success('Brochure unlocked successfully!', {
           duration: 4000,
           position: 'top-center',
         });
-        console.log('handleUnlockBrochure: Brochure unlocked');
+        console.log('handleUnlockBrochure: Brochure unlocked and added to profile');
       } catch (error: any) {
-        console.error('handleUnlockBrochure: Error deducting credits:', error);
+        console.error('handleUnlockBrochure: Error:', error);
+        toast.error('Failed to unlock brochure. Please try again.', {
+          duration: 4000,
+          position: 'top-center',
+        });
       } finally {
         setIsUnlocking(false);
       }
@@ -345,8 +409,6 @@ const OpportunityCard: React.FC<OpportunityCardProps> = memo(
       }
 
       const isVideo = /\.(mp4|webm|ogg)$/i.test(selectedMedia);
-
-      // Use only onClick for mute button, and use onPointerDown for video only on mobile
       const isMobile = typeof window !== 'undefined' && window.matchMedia('(pointer: coarse)').matches;
       return (
         <motion.div
