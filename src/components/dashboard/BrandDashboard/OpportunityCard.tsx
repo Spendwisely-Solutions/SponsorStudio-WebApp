@@ -315,9 +315,6 @@ const OpportunityCard: React.FC<OpportunityCardProps> = memo(
 
       setIsUnlocking(true);
       try {
-        // Deduct credits
-        await deductCredits(100);
-
         // Update brochures_unlocked array
         const { data: profileData, error: profileError } = await supabase
           .from('profiles')
@@ -341,6 +338,9 @@ const OpportunityCard: React.FC<OpportunityCardProps> = memo(
             throw updateError;
           }
         }
+
+        // Deduct credits only after successful unlock
+        await deductCredits(100);
 
         setIsBrochureUnlocked(true);
         toast.success('Brochure unlocked successfully!', {
@@ -673,7 +673,7 @@ const OpportunityCard: React.FC<OpportunityCardProps> = memo(
               DISLIKE
             </div>
           </motion.div>
-          <div className="absolute inset-0 bg-gradient-to-t from-gray-900/70 via-gray-800/30 to-transparent pointer-events-none" />
+          <div className="absolute inset-0 bg-gradient-to-t from-gray-900/70 via-gray-800/30 to-transparent pointerEvents='none'" />
           <div className="absolute bottom-0 left-0 right-0 p-4 sm:p-6 text-white flex justify-between items-start gap-4">
             <div className="flex-1 flex flex-col space-y-1">
               <h2 className="text-xl sm:text-2xl font-bold">{opportunity.title}</h2>
