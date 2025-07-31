@@ -176,7 +176,7 @@ const Home: React.FC = () => {
         </div>
       )}
 
-      {shouldShowProfileDialog && !isProfileComplete && (
+      {/* {shouldShowProfileDialog && !isProfileComplete && (
         <ProfileCompletionDialog
           onClose={() => {
             setShouldShowProfileDialog(false);
@@ -184,7 +184,7 @@ const Home: React.FC = () => {
             sessionStorage.setItem('profileDialogShown', 'true');
           }}
         />
-      )}
+      )} */}
 
       <NavBar
         user={user}
