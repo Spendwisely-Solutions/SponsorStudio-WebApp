@@ -3,7 +3,6 @@ import Slider from 'react-slick'; // Import react-slick
 import 'slick-carousel/slick/slick.css';
 import 'slick-carousel/slick/slick-theme.css';
 
-
 type TrendingEvent = {
   title: string;
   description: string;
@@ -116,18 +115,28 @@ function TrendingEvents() {
               {filteredEvents.map((event, idx) => {
                 let mediaUrl = '';
                 let mediaType: 'image' | 'video' | null = null;
+
+                // Prioritize the first image, then any image, then any video, then first available media
                 if (event.media_urls && event.media_urls.length > 0) {
-                  const video = event.media_urls.find(url => url.match(/\.(mp4|webm|ogg)$/i));
-                  const image = event.media_urls.find(url => url.match(/\.(jpg|jpeg|png|webp|avif)$/i));
-                  if (video) {
-                    mediaUrl = video;
-                    mediaType = 'video';
-                  } else if (image) {
-                    mediaUrl = image;
+                  const firstMedia = event.media_urls[0];
+                  if (firstMedia.match(/\.(jpg|jpeg|png|webp|avif)$/i)) {
+                    mediaUrl = firstMedia;
                     mediaType = 'image';
                   } else {
-                    mediaUrl = event.media_urls[0];
-                    mediaType = null;
+                    const image = event.media_urls.find(url => url.match(/\.(jpg|jpeg|png|webp|avif)$/i));
+                    if (image) {
+                      mediaUrl = image;
+                      mediaType = 'image';
+                    } else {
+                      const video = event.media_urls.find(url => url.match(/\.(mp4|webm|ogg)$/i));
+                      if (video) {
+                        mediaUrl = video;
+                        mediaType = 'video';
+                      } else {
+                        mediaUrl = firstMedia;
+                        mediaType = null;
+                      }
+                    }
                   }
                 }
 
@@ -154,6 +163,7 @@ function TrendingEvents() {
                     window.location.href = `/dashboard?search=${searchParam}`;
                   }
                 };
+
                 return (
                   <div
                     key={event.title + (event.start_date || idx)}
