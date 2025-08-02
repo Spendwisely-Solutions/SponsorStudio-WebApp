@@ -373,7 +373,7 @@ export default function InfluencerDashboard() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <Toaster position="top-right" />
+      {/* <Toaster position="top-right" /> */}
       
       {/* Header */}
       <div className="bg-white shadow-sm border-b">

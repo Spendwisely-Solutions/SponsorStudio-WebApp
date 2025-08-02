@@ -101,14 +101,14 @@ export default function ScheduledMeetings({ meetings, isBrand }: ScheduledMeetin
               <Calendar className="w-10 h-10 text-gray-400" />
               <Frown className="w-10 h-10 text-gray-400" />
             </div>
-            <p className="text-gray-600 text-lg mb-4">No meetings found for the selected filters.</p>
-            <a
+            <p className="text-gray-600 text-lg mb-4">No meetings available.</p>
+            {/* <a
               href="/schedule"
               className="inline-flex items-center px-4 py-2 bg-indigo-600 text-white text-sm font-medium rounded-md hover:bg-indigo-700 transition-all duration-200 transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
               aria-label="Schedule a new meeting"
             >
               Schedule a Meeting
-            </a>
+            </a> */}
           </motion.div>
         </div>
       ) : (

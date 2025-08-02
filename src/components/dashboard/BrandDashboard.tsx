@@ -177,10 +177,24 @@ export default function BrandDashboard({ onUpdateProfile }: BrandDashboardProps)
       const { data: matchesData, error } = await supabase
         .from('matches')
         .select(`
-          *,
+          id,
+          opportunity_id,
+          created_at,
+          status,
+          notes,
+          meeting_scheduled_at,
+          meeting_link,
           opportunities:opportunity_id (
-            *,
-            profiles:creator_id (*)
+            id,
+            title,
+            sponsorship_brochure_url,
+            location,
+            profiles:creator_id (company_name)
+          ),
+          profiles:brand_id (
+            company_name,
+            industry,
+            contact_person_name
           )
         `)
         .eq('brand_id', user.id);
@@ -200,12 +214,29 @@ export default function BrandDashboard({ onUpdateProfile }: BrandDashboardProps)
     let query = supabase
       .from('opportunities')
       .select(`
-        *,
+        id,
+        title,
+        description,
+        location,
+        start_date,
+        end_date,
+        ad_type,
+        price_range,
+        media_urls,
+        sponsorship_brochure_url,
+        calendly_link,
+        reach,
+        requirements,
+        benefits,
+        category_id,
+        status,
+        verification_status,
+        creator_id,
         categories:category_id (name),
         profiles:creator_id (company_name)
       `)
       .eq('status', 'active')
-      .eq('verification_status', 'approved');
+      .eq('verification_status', 'approved')
 
     if (user) {
       const { data: profileData, error: profileError } = await supabase
@@ -505,8 +536,11 @@ export default function BrandDashboard({ onUpdateProfile }: BrandDashboardProps)
         const { data: opportunityData, error: opportunityError } = await supabase
           .from('opportunities')
           .select(`
-            *,
-            profiles:creator_id (*)
+            id,
+            title,
+            calendly_link,
+            sponsorship_brochure_url,
+            profiles:creator_id (company_name, email)
           `)
           .eq('id', id)
           .single();

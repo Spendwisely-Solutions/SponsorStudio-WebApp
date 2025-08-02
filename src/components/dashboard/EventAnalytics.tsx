@@ -14,10 +14,14 @@ import {
   ChevronDown
 } from 'lucide-react';
 import type { Database } from '../../lib/database.types';
+import toast from 'react-hot-toast';
 
 type Opportunity = Database['public']['Tables']['opportunities']['Row'];
 type Match = Database['public']['Tables']['matches']['Row'] & {
-  profiles: Database['public']['Tables']['profiles']['Row'];
+  profiles: Pick<
+    Database['public']['Tables']['profiles']['Row'],
+    'company_name' | 'industry' | 'contact_person_name' | 'contact_person_phone' | 'email'
+  >;
 };
 type FundRow = {
   CompanyName: string;
@@ -90,6 +94,7 @@ export default function EventAnalytics({ opportunityId }: AnalyticsProps) {
       setTotalAmount(0);
       setFundRows([]);
       setOpportunity(null);
+      toast.error('Failed to load opportunity data.');
     }
   };
 
@@ -98,19 +103,73 @@ export default function EventAnalytics({ opportunityId }: AnalyticsProps) {
       const { data, error } = await supabase
         .from('matches')
         .select(`
-          *,
-          profiles:brand_id (*)
+          id,
+          opportunity_id,
+          status,
+          created_at,
+          updated_at,
+          meeting_scheduled_at,
+          meeting_link,
+          notes,
+          profiles:brand_id (
+            company_name,
+            industry,
+            contact_person_name,
+            contact_person_phone,
+            email
+          )
         `)
         .eq('opportunity_id', opportunityId);
-      
+
       if (error) throw error;
-      
-      setMatches(data as Match[]);
+
+      // Log raw response to verify fields
+
+      // Sanitize profiles data to ensure only required fields are included
+      const sanitizedData = data.map(match => ({
+        ...match,
+        profiles: match.profiles
+          ? {
+              company_name: match.profiles.company_name,
+              industry: match.profiles.industry,
+              contact_person_name: match.profiles.contact_person_name,
+              contact_person_phone: match.profiles.contact_person_phone,
+              email: match.profiles.email,
+            }
+          : null,
+      }));
+
+      // Validate response for unexpected fields
+      sanitizedData.forEach(match => {
+        if (match.profiles) {
+          const profileKeys = Object.keys(match.profiles);
+          const expectedKeys = [
+            'company_name',
+            'industry',
+            'contact_person_name',
+            'contact_person_phone',
+            'email',
+          ];
+          const unexpectedKeys = profileKeys.filter(key => !expectedKeys.includes(key));
+          if (unexpectedKeys.length > 0) {
+            console.error(
+              `Data leak detected! Unexpected profile fields for match ${match.id}:`,
+              unexpectedKeys.join(', ')
+            );
+            toast.error('Unexpected profile data detected. Please contact support.', {
+              id: 'data_leak_warning',
+            });
+          }
+        }
+      });
+
+      setMatches(sanitizedData as Match[]);
       setLoading(false);
     } catch (error) {
       console.error('Error fetching matches:', error);
       setMatches([]);
       setLoading(false);
+      toast.error('Failed to load match data.');
     }
   };
 
@@ -175,6 +234,7 @@ export default function EventAnalytics({ opportunityId }: AnalyticsProps) {
       setTotalSheetMatches(0);
       setTotalAmount(0);
       setFundRows([]);
+      toast.error('Failed to load sheet data.');
     }
   };
 
@@ -316,7 +376,6 @@ export default function EventAnalytics({ opportunityId }: AnalyticsProps) {
           </div>
         </div>
       </div>
-      {/* Match Status Breakdown and Recent Matches removed for cleaner UI */}
       {/* Funding Accordion */}
       <div className="mb-6 sm:mb-8">
         <button
