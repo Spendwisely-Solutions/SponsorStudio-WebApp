@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import {
   Users,
-  Building2,
   Calendar,
   CalendarRange,
   Link as LinkIcon,
@@ -15,14 +14,22 @@ import {
 import { useRazorpay } from 'react-razorpay';
 import axios from 'axios';
 import { supabase } from '../../../lib/supabase';
+import DOMPurify from 'dompurify';
 import type { Database } from '../../../lib/database.types';
 import MatchFilter from './MatchFilter';
 import { motion, AnimatePresence } from 'framer-motion';
+import toast from 'react-hot-toast';
 
 type Match = Database['public']['Tables']['matches']['Row'] & {
-  profiles: Database['public']['Tables']['profiles']['Row'];
-  opportunities?: Database['public']['Tables']['opportunities']['Row'] & { payment_amount?: number };
+  opportunities?: Pick<Database['public']['Tables']['opportunities']['Row'], 'id' | 'title'>;
   opportunity_id?: string;
+};
+
+type DetailedMatch = Match & {
+  profiles: Pick<
+    Database['public']['Tables']['profiles']['Row'],
+    'company_name' | 'industry' | 'contact_person_name' | 'contact_person_phone' | 'email'
+  >;
 };
 
 interface MatchListProps {
@@ -35,6 +42,7 @@ interface MatchListProps {
   onFilterChange: (filter: 'all' | 'pending' | 'accepted' | 'rejected') => void;
   onSearchChange: (query: string) => void;
   generateGoogleCalendarLink: (match: Match) => string;
+  onUpdateProfile: () => void;
 }
 
 export default function MatchList({
@@ -47,6 +55,7 @@ export default function MatchList({
   onFilterChange,
   onSearchChange,
   generateGoogleCalendarLink,
+  onUpdateProfile,
 }: MatchListProps) {
   const [paymentStatus, setPaymentStatus] = useState<Record<string, boolean>>({});
   const [paymentInitiated, setPaymentInitiated] = useState<Record<string, boolean>>({});
@@ -54,15 +63,16 @@ export default function MatchList({
   const [loadingPayments, setLoadingPayments] = useState<boolean>(true);
   const [paymentCheckError, setPaymentCheckError] = useState<string | null>(null);
   const [selectedOpportunityId, setSelectedOpportunityId] = useState<string | null>(null);
+  const [detailedMatches, setDetailedMatches] = useState<Record<string, DetailedMatch[]>>({});
   const { Razorpay } = useRazorpay();
 
-  // Check payment status
   useEffect(() => {
     const checkPayments = async () => {
       setLoadingPayments(true);
       setPaymentCheckError(null);
-      const uniqueOpportunityIds = [...new Set(matches.map(match => match.opportunities?.id || match.opportunity_id).filter(id => id))];
-
+      const uniqueOpportunityIds = [
+        ...new Set(matches.map(match => match.opportunities?.id || match.opportunity_id).filter(id => id)),
+      ];
 
       if (uniqueOpportunityIds.length === 0) {
         setLoadingPayments(false);
@@ -107,6 +117,100 @@ export default function MatchList({
     }
   }, [matches]);
 
+  const fetchMatchDetails = async (opportunityId: string) => {
+    try {
+      // Use a Supabase view or direct table with explicit field selection
+      const { data, error } = await supabase
+        .from('matches')
+        .select(`
+          id,
+          opportunity_id,
+          status,
+          created_at,
+          updated_at,
+          meeting_scheduled_at,
+          meeting_link,
+          notes,
+          profiles:brand_id (
+            company_name,
+            industry,
+            contact_person_name,
+            contact_person_phone,
+            email
+          ),
+          opportunities:opportunity_id (id, title)
+        `)
+        .eq('opportunity_id', opportunityId)
+        .limit(50);
+
+      if (error) {
+        console.error('Supabase query error:', error);
+        throw error;
+      }
+
+      // Log raw response to verify fields
+
+      // Sanitize profiles data to ensure only required fields are included
+      const sanitizedData = data.map(match => ({
+        ...match,
+        profiles: match.profiles
+          ? {
+              company_name: match.profiles.company_name,
+              industry: match.profiles.industry,
+              contact_person_name: match.profiles.contact_person_name,
+              contact_person_phone: match.profiles.contact_person_phone,
+              email: match.profiles.email,
+            }
+          : null,
+      }));
+
+      // Validate response for unexpected fields
+      sanitizedData.forEach(match => {
+        if (match.profiles) {
+          const profileKeys = Object.keys(match.profiles);
+          const expectedKeys = [
+            'company_name',
+            'industry',
+            'contact_person_name',
+            'contact_person_phone',
+            'email',
+          ];
+          const unexpectedKeys = profileKeys.filter(key => !expectedKeys.includes(key));
+          if (unexpectedKeys.length > 0) {
+            console.error(
+              `Data leak detected! Unexpected profile fields for match ${match.id}:`,
+              unexpectedKeys.join(', ')
+            );
+            toast.error('Unexpected profile data detected. Please contact support.', {
+              id: 'data_leak_warning',
+            });
+          }
+          if (!match.profiles.company_name) {
+            console.warn(
+              'Null company_name for match:',
+              match.id,
+              'brand_id:',
+              match.brand_id
+            );
+            toast.error(
+              'Some matches have missing profile data. Please update your profile.',
+              { id: 'missing_profile_data' }
+            );
+            onUpdateProfile();
+          }
+        }
+      });
+
+      setDetailedMatches(prev => ({
+        ...prev,
+        [opportunityId]: sanitizedData as DetailedMatch[],
+      }));
+    } catch (error) {
+      console.error('Error fetching match details:', error);
+      toast.error('Failed to load match details.');
+    }
+  };
+
   const initiatePayment = async (opportunityId: string, amount: number = 5000) => {
     try {
       const { data: existingPayment, error: checkError } = await supabase
@@ -128,6 +232,7 @@ export default function MatchList({
         }));
         setPaymentError(prev => ({ ...prev, [opportunityId]: null }));
         setPaymentInitiated(prev => ({ ...prev, [opportunityId]: false }));
+        await fetchMatchDetails(opportunityId);
         return;
       }
 
@@ -169,7 +274,7 @@ export default function MatchList({
         name: 'Sponsor Studio',
         description: `Payment for opportunity ${opportunityId}`,
         order_id: orderId,
-        handler: async (response) => {
+        handler: async (response: { razorpay_order_id: string; razorpay_payment_id: string; razorpay_signature: string }) => {
           try {
             const verifyResponse = await axios.post('https://payment-gateway-serverless-lac.vercel.app/api/verify-payment', {
               razorpay_order_id: response.razorpay_order_id,
@@ -189,17 +294,21 @@ export default function MatchList({
 
               if (updateError) throw new Error('Failed to update payment status');
 
-              setPaymentStatus(prev => {
-                const newStatus = { ...prev, [opportunityId]: true };
-                return newStatus;
-              });
+              setPaymentStatus(prev => ({
+                ...prev,
+                [opportunityId]: true,
+              }));
               setPaymentError(prev => ({ ...prev, [opportunityId]: null }));
+              await fetchMatchDetails(opportunityId);
             } else {
               await supabase
                 .from('payments')
                 .update({ status: 'unpaid' })
                 .eq('id', payment.id);
-              setPaymentError(prev => ({ ...prev, [opportunityId]: 'Payment verification failed. Please contact support.' }));
+              setPaymentError(prev => ({
+                ...prev,
+                [opportunityId]: 'Payment verification failed. Please contact support.',
+              }));
             }
           } catch (error) {
             console.error(`Payment verification error for ${opportunityId}:`, error);
@@ -207,15 +316,18 @@ export default function MatchList({
               .from('payments')
               .update({ status: 'unpaid' })
               .eq('id', payment.id);
-            setPaymentError(prev => ({ ...prev, [opportunityId]: 'Error verifying payment. Please try again.' }));
+            setPaymentError(prev => ({
+              ...prev,
+              [opportunityId]: 'Error verifying payment. Please try again.',
+            }));
           } finally {
             setPaymentInitiated(prev => ({ ...prev, [opportunityId]: false }));
           }
         },
         prefill: {
-          name: matches[0]?.profiles?.contact_person_name || 'User',
-          email: matches[0]?.profiles?.email || 'user@example.com',
-          contact: matches[0]?.profiles?.contact_person_phone || '+919999999999',
+          name: 'User', // Fallback since profiles are not fetched initially
+          email: 'user@example.com',
+          contact: '+919999999999',
         },
         theme: {
           color: '#2B4B9B',
@@ -228,13 +340,19 @@ export default function MatchList({
           .from('payments')
           .update({ status: 'unpaid' })
           .eq('id', payment.id);
-        setPaymentError(prev => ({ ...prev, [opportunityId]: `Payment failed: ${response.error.description}` }));
+        setPaymentError(prev => ({
+          ...prev,
+          [opportunityId]: `Payment failed: ${response.error.description}`,
+        }));
         setPaymentInitiated(prev => ({ ...prev, [opportunityId]: false }));
       });
       razorpay.open();
-    } catch (error) {
+    } catch (error: any) {
       console.error(`Payment initiation error for ${opportunityId}:`, error.message);
-      setPaymentError(prev => ({ ...prev, [opportunityId]: 'Failed to initiate payment. Please try again.' }));
+      setPaymentError(prev => ({
+        ...prev,
+        [opportunityId]: 'Failed to initiate payment. Please try again.',
+      }));
       setPaymentInitiated(prev => ({ ...prev, [opportunityId]: false }));
     }
   };
@@ -246,12 +364,8 @@ export default function MatchList({
     })
     .filter((match) => {
       if (!searchQuery) return true;
-      const searchLower = searchQuery.toLowerCase();
-      return (
-        (match.profiles?.company_name?.toLowerCase().includes(searchLower) ?? false) ||
-        (match.opportunities?.title?.toLowerCase().includes(searchLower) ?? false) ||
-        (match.profiles?.industry?.toLowerCase().includes(searchLower) ?? false)
-      );
+      const searchLower = DOMPurify.sanitize(searchQuery.toLowerCase());
+      return match.opportunities?.title?.toLowerCase().includes(searchLower) ?? false;
     });
 
   const matchesByOpportunity = filteredMatches.reduce((acc, match) => {
@@ -261,25 +375,18 @@ export default function MatchList({
     return acc;
   }, {} as Record<string, Match[]>);
 
-
   const toggleOpportunity = (oppId: string) => {
     setSelectedOpportunityId(selectedOpportunityId === oppId ? null : oppId);
+    if (paymentStatus[oppId] && !detailedMatches[oppId]) {
+      fetchMatchDetails(oppId);
+    }
   };
 
-  // Animation variants
-  const cardVariants = {
-    hidden: { opacity: 0, y: 20 },
-    visible: (i: number) => ({
-      opacity: 1,
-      y: 0,
-      transition: { delay: i * 0.1, duration: 0.3 },
-    }),
-  };
-
-  const matchVariants = {
-    hidden: { opacity: 0, height: 0 },
-    visible: { opacity: 1, height: 'auto', transition: { duration: 0.3 } },
-    exit: { opacity: 0, height: 0, transition: { duration: 0.2 } },
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>, oppId: string) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      toggleOpportunity(oppId);
+    }
   };
 
   const buttonVariants = {
@@ -299,10 +406,12 @@ export default function MatchList({
           <h2 className="text-2xl font-bold text-gray-900 mb-4 sm:mb-0">Brand Matches</h2>
           <motion.button
             onClick={onRefresh}
+            onKeyDown={(e) => handleKeyDown(e, 'refresh')}
             className="flex items-center px-4 py-2 bg-gradient-to-r from-[#2B4B9B] to-[#3B5BB9] text-white rounded-lg shadow-md"
             variants={buttonVariants}
             whileHover="hover"
             whileTap="tap"
+            aria-label="Refresh matches"
           >
             <RefreshCw className="w-4 h-4 mr-2" />
             Refresh
@@ -340,10 +449,12 @@ export default function MatchList({
           <h2 className="text-2xl font-bold text-gray-900 mb-4 sm:mb-0">Brand Matches</h2>
           <motion.button
             onClick={onRefresh}
+            onKeyDown={(e) => handleKeyDown(e, 'refresh')}
             className="flex items-center px-4 py-2 bg-gradient-to-r from-[#2B4B9B] to-[#3B5BB9] text-white rounded-lg shadow-md"
             variants={buttonVariants}
             whileHover="hover"
             whileTap="tap"
+            aria-label="Refresh matches"
           >
             <RefreshCw className="w-4 h-4 mr-2" />
             Refresh
@@ -389,10 +500,12 @@ export default function MatchList({
               };
               checkPayments();
             }}
+            onKeyDown={(e) => handleKeyDown(e, 'retry')}
             className="px-6 py-2 bg-gradient-to-r from-[#2B4B9B] to-[#3B5BB9] text-white rounded-lg shadow-md"
             variants={buttonVariants}
             whileHover="hover"
             whileTap="tap"
+            aria-label="Retry loading payment status"
           >
             Retry
           </motion.button>
@@ -413,10 +526,12 @@ export default function MatchList({
           <h2 className="text-2xl font-bold text-gray-900 mb-4 sm:mb-0">Brand Matches</h2>
           <motion.button
             onClick={onRefresh}
+            onKeyDown={(e) => handleKeyDown(e, 'refresh')}
             className="flex items-center px-4 py-2 bg-gradient-to-r from-[#2B4B9B] to-[#3B5BB9] text-white rounded-lg shadow-md"
             variants={buttonVariants}
             whileHover="hover"
             whileTap="tap"
+            aria-label="Refresh matches"
           >
             <RefreshCw className="w-4 h-4 mr-2" />
             Refresh
@@ -432,7 +547,7 @@ export default function MatchList({
             <Users className="w-8 h-8 text-indigo-500" />
           </div>
           <h3 className="text-xl font-semibold text-gray-800 mb-2">
-            {searchQuery ? 'No matching results' : 'No matches or opportunities found'}
+            {searchQuery ? 'No matching results' : 'No matches found'}
           </h3>
           <p className="text-gray-600">
             {searchQuery
@@ -455,10 +570,12 @@ export default function MatchList({
         <h2 className="text-2xl font-bold text-gray-900 mb-4 sm:mb-0">Brand Matches</h2>
         <motion.button
           onClick={onRefresh}
+          onKeyDown={(e) => handleKeyDown(e, 'refresh')}
           className="flex items-center px-4 py-2 bg-gradient-to-r from-[#2B4B9B] to-[#3B5BB9] text-white rounded-lg shadow-md"
           variants={buttonVariants}
           whileHover="hover"
           whileTap="tap"
+          aria-label="Refresh matches"
         >
           <RefreshCw className="w-4 h-4 mr-2" />
           Refresh
@@ -482,7 +599,6 @@ export default function MatchList({
           const opportunity = oppMatches[0].opportunities;
           const isMissingOpportunity = oppId === 'missing_opportunity';
           const isPaid = paymentStatus[oppId] ?? false;
-          const paymentAmount = opportunity?.payment_amount ?? 5000;
           const matchCount = oppMatches.length;
 
           return (
@@ -490,10 +606,15 @@ export default function MatchList({
               key={oppId}
               className="border border-gray-200 rounded-xl shadow-md p-5 bg-gradient-to-br from-white to-gray-50 hover:shadow-lg cursor-pointer transition-shadow"
               onClick={() => toggleOpportunity(oppId)}
-              variants={cardVariants}
-              custom={index}
+              onKeyDown={(e) => handleKeyDown(e, oppId)}
+              variants={{
+                hidden: { opacity: 0, y: 20 },
+                visible: { opacity: 1, y: 0, transition: { delay: index * 0.1, duration: 0.3 } },
+              }}
               initial="hidden"
               animate="visible"
+              tabIndex={0}
+              aria-label={`Toggle matches for ${opportunity?.title || 'Unknown Opportunity'}`}
             >
               <div className="flex justify-between items-center">
                 <div>
@@ -527,7 +648,11 @@ export default function MatchList({
       <AnimatePresence>
         {selectedOpportunityId && matchesByOpportunity[selectedOpportunityId] && (
           <motion.div
-            variants={matchVariants}
+            variants={{
+              hidden: { opacity: 0, height: 0 },
+              visible: { opacity: 1, height: 'auto', transition: { duration: 0.3 } },
+              exit: { opacity: 0, height: 0, transition: { duration: 0.2 } },
+            }}
             initial="hidden"
             animate="visible"
             exit="exit"
@@ -537,7 +662,7 @@ export default function MatchList({
               const opportunity = oppMatches[0].opportunities;
               const isMissingOpportunity = selectedOpportunityId === 'missing_opportunity';
               const isPaid = paymentStatus[selectedOpportunityId] ?? false;
-              const paymentAmount = opportunity?.payment_amount ?? 5000;
+              const paymentAmount = 5000; // Hardcoded since payment_amount column does not exist
 
               return (
                 <div>
@@ -546,7 +671,7 @@ export default function MatchList({
                   </h3>
                   {isPaid ? (
                     <motion.div className="grid gap-6">
-                      {oppMatches.map((match, index) => (
+                      {detailedMatches[selectedOpportunityId]?.map((match, index) => (
                         <motion.div
                           key={match.id}
                           className={`rounded-xl border shadow-md p-6 transition-all duration-200 ${
@@ -556,17 +681,18 @@ export default function MatchList({
                               ? 'border-green-300 bg-green-50'
                               : 'border-gray-300 bg-gray-50 opacity-90'
                           }`}
-                          variants={cardVariants}
-                          custom={index}
+                          variants={{
+                            hidden: { opacity: 0, y: 20 },
+                            visible: { opacity: 1, y: 0, transition: { delay: index * 0.1, duration: 0.3 } },
+                          }}
                           initial="hidden"
                           animate="visible"
                         >
                           <div className="flex flex-col sm:flex-row justify-between items-start gap-6">
                             <div className="flex-grow">
                               <div className="flex items-center mb-3">
-                                <Building2 className="w-6 h-6 text-gray-600 mr-2" />
                                 <h4 className="text-xl font-semibold text-gray-900">
-                                  {match.profiles?.company_name || 'Unknown Company'}
+                                  {match.profiles?.company_name || 'Brand Details Unavailable'}
                                 </h4>
                                 <span
                                   className={`ml-3 px-3 py-1 text-xs font-semibold rounded-full ${
@@ -636,11 +762,13 @@ export default function MatchList({
                                 <>
                                   <motion.button
                                     onClick={() => onUpdateMatchStatus(match.id, 'accepted')}
+                                    onKeyDown={(e) => handleKeyDown(e, `accept-${match.id}`)}
                                     disabled={processingMatches[match.id]?.accept}
                                     className={`w-full sm:w-auto flex items-center justify-center px-5 py-2 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-lg shadow-md disabled:bg-gray-400 disabled:cursor-not-allowed`}
                                     variants={buttonVariants}
                                     whileHover="hover"
                                     whileTap="tap"
+                                    aria-label={`Accept match ${match.id}`}
                                   >
                                     {processingMatches[match.id]?.accept ? (
                                       <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
@@ -651,11 +779,13 @@ export default function MatchList({
                                   </motion.button>
                                   <motion.button
                                     onClick={() => onUpdateMatchStatus(match.id, 'rejected')}
+                                    onKeyDown={(e) => handleKeyDown(e, `decline-${match.id}`)}
                                     disabled={processingMatches[match.id]?.decline}
                                     className={`w-full sm:w-auto flex items-center justify-center px-5 py-2 bg-gradient-to-r from-red-500 to-red-600 text-white rounded-lg shadow-md disabled:bg-gray-400 disabled:cursor-not-allowed`}
                                     variants={buttonVariants}
                                     whileHover="hover"
                                     whileTap="tap"
+                                    aria-label={`Decline match ${match.id}`}
                                   >
                                     {processingMatches[match.id]?.decline ? (
                                       <RefreshCw className="w-4 h-4 mr-2 animate-spin" />
@@ -675,6 +805,7 @@ export default function MatchList({
                                     variants={buttonVariants}
                                     whileHover="hover"
                                     whileTap="tap"
+                                    aria-label="Join meeting"
                                   >
                                     <LinkIcon className="w-4 h-4 mr-2" />
                                     Join Meeting
@@ -687,6 +818,7 @@ export default function MatchList({
                                     variants={buttonVariants}
                                     whileHover="hover"
                                     whileTap="tap"
+                                    aria-label="Add to calendar"
                                   >
                                     <Calendar className="w-4 h-4 mr-2" />
                                     Add to Calendar
@@ -729,6 +861,7 @@ export default function MatchList({
                           )}
                           <motion.button
                             onClick={() => initiatePayment(selectedOpportunityId, paymentAmount)}
+                            onKeyDown={(e) => handleKeyDown(e, `pay-${selectedOpportunityId}`)}
                             disabled={paymentInitiated[selectedOpportunityId]}
                             className={`px-6 py-3 ${
                               paymentInitiated[selectedOpportunityId]
@@ -738,6 +871,7 @@ export default function MatchList({
                             variants={buttonVariants}
                             whileHover="hover"
                             whileTap="tap"
+                            aria-label={`Pay to unlock matches for ${opportunity?.title || 'this opportunity'}`}
                           >
                             {paymentInitiated[selectedOpportunityId] ? (
                               <span className="flex items-center">

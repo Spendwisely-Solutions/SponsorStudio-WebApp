@@ -12,15 +12,14 @@ import EventCard from './CreatorDashboard/EventCard';
 import MatchList from './CreatorDashboard/MatchList';
 import StatsCards from './CreatorDashboard/StatsCards';
 import Tabs from './CreatorDashboard/Tabs';
-import MatchFilter from './CreatorDashboard/MatchFilter';
 import Modal from '../../components/Modal';
 import { PlusCircle, ChevronDown } from 'lucide-react';
+import DOMPurify from 'dompurify';
 
 type Opportunity = Database['public']['Tables']['opportunities']['Row'];
 type Category = Database['public']['Tables']['categories']['Row'];
 type Match = Database['public']['Tables']['matches']['Row'] & {
-  profiles: Database['public']['Tables']['profiles']['Row'];
-  opportunities?: Database['public']['Tables']['opportunities']['Row'];
+  opportunities?: Pick<Database['public']['Tables']['opportunities']['Row'], 'id' | 'title'>;
 };
 
 interface BrandDashboardProps {
@@ -107,9 +106,32 @@ export default function CreatorDashboard({ onUpdateProfile }: BrandDashboardProp
     try {
       const { data, error } = await supabase
         .from('opportunities')
-        .select('*')
+        .select(`
+          id,
+          creator_id,
+          title,
+          description,
+          location,
+          category_id,
+          reach,
+          price_range,
+          requirements,
+          benefits,
+          media_urls,
+          start_date,
+          end_date,
+          status,
+          calendly_link,
+          sponsorship_brochure_url,
+          verification_status,
+          created_at,
+          updated_at,
+          mou_url,
+          mou_id,
+          is_vip
+        `)
         .eq('creator_id', user.id)
-        .limit(50);
+        .limit(50); // Consider pagination for scalability
       if (error) {
         console.error('Error fetching opportunities:', error.message);
         throw new Error('Failed to load opportunities');
@@ -122,12 +144,13 @@ export default function CreatorDashboard({ onUpdateProfile }: BrandDashboardProp
     }
   };
 
-  const fetchMatches = async () => {
+  const fetchMatches = async (retryCount = 0) => {
     if (!user) {
       setMatches([]);
       return;
     }
     try {
+      // Ensure only non-sensitive data is fetched; sensitive profiles data (e.g., company_name) is fetched in MatchList.tsx post-payment
       const { data: creatorOpps, error: oppsError } = await supabase
         .from('opportunities')
         .select('id')
@@ -154,19 +177,24 @@ export default function CreatorDashboard({ onUpdateProfile }: BrandDashboardProp
           meeting_link,
           meeting_scheduled_at,
           notes,
-          profiles:brand_id (company_name, industry, contact_person_name, contact_person_phone, email),
-          opportunities:opportunity_id (title)
+          opportunities:opportunity_id (id, title)
         `)
         .in('opportunity_id', oppIds)
-        .limit(100);
+        .limit(50); // Reduced limit for performance
       if (matchesError) {
         console.error('Error fetching matches:', matchesError.message);
         throw new Error('Failed to load matches');
       }
       setMatches(matchesData as Match[] || []);
-    } catch (error) {
-      console.error('Error in fetchMatches:', error);
-      throw error;
+    } catch (error: any) {
+      if (retryCount < 3) {
+        console.warn(`Retrying fetchMatches (${retryCount + 1}/3)...`);
+        setTimeout(() => fetchMatches(retryCount + 1), 1000 * (retryCount + 1));
+      } else {
+        console.error('Error in fetchMatches:', error);
+        toast.error('Failed to load matches');
+        setError('Failed to load matches');
+      }
     }
   };
 
@@ -201,6 +229,7 @@ export default function CreatorDashboard({ onUpdateProfile }: BrandDashboardProp
             if (status === 'SUBSCRIBED') {
             } else if (err) {
               console.error('Subscription error:', err);
+              toast.error('Failed to subscribe to match updates');
             }
           });
       } catch (error: any) {
@@ -221,10 +250,11 @@ export default function CreatorDashboard({ onUpdateProfile }: BrandDashboardProp
       }
       isFetching.current = false;
     };
-  }, [user?.id]);
+  }, [user?.id, onUpdateProfile]);
 
   const fetchBrandEmail = async (brandId: string): Promise<string> => {
     try {
+      // Ensure the Supabase edge function 'get-user-email' returns only the email field to avoid exposing sensitive data
       const response = await fetch(
         'https://urablfvmqregyvfyaovi.supabase.co/functions/v1/get-user-email',
         {
@@ -241,8 +271,8 @@ export default function CreatorDashboard({ onUpdateProfile }: BrandDashboardProp
         throw new Error(data.error || 'Failed to fetch brand email');
       }
       return data.email;
-    } catch (error) {
-      console.error('Error fetching brand email:', error);
+    } catch (error: any) {
+      console.error('Error fetching brand email for brandId:', brandId, error.message);
       throw error;
     }
   };
@@ -254,9 +284,12 @@ export default function CreatorDashboard({ onUpdateProfile }: BrandDashboardProp
         opportunity_title: opportunityTitle,
         message: 'Your match has been approved! Please check your dashboard for more details.',
       };
-      await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, templateParams);
+      const response = await emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, templateParams);
+      if (response.status !== 200) {
+        throw new Error('EmailJS response status not OK');
+      }
     } catch (error) {
-      console.error('Error sending email:', error);
+      console.error('Error sending approval email to:', brandEmail, error);
       toast.error('Failed to send notification email');
     }
   };
@@ -321,7 +354,9 @@ export default function CreatorDashboard({ onUpdateProfile }: BrandDashboardProp
     }
   };
 
-  const handleSubmit = async (formData: Partial<Opportunity> & { media_files?: File[]; sponsorship_brochure_file?: File }) => {
+  const handleSubmit = async (
+    formData: Partial<Opportunity> & { media_files?: File[]; sponsorship_brochure_file?: File }
+  ) => {
     if (!user) return;
     setIsSubmitting(true);
     try {
@@ -485,8 +520,8 @@ export default function CreatorDashboard({ onUpdateProfile }: BrandDashboardProp
       toast.success(`Opportunity ${newStatus === 'active' ? 'activated' : 'paused'} successfully`);
       fetchOpportunities();
     } catch (error: any) {
-      toast.error('Failed to update Opportunity status');
-      setError('Failed to update Opportunity status');
+      toast.error('Failed to update opportunity status');
+      setError('Failed to update opportunity status');
     }
   };
 
@@ -539,6 +574,18 @@ export default function CreatorDashboard({ onUpdateProfile }: BrandDashboardProp
   const acceptedMatches = matches.filter((match) => match.status === 'accepted');
   const rejectedMatches = matches.filter((match) => match.status === 'rejected');
 
+  const handleSearchChange = (query: string) => {
+    const sanitizedQuery = DOMPurify.sanitize(query);
+    setSearchQuery(sanitizedQuery);
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLButtonElement>, callback: () => void) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      callback();
+    }
+  };
+
   if (error) {
     return (
       <div className="pb-14 sm:pb-0 text-center">
@@ -551,7 +598,13 @@ export default function CreatorDashboard({ onUpdateProfile }: BrandDashboardProp
               setLoading(true);
               window.location.reload();
             }}
+            onKeyDown={(e) => handleKeyDown(e, () => {
+              setError(null);
+              setLoading(true);
+              window.location.reload();
+            })}
             className="mt-4 px-4 py-2 bg-[#2B4B9B] text-white rounded-lg hover:bg-[#1a2f61]"
+            aria-label="Retry loading dashboard"
           >
             Retry
           </button>
@@ -580,7 +633,12 @@ export default function CreatorDashboard({ onUpdateProfile }: BrandDashboardProp
             setShowAnalytics(false);
             setSelectedAnalyticsId(null);
           }}
+          onKeyDown={(e) => handleKeyDown(e, () => {
+            setShowAnalytics(false);
+            setSelectedAnalyticsId(null);
+          })}
           className="mb-4 flex items-center text-[#2B4B9B] hover:text-[#1a2f61]"
+          aria-label="Back to opportunities"
         >
           <ChevronDown className="w-4 h-4 mr-1 rotate-90" />
           Back to opportunities
@@ -592,6 +650,7 @@ export default function CreatorDashboard({ onUpdateProfile }: BrandDashboardProp
 
   return (
     <div className="pb-14 sm:pb-0">
+      {/* <Toaster /> */}
       <Modal
         isOpen={showDeleteModal}
         onClose={() => {
@@ -649,7 +708,31 @@ export default function CreatorDashboard({ onUpdateProfile }: BrandDashboardProp
                 });
                 setMediaPreviews([]);
               }}
+              onKeyDown={(e) => handleKeyDown(e, () => {
+                setShowForm(true);
+                setIsEditing(false);
+                setSelectedOpportunityId(null);
+                setFormData({
+                  title: '',
+                  description: '',
+                  location: '',
+                  category_id: '',
+                  reach: undefined,
+                  price_range: { min: undefined, max: undefined },
+                  requirements: '',
+                  benefits: '',
+                  media_urls: [],
+                  start_date: '',
+                  end_date: '',
+                  status: 'active',
+                  calendly_link: '',
+                  sponsorship_brochure_url: '',
+                  verification_status: 'pending',
+                });
+                setMediaPreviews([]);
+              })}
               className="flex items-center space-x-1 px-4 py-2 bg-[#2B4B9B] text-white rounded-lg hover:bg-[#1a2f61]"
+              aria-label="Create new opportunity"
             >
               <PlusCircle className="w-4 h-4" />
               <span>Create Opportunity</span>
@@ -674,13 +757,15 @@ export default function CreatorDashboard({ onUpdateProfile }: BrandDashboardProp
                   <div className="w-16 h-16 mx-auto mb-4 bg-gray-100 rounded-full flex items-center justify-center">
                     <PlusCircle className="w-8 h-8 text-gray-400" />
                   </div>
-                  <h3 className="text-xl font-medium text-gray-800 mb-2">No Opportunity yet</h3>
+                  <h3 className="text-xl font-medium text-gray-800 mb-2">No Opportunities Yet</h3>
                   <p className="text-gray-600 mb-4">
                     Create your first Opportunity to start connecting with brands.
                   </p>
                   <button
                     onClick={() => setShowForm(true)}
+                    onKeyDown={(e) => handleKeyDown(e, () => setShowForm(true))}
                     className="px-4 py-2 bg-[#2B4B9B] text-white rounded-lg hover:bg-[#1a2f61]"
+                    aria-label="Create new opportunity"
                   >
                     Create Opportunity
                   </button>
@@ -718,8 +803,9 @@ export default function CreatorDashboard({ onUpdateProfile }: BrandDashboardProp
               processingMatches={processingMatches}
               onRefresh={fetchMatches}
               onFilterChange={setMatchFilter}
-              onSearchChange={setSearchQuery}
+              onSearchChange={handleSearchChange}
               generateGoogleCalendarLink={generateGoogleCalendarLink}
+              onUpdateProfile={onUpdateProfile}
             />
           )}
         </div>

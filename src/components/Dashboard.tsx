@@ -20,13 +20,20 @@ import AnalyticsDashboard from './dashboard/AnalyticsDashboard';
 import { signOut } from '../lib/auth';
 import Skeleton from 'react-loading-skeleton';
 import 'react-loading-skeleton/dist/skeleton.css';
+import toast from 'react-hot-toast';
 
 type ClientLogo = Database['public']['Tables']['client_logos']['Row'];
 type SuccessStory = Database['public']['Tables']['success_stories']['Row'];
 type Match = Database['public']['Tables']['matches']['Row'] & {
-  opportunities: Database['public']['Tables']['opportunities']['Row'] & {
-    profiles: Database['public']['Tables']['profiles']['Row'];
-  };
+  opportunities?: Pick<
+    Database['public']['Tables']['opportunities']['Row'],
+    'id' | 'title' | 'creator_id' | 'profiles'
+  >;
+  posts?: Pick<Database['public']['Tables']['posts']['Row'], 'id' | 'title'>;
+  profiles?: Pick<
+    Database['public']['Tables']['profiles']['Row'],
+    'company_name' | 'industry' | 'contact_person_name' | 'contact_person_phone' | 'email'
+  >;
 };
 
 export default function Dashboard() {
@@ -93,10 +100,25 @@ export default function Dashboard() {
           matchesQuery = supabase
             .from('matches')
             .select(`
-              *,
+              id,
+              opportunity_id,
+              status,
+              created_at,
+              updated_at,
+              meeting_scheduled_at,
+              meeting_link,
+              notes,
               opportunities:opportunity_id (
-                *,
-                profiles:creator_id (*)
+                id,
+                title,
+                creator_id,
+                profiles:creator_id (
+                  company_name,
+                  industry,
+                  contact_person_name,
+                  contact_person_phone,
+                  email
+                )
               )
             `)
             .eq('brand_id', profile.id)
@@ -114,9 +136,25 @@ export default function Dashboard() {
             matchesQuery = supabase
               .from('matches')
               .select(`
-                *,
-                profiles:brand_id (*),
-                opportunities:opportunity_id (*)
+                id,
+                opportunity_id,
+                status,
+                created_at,
+                updated_at,
+                meeting_scheduled_at,
+                meeting_link,
+                notes,
+                profiles:brand_id (
+                  company_name,
+                  industry,
+                  contact_person_name,
+                  contact_person_phone,
+                  email
+                ),
+                opportunities:opportunity_id (
+                  id,
+                  title
+                )
               `)
               .in('opportunity_id', oppIds)
               .in('status', ['accepted', 'completed']);
@@ -134,9 +172,25 @@ export default function Dashboard() {
             matchesQuery = supabase
               .from('matches')
               .select(`
-                *,
-                profiles:brand_id (*),
-                posts:post_id (*)
+                id,
+                post_id,
+                status,
+                created_at,
+                updated_at,
+                meeting_scheduled_at,
+                meeting_link,
+                notes,
+                profiles:brand_id (
+                  company_name,
+                  industry,
+                  contact_person_name,
+                  contact_person_phone,
+                  email
+                ),
+                posts:post_id (
+                  id,
+                  title
+                )
               `)
               .in('post_id', postIds)
               .in('status', ['accepted', 'completed']);
@@ -146,13 +200,98 @@ export default function Dashboard() {
         if (matchesQuery) {
           const { data: matchesData, error: matchesError } = await matchesQuery;
           if (matchesError) throw matchesError;
-          setMeetings(matchesData || []);
+
+          // Log raw response to verify fields
+
+          // Sanitize match data to ensure only required profile fields are included
+          const sanitizedData = matchesData.map(match => ({
+            ...match,
+            profiles: match.profiles
+              ? {
+                  company_name: match.profiles.company_name,
+                  industry: match.profiles.industry,
+                  contact_person_name: match.profiles.contact_person_name,
+                  contact_person_phone: match.profiles.contact_person_phone,
+                  email: match.profiles.email,
+                }
+              : null,
+            opportunities: match.opportunities
+              ? {
+                  id: match.opportunities.id,
+                  title: match.opportunities.title,
+                  creator_id: match.opportunities.creator_id,
+                  profiles: match.opportunities.profiles
+                    ? {
+                        company_name: match.opportunities.profiles.company_name,
+                        industry: match.opportunities.profiles.industry,
+                        contact_person_name: match.opportunities.profiles.contact_person_name,
+                        contact_person_phone: match.opportunities.profiles.contact_person_phone,
+                        email: match.opportunities.profiles.email,
+                      }
+                    : null,
+                }
+              : null,
+            posts: match.posts
+              ? {
+                  id: match.posts.id,
+                  title: match.posts.title,
+                }
+              : null,
+          }));
+
+          // Validate response for unexpected fields
+          sanitizedData.forEach(match => {
+            if (match.profiles) {
+              const profileKeys = Object.keys(match.profiles);
+              const expectedKeys = [
+                'company_name',
+                'industry',
+                'contact_person_name',
+                'contact_person_phone',
+                'email',
+              ];
+              const unexpectedKeys = profileKeys.filter(key => !expectedKeys.includes(key));
+              if (unexpectedKeys.length > 0) {
+                console.error(
+                  `Data leak detected! Unexpected profile fields for match ${match.id}:`,
+                  unexpectedKeys.join(', ')
+                );
+                toast.error('Unexpected profile data detected. Please contact support.', {
+                  id: 'data_leak_warning',
+                });
+              }
+            }
+            if (match.opportunities?.profiles) {
+              const oppProfileKeys = Object.keys(match.opportunities.profiles);
+              const expectedKeys = [
+                'company_name',
+                'industry',
+                'contact_person_name',
+                'contact_person_phone',
+                'email',
+              ];
+              const unexpectedKeys = oppProfileKeys.filter(key => !expectedKeys.includes(key));
+              if (unexpectedKeys.length > 0) {
+                console.error(
+                  `Data leak detected! Unexpected opportunity profile fields for match ${match.id}:`,
+                  unexpectedKeys.join(', ')
+                );
+                toast.error('Unexpected profile data detected. Please contact support.', {
+                  id: 'data_leak_warning',
+                });
+              }
+            }
+          });
+
+          setMeetings(sanitizedData as Match[]);
         }
       }
       
       setIsLoading(false);
     } catch (error) {
+      console.error('Error fetching user data:', error);
       setIsLoading(false);
+      toast.error('Failed to load dashboard data.');
     }
   };
 
@@ -161,6 +300,8 @@ export default function Dashboard() {
       await signOut();
       navigate('/');
     } catch (error) {
+      console.error('Error signing out:', error);
+      toast.error('Failed to sign out.');
     }
   };
 
