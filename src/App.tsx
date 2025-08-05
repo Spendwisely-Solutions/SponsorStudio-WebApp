@@ -48,30 +48,30 @@ function App() {
         </Router>
         <Toaster
           position="bottom-center"
-          toastOptions={{
-            duration: 4000,
-            style: {
-              background: '#f0faf5',
-              color: '#047857',
-              maxWidth: '500px',
-              padding: '16px',
-              borderRadius: '8px',
-            },
-            success: {
-              duration: 3000,
-              iconTheme: {
-                primary: '#4ade80',
-                secondary: '#fff',
-              },
-            },
-            error: {
-              duration: 4000,
-              iconTheme: {
-                primary: '#ef4444',
-                secondary: '#fff',
-              },
-            },
-          }}
+          // toastOptions={{
+          //   duration: 4000,
+          //   style: {
+          //     background: '#f0faf5',
+          //     color: '#047857',
+          //     maxWidth: '500px',
+          //     padding: '16px',
+          //     borderRadius: '8px',
+          //   },
+          //   success: {
+          //     duration: 3000,
+          //     iconTheme: {
+          //       primary: '#4ade80',
+          //       secondary: '#fff',
+          //     },
+          //   },
+          //   error: {
+          //     duration: 4000,
+          //     iconTheme: {
+          //       primary: '#ef4444',
+          //       secondary: '#fff',
+          //     },
+          //   },
+          // }}
         />
       </ModalProvider>
     </AuthProvider>

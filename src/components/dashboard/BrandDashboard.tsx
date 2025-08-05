@@ -15,7 +15,7 @@ import MatchesSection from './BrandDashboard/MatchesSection';
 import NoResultsCard from './BrandDashboard/NoResultsCard';
 import OpportunityCard from './BrandDashboard/OpportunityCard';
 import InfluencerPostCard from './BrandDashboard/InfluencerPostCard';
-import CreditBar from './BrandDashboard/CreditBar'; // Import the new CreditBar component
+import CreditBar from './BrandDashboard/CreditBar';
 import type { Opportunity, Post, Category, Match } from './BrandDashboard/types';
 import { useLocation } from 'react-router-dom';
 
@@ -236,7 +236,14 @@ export default function BrandDashboard({ onUpdateProfile }: BrandDashboardProps)
         profiles:creator_id (company_name)
       `)
       .eq('status', 'active')
-      .eq('verification_status', 'approved')
+      .eq('verification_status', 'approved');
+
+    // Filter out opportunities with start_date less than or equal to current date + 1 day
+    const currentDate = new Date();
+    const minStartDate = new Date(currentDate);
+    minStartDate.setDate(currentDate.getDate() + 2); // Minimum start date is 2 days from now
+    const formattedMinStartDate = minStartDate.toISOString().split('T')[0]; // Format as YYYY-MM-DD
+    query = query.gte('start_date', formattedMinStartDate);
 
     if (user) {
       const { data: profileData, error: profileError } = await supabase

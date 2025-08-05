@@ -1,9 +1,10 @@
-import React, { memo, useState, useEffect, useMemo, useRef } from 'react';
+import React, { memo, useState, useEffect, useMemo, useRef, ComponentType, ReactNode } from 'react';
 import { Calendar, DollarSign, MapPin, FileText, Heart, X, Volume2, VolumeX, Link as LinkIcon, Tag, User, Users, Unlock } from 'lucide-react';
 import { motion, useMotionValue, useTransform } from 'framer-motion';
 import toast from 'react-hot-toast';
 import { supabase } from '../../../lib/supabase';
 import { useAuth } from '../../../contexts/AuthContext';
+import { formatDate } from '../../../utils/formatDate';
 
 interface Opportunity {
   id: string;
@@ -38,6 +39,26 @@ interface OpportunityCardProps {
   setShowFullDetails: (value: boolean) => void;
   credits: number;
   deductCredits: (creditsToDeduct: number) => Promise<void>;
+}
+
+// Error Boundary Component
+class ErrorBoundary extends React.Component<{ children: ReactNode }, { hasError: boolean }> {
+  state = { hasError: false };
+
+  static getDerivedStateFromError() {
+    return { hasError: true };
+  }
+
+  componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
+    console.error('ErrorBoundary caught error in OpportunityCard:', error, errorInfo);
+  }
+
+  render() {
+    if (this.state.hasError) {
+      return <div className="text-red-600">Error rendering OpportunityCard. Check console for details.</div>;
+    }
+    return this.props.children;
+  }
 }
 
 const useSwipeAnimation = (
@@ -148,8 +169,13 @@ const useImpressionTracking = (opportunityId: string, userId: string | null) => 
   return cardRef;
 };
 
-const OpportunityCard: React.FC<OpportunityCardProps> = memo(
+const OpportunityCard: ComponentType<OpportunityCardProps> = memo(
   ({ opportunity, onLike, onReject, swipeAction, onAnimationComplete, showFullDetails, credits, deductCredits }) => {
+    // Validate opportunity
+    if (!opportunity) {
+      return <div className="text-red-600">Error: Opportunity data is missing</div>;
+    }
+
     const { user } = useAuth();
     const [isSwipePending, setIsSwipePending] = useState(false);
     const { x, rotate, likeOpacity, dislikeOpacity, handleDragEnd } = useSwipeAnimation(
@@ -591,181 +617,180 @@ const OpportunityCard: React.FC<OpportunityCardProps> = memo(
       },
     ].filter(card => card.value !== 'N/A' || card.label === 'Brochure');
 
-    const formattedDate = opportunity.start_date
-      ? opportunity.end_date &&
-        new Date(opportunity.start_date).toDateString() === new Date(opportunity.end_date).toDateString()
-        ? new Date(opportunity.start_date).toLocaleDateString()
-        : `${new Date(opportunity.start_date).toLocaleDateString()}${
-            opportunity.end_date ? ` - ${new Date(opportunity.end_date).toLocaleDateString()}` : ''
-          }`
-      : 'N/A';
+    // Format dates for display
+    const startDateFormatted = formatDate(opportunity.start_date);
+    const endDateFormatted = opportunity.end_date ? formatDate(opportunity.end_date) : null;
+    const isSameDate = startDateFormatted === endDateFormatted;
+    const dateDisplay = isSameDate ? startDateFormatted : `${startDateFormatted}${endDateFormatted ? ` - ${endDateFormatted}` : ''}`;
 
     return (
-      <div className="flex flex-col pb-6" ref={cardRef}>
-        <motion.div
-          key={opportunity.id}
-          className="snap-center flex-shrink-0 w-full h-[calc(100vh-150px)] sm:h-[calc(100vh-100px)] flex flex-col bg-white rounded-lg overflow-hidden relative"
-          drag={isSwipePending ? false : 'x'}
-          dragConstraints={{ left: -300, right: 300 }}
-          dragElastic={0.2}
-          dragMomentum={false}
-          onDragEnd={handleDragEnd}
-          initial={{
-            scale: 0.95,
-            opacity: 0,
-          }}
-          animate={{
-            scale: 1,
-            opacity: 1,
-            transition: {
+      <ErrorBoundary>
+        <div className="flex flex-col pb-6" ref={cardRef}>
+          <motion.div
+            key={opportunity.id}
+            className="snap-center flex-shrink-0 w-full h-[calc(100vh-150px)] sm:h-[calc(100vh-100px)] flex flex-col bg-white rounded-lg overflow-hidden relative"
+            drag={isSwipePending ? false : 'x'}
+            dragConstraints={{ left: -300, right: 300 }}
+            dragElastic={0.2}
+            dragMomentum={false}
+            onDragEnd={handleDragEnd}
+            initial={{
+              scale: 0.95,
+              opacity: 0,
+            }}
+            animate={{
+              scale: 1,
+              opacity: 1,
+              transition: {
+                type: 'spring',
+                stiffness: 200,
+                damping: 25,
+                mass: 0.8,
+              },
+            }}
+            exit={{
+              x: swipeAction === 'like' ? '100%' : swipeAction === 'dislike' ? '-100%' : 0,
+              opacity: 0,
+              transition: {
+                duration: 0.3,
+                ease: 'easeOut',
+              },
+            }}
+            style={{
+              x,
+              rotate,
+              willChange: 'transform',
+              touchAction: 'pan-y',
+            }}
+            transition={{
               type: 'spring',
               stiffness: 200,
               damping: 25,
               mass: 0.8,
-            },
-          }}
-          exit={{
-            x: swipeAction === 'like' ? '100%' : swipeAction === 'dislike' ? '-100%' : 0,
-            opacity: 0,
-            transition: {
-              duration: 0.3,
-              ease: 'easeOut',
-            },
-          }}
-          style={{
-            x,
-            rotate,
-            willChange: 'transform',
-            touchAction: 'pan-y',
-          }}
-          transition={{
-            type: 'spring',
-            stiffness: 200,
-            damping: 25,
-            mass: 0.8,
-          }}
-          onAnimationComplete={() => {
-            if (swipeAction && !isSwipePending) {
-              onAnimationComplete(opportunity.id);
-            }
-          }}
-        >
-          {mediaContent}
-          <motion.div
-            style={{
-              opacity: likeOpacity,
-              pointerEvents: 'none',
             }}
-            className="absolute inset-0 flex items-center justify-center bg-green-600/90"
-          >
-            <div className="text-4xl sm:text-6xl font-bold text-white border-4 border-gray-200 rounded-full px-6 py-3 shadow-lg transform rotate-12">
-              LIKE
-            </div>
-          </motion.div>
-          <motion.div
-            style={{
-              opacity: dislikeOpacity,
-              pointerEvents: 'none',
+            onAnimationComplete={() => {
+              if (swipeAction && !isSwipePending) {
+                onAnimationComplete(opportunity.id);
+              }
             }}
-            className="absolute inset-0 flex items-center justify-center bg-red-600/90"
           >
-            <div className="text-4xl sm:text-6xl font-bold text-white border-4 border-gray-200 rounded-full px-6 py-3 shadow-lg -rotate-12">
-              DISLIKE
-            </div>
-          </motion.div>
-          <div className="absolute inset-0 bg-gradient-to-t from-gray-900/70 via-gray-800/30 to-transparent pointerEvents='none'" />
-          <div className="absolute bottom-0 left-0 right-0 p-4 sm:p-6 text-white flex justify-between items-start gap-4">
-            <div className="flex-1 flex flex-col space-y-1">
-              <h2 className="text-xl sm:text-2xl font-bold">{opportunity.title}</h2>
-              <div className="flex items-center text-sm sm:text-base">
-                <MapPin className="w-4 h-4 sm:w-5 sm:h-5 mr-1 text-white" />
-                {opportunity.location || 'N/A'}
-              </div>
-            </div>
-            <div className="flex-1 flex flex-col space-y-1 items-end">
-              <div className="flex items-center text-sm sm:text-base">
-                <Users className="w-4 h-4 sm:w-5 sm:h-5 mr-1 text-white" />
-                {opportunity.reach || 'N/A'}
-              </div>
-              <div className="flex items-center text-sm sm:text-base">
-                <Calendar className="w-4 h-4 sm:w-5 sm:h-5 mr-1 text-white" />
-                {formattedDate}
-              </div>
-            </div>
-          </div>
-          <div className="absolute top-1/2 right-4 sm:right-6 transform -translate-y-1/2 flex flex-col gap-2">
-            <button
-              onClick={() => handleButtonAction('like')}
-              className={`p-2 rounded-full transition-colors duration-200 ${
-                credits < 50 || isSwipePending
-                  ? 'bg-gray-400/80 cursor-not-allowed'
-                  : 'bg-green-600/80 hover:bg-green-700/90'
-              }`}
-              aria-label="Like"
-              disabled={credits < 50 || isSwipePending}
+            {mediaContent}
+            <motion.div
+              style={{
+                opacity: likeOpacity,
+                pointerEvents: 'none',
+              }}
+              className="absolute inset-0 flex items-center justify-center bg-green-600/90"
             >
-              <Heart className="w-5 h-5 sm:w-6 sm:h-6 text-white" fill="currentColor" />
-            </button>
-            <button
-              onClick={() => handleButtonAction('dislike')}
-              className={`p-2 rounded-full transition-colors duration-200 ${
-                isSwipePending ? 'bg-gray-400/80 cursor-not-allowed' : 'bg-red-600/80 hover:bg-red-700/90'
-              }`}
-              aria-label="Reject"
-              disabled={isSwipePending}
+              <div className="text-4xl sm:text-6xl font-bold text-white border-4 border-gray-200 rounded-full px-6 py-3 shadow-lg transform rotate-12">
+                LIKE
+              </div>
+            </motion.div>
+            <motion.div
+              style={{
+                opacity: dislikeOpacity,
+                pointerEvents: 'none',
+              }}
+              className="absolute inset-0 flex items-center justify-center bg-red-600/90"
             >
-              <X className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
-            </button>
-          </div>
-        </motion.div>
-        {thumbnailGallery}
-        <div className="bg-gray-100 py-4 sm:py-6">
-          <div className="grid grid-cols-1">
-            <div className="bg-white rounded-lg p-4 shadow-md">
-              <p className="text-sm sm:text-base text-gray-600">Description</p>
-              <p className="text-base sm:text-lg text-gray-900 text-justify">
-                {opportunity.description || 'Not specified'}
-              </p>
-            </div>
-          </div>
-        </div>
-        <div className="bg-gray-100">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {opportunity.requirements && opportunity.requirements.trim() !== '' && (
-              <div className="bg-white rounded-lg p-3 shadow-md">
-                <p className="text-xs sm:text-sm text-gray-600">Requirements</p>
-                <p className="text-base sm:text-lg text-gray-900 text-justify">
-                  {opportunity.requirements}
-                </p>
+              <div className="text-4xl sm:text-6xl font-bold text-white border-4 border-gray-200 rounded-full px-6 py-3 shadow-lg -rotate-12">
+                DISLIKE
               </div>
-            )}
-            {opportunity.benefits && opportunity.benefits.trim() !== '' && (
-              <div className="bg-white rounded-lg p-3 shadow-md">
-                <p className="text-xs sm:text-sm text-gray-600">Benefits</p>
-                <p className="text-base sm:text-lg text-gray-900 text-justify">
-                  {opportunity.benefits}
-                </p>
-              </div>
-            )}
-          </div>
-        </div>
-        <div className="bg-gray-100 py-4 sm:py-6">
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-            {detailCards.map((card, index) => (
-              <div
-                key={index}
-                className="bg-white rounded-lg p-3 flex items-center space-x-3 shadow-md"
-              >
-                {card.icon}
-                <div>
-                  <p className="text-xs sm:text-sm text-gray-600">{card.label}</p>
-                  <p className="text-sm sm:text-base text-gray-900">{card.value}</p>
+            </motion.div>
+            <div className="absolute inset-0 bg-gradient-to-t from-gray-900/70 via-gray-800/30 to-transparent pointerEvents='none'" />
+            <div className="absolute bottom-0 left-0 right-0 p-4 sm:p-6 text-white flex justify-between items-start gap-4">
+              <div className="flex-1 flex flex-col space-y-1">
+                <h2 className="text-xl sm:text-2xl font-bold">{opportunity.title}</h2>
+                <div className="flex items-center text-sm sm:text-base">
+                  <MapPin className="w-4 h-4 sm:w-5 sm:h-5 mr-1 text-white" />
+                  {opportunity.location || 'N/A'}
                 </div>
               </div>
-            ))}
+              <div className="flex-1 flex flex-col space-y-1 items-end">
+                <div className="flex items-center text-sm sm:text-base">
+                  <Users className="w-4 h-4 sm:w-5 sm:h-5 mr-1 text-white" />
+                  {opportunity.reach || 'N/A'}
+                </div>
+                <div className="flex items-center text-sm sm:text-base">
+                  <Calendar className="w-4 h-4 sm:w-5 sm:h-5 mr-1 text-white" />
+                  {dateDisplay}
+                </div>
+              </div>
+            </div>
+            <div className="absolute top-1/2 right-4 sm:right-6 transform -translate-y-1/2 flex flex-col gap-2">
+              <button
+                onClick={() => handleButtonAction('like')}
+                className={`p-2 rounded-full transition-colors duration-200 ${
+                  credits < 50 || isSwipePending
+                    ? 'bg-gray-400/80 cursor-not-allowed'
+                    : 'bg-green-600/80 hover:bg-green-700/90'
+                }`}
+                aria-label="Like"
+                disabled={credits < 50 || isSwipePending}
+              >
+                <Heart className="w-5 h-5 sm:w-6 sm:h-6 text-white" fill="currentColor" />
+              </button>
+              <button
+                onClick={() => handleButtonAction('dislike')}
+                className={`p-2 rounded-full transition-colors duration-200 ${
+                  isSwipePending ? 'bg-gray-400/80 cursor-not-allowed' : 'bg-red-600/80 hover:bg-red-700/90'
+                }`}
+                aria-label="Reject"
+                disabled={isSwipePending}
+              >
+                <X className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
+              </button>
+            </div>
+          </motion.div>
+          {thumbnailGallery}
+          <div className="bg-gray-100 py-4 sm:py-6">
+            <div className="grid grid-cols-1">
+              <div className="bg-white rounded-lg p-4 shadow-md">
+                <p className="text-sm sm:text-base text-gray-600">Description</p>
+                <p className="text-base sm:text-lg text-gray-900 text-justify">
+                  {opportunity.description || 'Not specified'}
+                </p>
+              </div>
+            </div>
+          </div>
+          <div className="bg-gray-100">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {opportunity.requirements && opportunity.requirements.trim() !== '' && (
+                <div className="bg-white rounded-lg p-3 shadow-md">
+                  <p className="text-xs sm:text-sm text-gray-600">Requirements</p>
+                  <p className="text-base sm:text-lg text-gray-900 text-justify">
+                    {opportunity.requirements}
+                  </p>
+                </div>
+              )}
+              {opportunity.benefits && opportunity.benefits.trim() !== '' && (
+                <div className="bg-white rounded-lg p-3 shadow-md">
+                  <p className="text-xs sm:text-sm text-gray-600">Benefits</p>
+                  <p className="text-base sm:text-lg text-gray-900 text-justify">
+                    {opportunity.benefits}
+                  </p>
+                </div>
+              )}
+            </div>
+          </div>
+          <div className="bg-gray-100 py-4 sm:py-6">
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+              {detailCards.map((card, index) => (
+                <div
+                  key={index}
+                  className="bg-white rounded-lg p-3 flex items-center space-x-3 shadow-md"
+                >
+                  {card.icon}
+                  <div>
+                    <p className="text-xs sm:text-sm text-gray-600">{card.label}</p>
+                    <p className="text-sm sm:text-base text-gray-900">{card.value}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
-      </div>
+      </ErrorBoundary>
     );
   }
 );

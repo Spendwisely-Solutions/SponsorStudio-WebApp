@@ -25,7 +25,7 @@ const supabase = createClient(supabaseUrl, supabaseAnonKey, {
 });
 
 function ManageClientsLogos() {
-  type Logo = { id: string; name: string; logo_url: string; created_at: string };
+  type Logo = { id: string; name: string; logo_url: string; created_at: string; row: number };
   const [logos, setLogos] = useState<Logo[]>([]);
   const [search, setSearch] = useState('');
   const [showUploadModal, setShowUploadModal] = useState(false);
@@ -34,9 +34,11 @@ function ManageClientsLogos() {
   const [deleteLogoUrl, setDeleteLogoUrl] = useState<string>('');
   const [loading, setLoading] = useState(false);
   const [name, setName] = useState('');
+  const [row, setRow] = useState<1 | 2>(1);
   const [file, setFile] = useState<File | null>(null);
   const [editId, setEditId] = useState<string | null>(null);
   const [editName, setEditName] = useState('');
+  const [editRow, setEditRow] = useState<1 | 2>(1);
   const [editLogoUrl, setEditLogoUrl] = useState('');
   const [uploading, setUploading] = useState(false);
   const [compressionInfo, setCompressionInfo] = useState<{ originalSize?: number; compressedSize?: number; previewUrl?: string } | null>(null);
@@ -56,7 +58,6 @@ function ManageClientsLogos() {
     if (!name || !file) return;
     setUploading(true);
     try {
-      // Compress image before upload
       const compressedFile = await compressMedia(file, { maxSizeMB: 0.15, maxWidthOrHeight: 400 });
       setCompressionInfo({
         originalSize: file.size,
@@ -72,9 +73,10 @@ function ManageClientsLogos() {
       }
       const { data: urlData } = supabase.storage.from('client-logos').getPublicUrl(fileName);
       const logoUrl = urlData.publicUrl;
-      const { error: insertError } = await supabase.from('client_logos').insert({ name, logo_url: logoUrl });
+      const { error: insertError } = await supabase.from('client_logos').insert({ name, logo_url: logoUrl, row });
       if (insertError) alert('Insert failed');
       setName('');
+      setRow(1);
       setFile(null);
       setUploading(false);
       setShowUploadModal(false);
@@ -100,6 +102,7 @@ function ManageClientsLogos() {
   function startEditLogo(logo: Logo) {
     setEditId(logo.id);
     setEditName(logo.name);
+    setEditRow(logo.row as 1 | 2);
     setEditLogoUrl(logo.logo_url);
     setShowUploadModal(true);
   }
@@ -108,7 +111,6 @@ function ManageClientsLogos() {
     let newLogoUrl = editLogoUrl;
     if (file) {
       try {
-        // Compress image before upload
         const compressedFile = await compressMedia(file, { maxSizeMB: 0.15, maxWidthOrHeight: 400 });
         setCompressionInfo({
           originalSize: file.size,
@@ -125,9 +127,10 @@ function ManageClientsLogos() {
         alert('Compression failed');
       }
     }
-    await supabase.from('client_logos').update({ name: editName, logo_url: newLogoUrl }).eq('id', editId);
+    await supabase.from('client_logos').update({ name: editName, logo_url: newLogoUrl, row: editRow }).eq('id', editId);
     setEditId(null);
     setEditName('');
+    setEditRow(1);
     setEditLogoUrl('');
     setFile(null);
     setShowUploadModal(false);
@@ -141,7 +144,7 @@ function ManageClientsLogos() {
         <h1 className="text-3xl font-bold text-gray-900">Manage Client Logos</h1>
         <button
           className="bg-gradient-to-r from-blue-600 to-blue-500 text-white px-6 py-2 rounded-xl shadow hover:scale-105 hover:from-blue-700 hover:to-blue-600 transition-all font-semibold"
-          onClick={() => { setShowUploadModal(true); setEditId(null); setName(''); setFile(null); setEditName(''); setEditLogoUrl(''); }}
+          onClick={() => { setShowUploadModal(true); setEditId(null); setName(''); setRow(1); setFile(null); setEditName(''); setEditRow(1); setEditLogoUrl(''); }}
         >
           <span className="inline-block align-middle mr-2">+</span> Add New Logo
         </button>
@@ -173,6 +176,7 @@ function ManageClientsLogos() {
                   <img src={logo.logo_url} alt={logo.name} className="h-16 w-16 object-contain" />
                 </div>
                 <div className="font-bold text-lg text-gray-900 mb-1 text-center truncate w-full" title={logo.name}>{logo.name}</div>
+                <div className="text-sm text-gray-500 mb-2">Row {logo.row}</div>
                 <div className="flex gap-3 mt-4">
                   <button
                     className="px-4 py-1 rounded-lg bg-blue-100 text-blue-700 font-semibold hover:bg-blue-200 transition-all shadow"
@@ -200,10 +204,9 @@ function ManageClientsLogos() {
         )}
       </div>
 
-      {/* Upload/Edit Modal */}
       <Modal
         isOpen={showUploadModal}
-        onClose={() => { setShowUploadModal(false); setEditId(null); setEditName(''); setEditLogoUrl(''); setFile(null); setName(''); setCompressionInfo(null); }}
+        onClose={() => { setShowUploadModal(false); setEditId(null); setEditName(''); setEditRow(1); setEditLogoUrl(''); setFile(null); setName(''); setRow(1); setCompressionInfo(null); }}
         onConfirm={editId ? handleEditLogo : handleAddLogo}
         title={editId ? 'Update Logo' : 'Add New Logo'}
         message={
@@ -216,6 +219,14 @@ function ManageClientsLogos() {
               className="border p-2 rounded w-full"
               required
             />
+            <select
+              value={editId ? editRow : row}
+              onChange={e => (editId ? setEditRow(Number(e.target.value) as 1 | 2) : setRow(Number(e.target.value) as 1 | 2))}
+              className="border p-2 rounded w-full"
+            >
+              <option value={1}>Row 1</option>
+              <option value={2}>Row 2</option>
+            </select>
             <input
               type="file"
               accept="image/*"
@@ -268,7 +279,6 @@ function ManageClientsLogos() {
         cancelButtonClass="border-gray-300 text-gray-700 hover:bg-gray-50"
       />
 
-      {/* Delete Confirmation Modal */}
       <Modal
         isOpen={showDeleteModal}
         onClose={() => { setShowDeleteModal(false); setDeleteLogoId(null); setDeleteLogoUrl(''); }}
@@ -284,4 +294,4 @@ function ManageClientsLogos() {
   );
 }
 
-export default ManageClientsLogos
+export default ManageClientsLogos;

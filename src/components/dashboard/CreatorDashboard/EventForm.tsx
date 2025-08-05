@@ -16,6 +16,7 @@ import { motion } from 'framer-motion';
 import type { Database } from '../../../lib/database.types';
 import MouSignComponent from '../../Mou/MouSignComponent';
 import { toast } from 'react-hot-toast';
+import compressMedia from '../../../utils/compressMedia'; // Import the compressMedia function
 
 type Opportunity = Database['public']['Tables']['opportunities']['Row'];
 type Category = Database['public']['Tables']['categories']['Row'];
@@ -86,7 +87,11 @@ export default function EventForm({
   const brochureInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-  }, [formData, isMOUAgreed, isMOUSignModalOpen, mediaPreviews]);
+    // Cleanup object URLs on component unmount
+    return () => {
+      mediaPreviews.forEach((preview) => URL.revokeObjectURL(preview));
+    };
+  }, [mediaPreviews]);
 
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
@@ -137,19 +142,42 @@ export default function EventForm({
     }
   };
 
-  const handleFileChange = (
+  const handleFileChange = async (
     e: React.ChangeEvent<HTMLInputElement>,
     field: 'media_files' | 'sponsorship_brochure_file'
   ) => {
     if (e.target.files) {
       const files = Array.from(e.target.files);
       if (field === 'media_files') {
-        setFormData((prev) => ({
-          ...prev,
-          media_files: [...(prev.media_files || []), ...files],
-        }));
-        const previews = files.map((file) => URL.createObjectURL(file));
-        setMediaPreviews([...mediaPreviews, ...previews]);
+        const processedFiles: File[] = [];
+        const previews: string[] = [];
+        
+        for (const file of files) {
+          try {
+            if (file.type.startsWith('image/')) {
+              const compressedFile = await compressMedia(file, {
+                maxSizeMB: 1,
+                maxWidthOrHeight: 1920,
+              });
+              processedFiles.push(compressedFile);
+              previews.push(URL.createObjectURL(compressedFile));
+            } else if (file.type.startsWith('video/')) {
+              processedFiles.push(file);
+              previews.push(URL.createObjectURL(file));
+            }
+          } catch (error) {
+            console.error('Error compressing file:', error);
+            toast.error(`Failed to process ${file.name}: ${error instanceof Error ? error.message : 'Unknown error'}`);
+          }
+        }
+        
+        if (processedFiles.length > 0) {
+          setFormData((prev) => ({
+            ...prev,
+            media_files: [...(prev.media_files || []), ...processedFiles],
+          }));
+          setMediaPreviews([...mediaPreviews, ...previews]);
+        }
       } else {
         setFormData((prev) => ({
           ...prev,
@@ -176,7 +204,7 @@ export default function EventForm({
     e.stopPropagation();
   };
 
-  const handleDrop = (e: React.DragEvent, field: 'media_files' | 'sponsorship_brochure_file') => {
+  const handleDrop = async (e: React.DragEvent, field: 'media_files' | 'sponsorship_brochure_file') => {
     e.preventDefault();
     e.stopPropagation();
     setDragActive(false);
@@ -187,12 +215,33 @@ export default function EventForm({
         const mediaFiles = files.filter(file => 
           file.type.startsWith('image/') || file.type.startsWith('video/')
         );
-        if (mediaFiles.length > 0) {
+        const processedFiles: File[] = [];
+        const previews: string[] = [];
+
+        for (const file of mediaFiles) {
+          try {
+            if (file.type.startsWith('image/')) {
+              const compressedFile = await compressMedia(file, {
+                maxSizeMB: 1,
+                maxWidthOrHeight: 1920,
+              });
+              processedFiles.push(compressedFile);
+              previews.push(URL.createObjectURL(compressedFile));
+            } else if (file.type.startsWith('video/')) {
+              processedFiles.push(file);
+              previews.push(URL.createObjectURL(file));
+            }
+          } catch (error) {
+            console.error('Error compressing file:', error);
+            toast.error(`Failed to process ${file.name}: ${error instanceof Error ? error.message : 'Unknown error'}`);
+          }
+        }
+
+        if (processedFiles.length > 0) {
           setFormData((prev) => ({
             ...prev,
-            media_files: [...(prev.media_files || []), ...mediaFiles],
+            media_files: [...(prev.media_files || []), ...processedFiles],
           }));
-          const previews = mediaFiles.map((file) => URL.createObjectURL(file));
           setMediaPreviews([...mediaPreviews, ...previews]);
         }
       } else {
