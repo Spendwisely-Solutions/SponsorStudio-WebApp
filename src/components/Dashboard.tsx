@@ -441,7 +441,7 @@ export default function Dashboard() {
                 <span>Dashboard</span>
               </button>
             </li>
-            <li>
+            <li className='hidden'>
               <button
                 onClick={() => setActiveTab('messages')}
                 className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg ${
@@ -491,7 +491,7 @@ export default function Dashboard() {
               </li>
             )}
             {(isCreator || isBrand) && (
-              <li>
+              <li className='hidden'>
                 <button
                   onClick={() => setActiveTab('messages')}
                   className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg ${
@@ -577,7 +577,7 @@ export default function Dashboard() {
                 <span>Dashboard</span>
               </button>
             </li>
-            <li>
+            <li className='hidden'>
               <button
                 onClick={() => { setActiveTab('messages'); setMobileSidebarOpen(false); }}
                 className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg ${
@@ -614,7 +614,7 @@ export default function Dashboard() {
               </li>
             )}
             {isBrand || isCreator || isInfluencer && (
-              <li>
+              <li className='hidden'>
                 <button
                   onClick={() => { setActiveTab('messages'); setMobileSidebarOpen(false); }}
                   className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg ${
@@ -639,6 +639,17 @@ export default function Dashboard() {
                 </button>
               </li>
             )}
+            <li className='hidden'>
+              <button
+                onClick={() => { setActiveTab('messages'); setMobileSidebarOpen(false); }}
+                className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg ${
+                  activeTab === 'profile' ? 'bg-blue-50 text-[#2B4B9B]' : 'text-gray-700 hover:bg-gray-100'
+                }`}
+              >
+                <User className="w-5 h-5" />
+                <span>Messages</span>
+              </button>
+            </li>
             <li>
               <button
                 onClick={() => { setActiveTab('profile'); setMobileSidebarOpen(false); }}
