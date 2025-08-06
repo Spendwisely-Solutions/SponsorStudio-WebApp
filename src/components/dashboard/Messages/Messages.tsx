@@ -19,7 +19,7 @@ interface Match {
   creator_id: string;
   brand_name?: string;
   creator_name?: string;
-  title?: string; // Use title for event name
+  title?: string;
 }
 
 const ChatSystem: React.FC = () => {
@@ -32,23 +32,20 @@ const ChatSystem: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
   const [chatUsers, setChatUsers] = useState<Set<string>>(new Set());
-  const adminId = '172a05a3-5b62-4565-8ef8-fa6277af4022'; // Replace with actual admin UUID
+  const adminId = '172a05a3-5b62-4565-8ef8-fa6277af4022';
 
   // Fetch current user ID from Supabase Auth
   useEffect(() => {
     const fetchUser = async () => {
       const { data: { user }, error } = await supabase.auth.getUser();
       if (error) {
-        console.error('Error fetching user:', error);
         setError('Failed to authenticate user');
         setLoading(false);
         return;
       }
       if (user) {
-        console.log('Authenticated user:', user.id);
         setCurrentUserId(user.id);
       } else {
-        console.error('No authenticated user found');
         setError('Please log in to view matches');
         setLoading(false);
       }
@@ -56,14 +53,14 @@ const ChatSystem: React.FC = () => {
     fetchUser();
   }, []);
 
-  // Fetch matches when currentUserId is available
+  // Fetch matches and profile data when currentUserId is available
   useEffect(() => {
     if (!currentUserId) return;
 
     const fetchMatches = async () => {
       setLoading(true);
-      console.log('Fetching matches for user:', currentUserId);
       try {
+        // Fetch brand matches with brand and creator profile data
         const { data: brandMatches, error: brandError } = await supabase
           .from('matches')
           .select(`
@@ -71,18 +68,23 @@ const ChatSystem: React.FC = () => {
             brand_id,
             opportunity_id,
             status,
-            opportunities:opportunity_id (creator_id, title)
+            opportunities:opportunity_id (
+              creator_id,
+              title,
+              profiles:creator_id (company_name)
+            ),
+            profiles:brand_id (company_name)
           `)
           .eq('status', 'accepted')
           .eq('brand_id', currentUserId);
 
         if (brandError) {
-          console.error('Error fetching brand matches:', brandError);
           setError('Failed to load brand matches: ' + brandError.message);
           setLoading(false);
           return;
         }
 
+        // Fetch creator matches with brand and creator profile data
         const { data: creatorMatches, error: creatorError } = await supabase
           .from('matches')
           .select(`
@@ -90,20 +92,21 @@ const ChatSystem: React.FC = () => {
             brand_id,
             opportunity_id,
             status,
-            opportunities:opportunity_id (creator_id, title)
+            opportunities:opportunity_id (
+              creator_id,
+              title,
+              profiles:creator_id (company_name)
+            ),
+            profiles:brand_id (company_name)
           `)
           .eq('status', 'accepted')
           .eq('opportunities.creator_id', currentUserId);
 
         if (creatorError) {
-          console.error('Error fetching creator matches:', creatorError);
           setError('Failed to load creator matches: ' + creatorError.message);
           setLoading(false);
           return;
         }
-
-        console.log('Brand matches:', brandMatches);
-        console.log('Creator matches:', creatorMatches);
 
         const combinedMatches = [...(brandMatches || []), ...(creatorMatches || [])];
 
@@ -114,20 +117,18 @@ const ChatSystem: React.FC = () => {
             brand_id: match.brand_id,
             opportunity_id: match.opportunity_id,
             creator_id: match.opportunities.creator_id,
-            brand_name: `Brand_${match.brand_id.slice(0, 8)}`,
-            creator_name: `Creator_${match.opportunities.creator_id.slice(0, 8)}`,
-            title: match.opportunities.title || `Event_${match.opportunity_id.slice(0, 8)}`, // Fallback if title is missing
+            brand_name: match.profiles?.company_name || `Brand_${match.brand_id.slice(0, 8)}`,
+            creator_name: match.opportunities.profiles?.company_name || `Creator_${match.opportunities.creator_id.slice(0, 8)}`,
+            title: match.opportunities.title || `Event_${match.opportunity_id.slice(0, 8)}`,
           }))
           .filter((match, index, self) => 
             index === self.findIndex((m) => m.id === match.id)
           );
 
-        console.log('Formatted matches:', formattedMatches);
         setMatches(formattedMatches);
         setError(null);
         setLoading(false);
       } catch (err) {
-        console.error('Unexpected error in fetchMatches:', err);
         setError('Unexpected error while loading matches');
         setLoading(false);
       }
@@ -157,28 +158,24 @@ const ChatSystem: React.FC = () => {
         setChatUsers((prev) => {
           const match = matches.find((m) => m.id === selectedMatchId);
           if (!match) return prev;
-          const updated = new Set([match.brand_id, match.creator_id, adminId]);
+          const updated = new Set<string>([match.brand_id, match.creator_id, adminId]);
           updated.add(payload.sender_id);
-          console.log('Updated chatUsers after new message:', Array.from(updated));
           return updated;
         });
       })
       .on('presence', { event: 'sync' }, () => {
         const presenceState = chatChannel.presenceState();
         const activeUsers = Object.keys(presenceState);
-        console.log('Active users in channel:', activeUsers);
         setChatUsers((prev) => {
           const match = matches.find((m) => m.id === selectedMatchId);
           if (!match) return prev;
-          const updated = new Set([match.brand_id, match.creator_id, adminId]);
+          const updated = new Set<string>([match.brand_id, match.creator_id, adminId]);
           activeUsers.forEach((userId) => updated.add(userId));
-          console.log('Updated chatUsers after presence sync:', Array.from(updated));
           return updated;
         });
       })
       .subscribe((status: string) => {
         if (status === 'SUBSCRIBED') {
-          console.log('Subscribed to channel:', `private:${selectedMatchId}`);
           chatChannel.track({ user_id: currentUserId });
         }
       });
@@ -208,22 +205,18 @@ const ChatSystem: React.FC = () => {
         .order('created_at', { ascending: true });
 
       if (error) {
-        console.error('Error loading messages:', error);
         setError('Failed to load messages: ' + error.message);
         return;
       }
 
-      console.log('Loaded messages:', data);
       setMessages(data || []);
       const match = matches.find((m) => m.id === matchId);
       if (match) {
-        const users = new Set([match.brand_id, match.creator_id, adminId]);
+        const users = new Set<string>([match.brand_id, match.creator_id, adminId]);
         data.forEach((msg: Message) => users.add(msg.sender_id));
-        console.log('Updated chatUsers after loading messages:', Array.from(users));
         setChatUsers(users);
       }
     } catch (err) {
-      console.error('Unexpected error in loadMessages:', err);
       setError('Unexpected error while loading messages');
     }
   };
@@ -245,7 +238,6 @@ const ChatSystem: React.FC = () => {
     const { error: dbError } = await supabase.from('messages').insert([message]);
 
     if (dbError) {
-      console.error('Error saving message:', dbError);
       setError('Failed to send message: ' + dbError.message);
       return;
     }
@@ -260,9 +252,8 @@ const ChatSystem: React.FC = () => {
     setChatUsers((prev) => {
       const match = matches.find((m) => m.id === selectedMatchId);
       if (!match) return prev;
-      const updated = new Set([match.brand_id, match.creator_id, adminId]);
+      const updated = new Set<string>([match.brand_id, match.creator_id, adminId]);
       updated.add(currentUserId);
-      console.log('Updated chatUsers after sending message:', Array.from(updated));
       return updated;
     });
   };
@@ -274,10 +265,21 @@ const ChatSystem: React.FC = () => {
     if (currentUserId === adminId) {
       return `Event: ${match.title} with ${match.brand_name}`;
     } else if (currentUserId === match.brand_id) {
-      return `Event: ${match.title}`;
+      return `Event: ${match.title} with ${match.creator_name}`;
     } else {
       return `Event: ${match.title} with ${match.brand_name}`;
     }
+  };
+
+  // Get display name for messages
+  const getDisplayName = (senderId: string) => {
+    const match = matches.find((m) => m.id === selectedMatchId);
+    if (!match) return `User_${senderId.slice(0, 8)}`;
+    if (senderId === currentUserId) return 'You';
+    if (senderId === adminId) return 'Admin';
+    if (senderId === match.brand_id) return match.brand_name;
+    if (senderId === match.creator_id) return match.creator_name;
+    return `User_${senderId.slice(0, 8)}`;
   };
 
   if (!currentUserId) {
@@ -343,11 +345,7 @@ const ChatSystem: React.FC = () => {
                     }`}
                   >
                     <span className="block text-xs font-semibold mb-1">
-                      {message.sender_id === currentUserId
-                        ? 'You'
-                        : message.sender_id === adminId
-                        ? 'Admin'
-                        : `User_${message.sender_id.slice(0, 8)}`}
+                      {getDisplayName(message.sender_id)}
                     </span>
                     <p>{message.content}</p>
                     <span className="block text-xs opacity-70 mt-1">
