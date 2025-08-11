@@ -36,7 +36,6 @@ interface ClientLogo {
   id: string;
   name: string;
   logo_url: string;
-  row: string;
 }
 
 interface SuccessStory {

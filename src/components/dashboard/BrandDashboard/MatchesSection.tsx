@@ -3,7 +3,6 @@ import { Heart, FileText, Calendar, Video } from 'lucide-react';
 import { supabase } from '../../../lib/supabase';
 import toast from 'react-hot-toast';
 import { useModal } from '../../../contexts/ModalContext'; // Adjust path
-import { formatDate } from '../../../utils/formatDate';
 import type { Match } from './types';
 
 interface MatchesSectionProps {
@@ -147,7 +146,7 @@ const MatchesSection: React.FC<MatchesSectionProps> = ({
                       <div className="space-y-1">
                         <div className="flex items-center">
                           <h4 className="font-semibold text-gray-800 text-sm sm:text-base">
-                            {match.opportunities?.profiles?.company_name || 'Unknown Company'}
+                          {match.opportunities?.profiles?.company_name || 'Unknown Company'}
                           </h4>
                           <span className="ml-2 px-2 py-1 text-xs bg-yellow-100 text-yellow-800 rounded-full">
                             Pending
@@ -173,7 +172,7 @@ const MatchesSection: React.FC<MatchesSectionProps> = ({
                           </p>
                         )}
                         <p className="text-sm text-gray-600">
-                          Sent: {formatDate(match.created_at)}
+                          Sent: {new Date(match.created_at).toLocaleDateString()}
                         </p>
                       </div>
                       <div className="flex flex-wrap gap-2">
@@ -219,7 +218,7 @@ const MatchesSection: React.FC<MatchesSectionProps> = ({
                         <div className="space-y-1">
                           <div className="flex items-center">
                             <h4 className="font-semibold text-gray-800 text-sm sm:text-base">
-                              {match.opportunities?.profiles?.company_name || 'Unknown Company'}
+                              {match.opportunities.profiles?.company_name || 'Unknown Company'}
                             </h4>
                             <span className="ml-2 px-2 py-1 text-xs bg-green-100 text-green-800 rounded-full">
                               Accepted
@@ -233,7 +232,8 @@ const MatchesSection: React.FC<MatchesSectionProps> = ({
                           </p>
                           {match.meeting_scheduled_at && (
                             <p className="text-sm text-gray-600">
-                              Meeting scheduled for: {formatDateTime(match.meeting_scheduled_at)}
+                              Meeting scheduled for:{' '}
+                              {new Date(match.meeting_scheduled_at).toLocaleString()}
                             </p>
                           )}
                         </div>

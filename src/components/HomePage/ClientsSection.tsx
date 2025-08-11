@@ -18,12 +18,12 @@ const ClientsSection: React.FC<ClientsSectionProps> = ({ loading, clientLogos })
   const titleRef = useRef<HTMLHeadingElement>(null);
   const subtitleRef = useRef<HTMLParagraphElement>(null);
   const contentRef = useRef<HTMLDivElement>(null);
-
-
+  
   // Animate elements when they come into view
   useEffect(() => {
     if (!titleRef.current || !subtitleRef.current || !contentRef.current) return;
     
+    // Title animation
     gsap.fromTo(
       titleRef.current,
       { opacity: 0, y: -30 },
@@ -39,6 +39,7 @@ const ClientsSection: React.FC<ClientsSectionProps> = ({ loading, clientLogos })
       }
     );
     
+    // Subtitle animation
     gsap.fromTo(
       subtitleRef.current,
       { opacity: 0, y: -20 },
@@ -55,6 +56,7 @@ const ClientsSection: React.FC<ClientsSectionProps> = ({ loading, clientLogos })
       }
     );
     
+    // Content reveal animation
     gsap.fromTo(
       contentRef.current,
       { opacity: 0, y: 30 },
@@ -72,12 +74,10 @@ const ClientsSection: React.FC<ClientsSectionProps> = ({ loading, clientLogos })
     );
     
     return () => {
+      // Clean up scroll triggers
       ScrollTrigger.getAll().forEach(trigger => trigger.kill());
     };
   }, []);
-
-  const row1Logos = clientLogos.filter(logo => logo.row === "1");
-  const row2Logos = clientLogos.filter(logo => logo.row === "2");
 
   return (
     <section 
@@ -85,6 +85,7 @@ const ClientsSection: React.FC<ClientsSectionProps> = ({ loading, clientLogos })
       className="py-16 relative z-10 bg-gradient-to-br from-white via-blue-50 to-indigo-50" 
       id="clients"
     >
+      {/* Background pattern/shapes */}
       <div className="absolute inset-0 z-0 opacity-10">
         <div className="absolute top-10 right-10 w-64 h-64 rounded-full bg-blue-300 mix-blend-multiply filter blur-xl"></div>
         <div className="absolute bottom-10 left-10 w-80 h-80 rounded-full bg-indigo-300 mix-blend-multiply filter blur-xl"></div>
@@ -104,6 +105,7 @@ const ClientsSection: React.FC<ClientsSectionProps> = ({ loading, clientLogos })
             People Who Trust Us
           </h2>
           
+          {/* Feature badges */}
           <div className="flex flex-wrap gap-3 justify-center mt-8 mb-10">
             <div className="feature-badge flex items-center gap-2 bg-gradient-to-r from-blue-50 to-indigo-50 px-4 py-2 rounded-full border border-blue-200/50 shadow-sm">
               <span className="text-sm font-medium text-blue-800">Global Brands</span>
@@ -124,7 +126,10 @@ const ClientsSection: React.FC<ClientsSectionProps> = ({ loading, clientLogos })
           </p>
         </div>
         
-        <div ref={contentRef} className="mt-12">
+        <div
+          ref={contentRef}
+          className="mt-12"
+        >
           {loading ? (
             <div className="flex justify-center space-x-6">
               {Array(5).fill(0).map((_, i) => (
@@ -135,6 +140,7 @@ const ClientsSection: React.FC<ClientsSectionProps> = ({ loading, clientLogos })
             </div>
           ) : (
             <div className="py-10 px-0 overflow-hidden [&_*::-webkit-scrollbar]:hidden [&_*]:scrollbar-hide">
+              {/* First row - faster speed */}
               <div className="mb-8">
                 <Marquee 
                   gradient={true} 
@@ -145,21 +151,18 @@ const ClientsSection: React.FC<ClientsSectionProps> = ({ loading, clientLogos })
                   direction="left"
                   className="overflow-hidden"
                 >
-                  {row1Logos.length > 0 ? (
-                    row1Logos.map((logo) => (
-                      <div 
-                        key={logo.id} 
-                        className="mx-8 transition-all duration-300 hover:scale-110 filter hover:drop-shadow-md"
-                      >
-                        <ClientLogo logo={logo} />
-                      </div>
-                    ))
-                  ) : (
-                    <div className="mx-8 text-gray-500 text-lg">No logos in Row 1</div>
-                  )}
+                  {clientLogos.map((logo) => (
+                    <div 
+                      key={logo.id} 
+                      className="mx-8 transition-all duration-300 hover:scale-110 filter hover:drop-shadow-md"
+                    >
+                      <ClientLogo logo={logo} />
+                    </div>
+                  ))}
                 </Marquee>
               </div>
               
+              {/* Second row - opposite direction */}
               <div>
                 <Marquee 
                   gradient={true} 
@@ -170,23 +173,20 @@ const ClientsSection: React.FC<ClientsSectionProps> = ({ loading, clientLogos })
                   direction="right"
                   className="overflow-hidden"
                 >
-                  {row2Logos.length > 0 ? (
-                    row2Logos.map((logo) => (
-                      <div 
-                        key={`row2-${logo.id}`}
-                        className="mx-8 transition-all duration-300 hover:scale-110 filter hover:drop-shadow-md"
-                      >
-                        <ClientLogo logo={logo} />
-                      </div>
-                    ))
-                  ) : (
-                    <div className="mx-8 text-gray-500 text-lg">No logos in Row 2</div>
-                  )}
+                  {[...clientLogos].reverse().map((logo) => (
+                    <div 
+                      key={`reverse-${logo.id}`}
+                      className="mx-8 transition-all duration-300 hover:scale-110 filter hover:drop-shadow-md"
+                    >
+                      <ClientLogo logo={logo} />
+                    </div>
+                  ))}
                 </Marquee>
               </div>
             </div>
           )}
           
+          {/* Trust Badges - similar to the Hero section */}
           {!loading && (
             <div className="mt-10 flex flex-wrap items-center justify-center gap-6 md:gap-8 text-gray-500">
               <div className="flex items-center">
