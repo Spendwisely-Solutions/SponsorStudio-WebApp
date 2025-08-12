@@ -233,7 +233,7 @@ const MatchesSection: React.FC<MatchesSectionProps> = ({
                           </p>
                           {match.meeting_scheduled_at && (
                             <p className="text-sm text-gray-600">
-                              Meeting scheduled for: {formatDateTime(match.meeting_scheduled_at)}
+                              Meeting scheduled for: {formatDate(match.meeting_scheduled_at)}
                             </p>
                           )}
                         </div>
