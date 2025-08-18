@@ -76,11 +76,25 @@ function TrendingEvents() {
     return startObj.toLocaleDateString('en-US', options);
   };
 
-  // Filter out events with 'test event' in the title and events without any media
-  const filteredEvents = events.filter(e =>
-    !e.title.toLowerCase().includes('test event') &&
-    Array.isArray(e.media_urls) && e.media_urls.length > 0
-  );
+  // Filter out events with 'test event' in the title, events without any media, and expired events
+  const filteredEvents = events.filter(e => {
+    // exclude explicit test events
+    if (e.title?.toLowerCase().includes('test event')) return false;
+
+    // require at least one media URL
+    if (!Array.isArray(e.media_urls) || e.media_urls.length === 0) return false;
+
+    // if end_date exists and parses to a valid date, exclude if it's in the past
+    if (e.end_date) {
+      const end = new Date(e.end_date);
+      if (!isNaN(end.getTime())) {
+        const now = new Date();
+        if (end < now) return false; // expired
+      }
+    }
+
+    return true;
+  });
 
   return (
     <div className="relative w-full py-16 px-2 sm:px-8 bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/50 overflow-hidden">
