@@ -28,7 +28,7 @@ type Match = Database['public']['Tables']['matches']['Row'] & {
 type DetailedMatch = Match & {
   profiles: Pick<
     Database['public']['Tables']['profiles']['Row'],
-    'company_name' | 'industry' | 'contact_person_name' | 'contact_person_phone' | 'email'
+    'company_name' | 'industry'
   >;
 };
 
@@ -133,10 +133,7 @@ export default function MatchList({
           notes,
           profiles:brand_id (
             company_name,
-            industry,
-            contact_person_name,
-            contact_person_phone,
-            email
+            industry
           ),
           opportunities:opportunity_id (id, title)
         `)
@@ -153,13 +150,15 @@ export default function MatchList({
       // Sanitize profiles data to ensure only required fields are included
       const sanitizedData = data.map(match => ({
         ...match,
-        profiles: match.profiles
+        profiles: match.profiles && Array.isArray(match.profiles) && match.profiles.length > 0
           ? {
-              company_name: match.profiles.company_name,
-              industry: match.profiles.industry,
-              contact_person_name: match.profiles.contact_person_name,
-              contact_person_phone: match.profiles.contact_person_phone,
-              email: match.profiles.email,
+              company_name: match.profiles[0].company_name,
+              industry: match.profiles[0].industry,
+            }
+          : match.profiles
+          ? {
+              company_name: (match.profiles as any).company_name,
+              industry: (match.profiles as any).industry,
             }
           : null,
       }));
@@ -171,9 +170,6 @@ export default function MatchList({
           const expectedKeys = [
             'company_name',
             'industry',
-            'contact_person_name',
-            'contact_person_phone',
-            'email',
           ];
           const unexpectedKeys = profileKeys.filter(key => !expectedKeys.includes(key));
           if (unexpectedKeys.length > 0) {
@@ -188,9 +184,7 @@ export default function MatchList({
           if (!match.profiles.company_name) {
             console.warn(
               'Null company_name for match:',
-              match.id,
-              'brand_id:',
-              match.brand_id
+              match.id
             );
             toast.error(
               'Some matches have missing profile data. Please update your profile.',
@@ -203,7 +197,7 @@ export default function MatchList({
 
       setDetailedMatches(prev => ({
         ...prev,
-        [opportunityId]: sanitizedData as DetailedMatch[],
+        [opportunityId]: sanitizedData as unknown as DetailedMatch[],
       }));
     } catch (error) {
       console.error('Error fetching match details:', error);
@@ -326,8 +320,8 @@ export default function MatchList({
         },
         prefill: {
           name: 'User', // Fallback since profiles are not fetched initially
-          email: 'user@example.com',
-          contact: '+919999999999',
+          email: '',
+          contact: '',
         },
         theme: {
           color: '#2B4B9B',
@@ -382,7 +376,7 @@ export default function MatchList({
     }
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLDivElement>, oppId: string) => {
+  const handleKeyDown = (e: React.KeyboardEvent, oppId: string) => {
     if (e.key === 'Enter' || e.key === ' ') {
       e.preventDefault();
       toggleOpportunity(oppId);
@@ -587,7 +581,7 @@ export default function MatchList({
         searchQuery={searchQuery}
         onFilterChange={onFilterChange}
         onSearchChange={onSearchChange}
-        matches={matches}
+        matches={matches as any}
       />
 
       <motion.div
@@ -714,19 +708,6 @@ export default function MatchList({
                                 {match.profiles?.industry && (
                                   <p>
                                     <span className="font-medium">Industry:</span> {match.profiles.industry}
-                                  </p>
-                                )}
-                                {match.profiles?.contact_person_name && (
-                                  <p>
-                                    <span className="font-medium">Contact:</span>{' '}
-                                    {match.profiles.contact_person_name}
-                                    {match.profiles.contact_person_phone &&
-                                      ` (${match.profiles.contact_person_phone})`}
-                                  </p>
-                                )}
-                                {match.profiles?.email && (
-                                  <p>
-                                    <span className="font-medium">Email:</span> {match.profiles.email}
                                   </p>
                                 )}
                                 <p>
