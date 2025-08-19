@@ -15,6 +15,7 @@ import Pricing from './components/Pricing/Pricing';
 import PurchaseCredits from './components/Pricing/PurchaseCredits';
 import ViewMou from './components/Mou/ViewMou';
 import CareerPage from './components/Careers/CareerPage';
+import FAQ from './components/FAQ/FAQ';
 import NotFound from './components/NotFound';
 import Home from './components/HomePage/Home';
 function App() {
@@ -29,7 +30,8 @@ function App() {
             <Route path="/admin" element={<AdminLogin />} />
             <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/logout" element={<Logout />} />
-            <Route path="/success" element={<SuccessPage />} />
+            <Route path="/success" element={<SuccessPage onSubmit={() => {}} />} />
+            {/* <Route path="/faq" element={<FAQ />} /> */}
             <Route path="/pricing" element={<Pricing />} />
             <Route path="/purchase" element={<PurchaseCredits />} />
             <Route path="/view-mou" element={<ViewMou />} />

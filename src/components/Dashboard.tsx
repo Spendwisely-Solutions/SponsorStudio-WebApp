@@ -17,6 +17,7 @@ import ProfileSettings from './dashboard/ProfileSettings/ProfileSettings';
 import ScheduledMeetings from './dashboard/Meetings/ScheduledMeetings';
 import ReportsList from './dashboard/Reports/ReportsList';
 import AnalyticsDashboard from './dashboard/AnalyticsDashboard';
+import Messages from './dashboard/Messages/Messages';
 import { signOut } from '../lib/auth';
 import Skeleton from 'react-loading-skeleton';
 import 'react-loading-skeleton/dist/skeleton.css';
@@ -440,7 +441,7 @@ export default function Dashboard() {
                 <span>Dashboard</span>
               </button>
             </li>
-            <li>
+            <li className='hidden'>
               <button
                 onClick={() => setActiveTab('messages')}
                 className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg ${
@@ -486,6 +487,19 @@ export default function Dashboard() {
                 >
                   <BarChart2 className="w-5 h-5" />
                   <span>Analytics</span>
+                </button>
+              </li>
+            )}
+            {(isCreator || isBrand) && (
+              <li className='hidden'>
+                <button
+                  onClick={() => setActiveTab('messages')}
+                  className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg ${
+                    activeTab === 'messages' ? 'bg-blue-50 text-[#2B4B9B]' : 'text-gray-700 hover:bg-gray-100'
+                  }`}
+                >
+                  <BarChart2 className="w-5 h-5" />
+                  <span>Messages</span>
                 </button>
               </li>
             )}
@@ -563,7 +577,7 @@ export default function Dashboard() {
                 <span>Dashboard</span>
               </button>
             </li>
-            <li>
+            <li className='hidden'>
               <button
                 onClick={() => { setActiveTab('messages'); setMobileSidebarOpen(false); }}
                 className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg ${
@@ -599,6 +613,19 @@ export default function Dashboard() {
                 </button>
               </li>
             )}
+            {isBrand || isCreator || isInfluencer && (
+              <li className='hidden'>
+                <button
+                  onClick={() => { setActiveTab('messages'); setMobileSidebarOpen(false); }}
+                  className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg ${
+                    activeTab === 'reports' ? 'bg-blue-50 text-[#2B4B9B]' : 'text-gray-700 hover:bg-gray-100'
+                  }`}
+                >
+                  <FileText className="w-5 h-5" />
+                  <span>Reports</span>
+                </button>
+              </li>
+            )}
             {(isCreator || isInfluencer) && (
               <li>
                 <button
@@ -612,6 +639,17 @@ export default function Dashboard() {
                 </button>
               </li>
             )}
+            <li className='hidden'>
+              <button
+                onClick={() => { setActiveTab('messages'); setMobileSidebarOpen(false); }}
+                className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg ${
+                  activeTab === 'profile' ? 'bg-blue-50 text-[#2B4B9B]' : 'text-gray-700 hover:bg-gray-100'
+                }`}
+              >
+                <User className="w-5 h-5" />
+                <span>Messages</span>
+              </button>
+            </li>
             <li>
               <button
                 onClick={() => { setActiveTab('profile'); setMobileSidebarOpen(false); }}
@@ -706,15 +744,7 @@ export default function Dashboard() {
           <ProfileSettings profile={userProfile} />
         )}
         {activeTab === 'messages' && (
-          <div className="bg-white rounded-lg shadow p-6">
-            <h2 className="text-2xl font-bold text-gray-800 mb-6">Messages</h2>
-            <div className="text-center py-8">
-              <MessageSquare className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-              <p className="text-gray-600">
-                Messaging feature coming soon! You'll be able to communicate directly with your matches here.
-              </p>
-            </div>
-          </div>
+              <Messages />
         )}
         {activeTab === 'meetings' && (
           <ScheduledMeetings meetings={meetings} isBrand={isBrand} />

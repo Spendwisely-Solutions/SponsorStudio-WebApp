@@ -17,6 +17,7 @@ import Footer from '../../components/HomePage/Footer';
 import AOS from 'aos';
 import 'aos/dist/aos.css'; // Import AOS styles
 import TrendingEvents from './TrendingEvents';
+import { FAQSection } from '../FAQ/FAQ';
 
 // Shared types
 interface Database {
@@ -207,6 +208,7 @@ const Home: React.FC = () => {
         showAllStories={showAllStories}
         setShowAllStories={setShowAllStories}
       />
+      {/* <FAQSection /> */}
       <ContactSection
         formData={formData}
         setFormData={setFormData}

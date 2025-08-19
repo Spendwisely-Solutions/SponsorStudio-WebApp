@@ -546,7 +546,7 @@ export default function EventForm({
                             <div className="mt-3 p-3 bg-blue-50 border border-blue-100 rounded-md">
                               <p className="text-blue-800 text-sm font-medium">VIP Plan Pricing:</p>
                               <ul className="mt-1 space-y-1 pl-5 list-disc text-gray-700">
-                                <li>₹10,000 upfront fee</li>
+                                <li>₹20,000 upfront fee</li>
                                 <li>25% commission on sponsorships over ₹2 lakhs</li>
                               </ul>
                               <p className="text-xs text-gray-500 mt-2">By enabling VIP privileges, you agree to the pricing terms above.</p>

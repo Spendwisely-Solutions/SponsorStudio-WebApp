@@ -136,6 +136,12 @@ export default function AdminDashboard() {
               Risk Analysis Requests
             </Link>
             <Link
+              to="/admin/create-risk-analysis"
+              className="flex items-center px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg"
+            >
+              <FileText className="w-5 h-5 mr-3" />Create Reports
+            </Link>
+            <Link
               to="/admin/manage-users"
               className="flex items-center px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg"
             >
@@ -314,6 +320,12 @@ export default function AdminDashboard() {
                 searchTerm={searchTerm}
                 setSearchTerm={setSearchTerm}
               />
+            }
+          />
+          <Route
+            path="/create-risk-analysis"
+            element={
+              <>Create Risk Analysis Reports</>
             }
           />
           <Route
