@@ -14,8 +14,10 @@ import {
   ClipboardList,
   Settings as SettingsIcon,
   LayoutDashboard,
+  MessageCircleQuestion as Faq,
   Briefcase,
   Link as LinkIcon,
+  FolderOpen,
   FileText
 } from 'lucide-react';
 import Opportunities from './Opportunities';
@@ -25,6 +27,7 @@ import RiskAnalysisRequests from './RiskAnalysisRequests';
 import ManageBlogs from './ManageBlogs';
 import ManageClientsLogos from './ManageClientsLogos';
 import ManageMedia from './ManageMedia';
+import ManageFaq from './ManageFaq';
 
 export default function AdminDashboard() {
   const navigate = useNavigate();
@@ -166,8 +169,15 @@ export default function AdminDashboard() {
               to="/admin/manage-medias"
               className="flex items-center px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg"
             >
-              <BarChart3 className="w-5 h-5 mr-3" />
+              <FolderOpen className="w-5 h-5 mr-3" />
               Manage Media
+            </Link>
+            <Link
+              to="/admin/manage-faq"
+              className="flex items-center px-4 py-2 text-gray-700 hover:bg-gray-100 rounded-lg"
+            >
+              <Faq className="w-5 h-5 mr-3" />
+              Manage FAQ
             </Link>
             <Link
               to="/admin/settings"
@@ -353,6 +363,12 @@ export default function AdminDashboard() {
             path="/manage-medias"
             element={
               <ManageMedia />
+            }
+          />
+          <Route
+            path="/manage-faq"
+            element={
+              <ManageFaq />
             }
           />
           <Route

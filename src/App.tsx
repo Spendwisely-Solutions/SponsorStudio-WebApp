@@ -31,7 +31,7 @@ function App() {
             <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/logout" element={<Logout />} />
             <Route path="/success" element={<SuccessPage onSubmit={() => {}} />} />
-            {/* <Route path="/faq" element={<FAQ />} /> */}
+            <Route path="/faq" element={<FAQ />} />
             <Route path="/pricing" element={<Pricing />} />
             <Route path="/purchase" element={<PurchaseCredits />} />
             <Route path="/view-mou" element={<ViewMou />} />
