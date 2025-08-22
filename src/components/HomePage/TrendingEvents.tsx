@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { useAuth } from '../../contexts/AuthContext';
 import Slider from 'react-slick'; // Import react-slick
 import 'slick-carousel/slick/slick.css';
 import 'slick-carousel/slick/slick-theme.css';
@@ -12,7 +13,11 @@ type TrendingEvent = {
   location: string;
 };
 
-function TrendingEvents() {
+interface TrendingEventsProps {
+  showAuthForm?: () => void;
+}
+
+function TrendingEvents({ showAuthForm }: TrendingEventsProps) {
   const [events, setEvents] = useState<TrendingEvent[]>([]);
   const [loading, setLoading] = useState(true);
   const [isMobile, setIsMobile] = useState(false);
@@ -96,6 +101,8 @@ function TrendingEvents() {
     return true;
   });
 
+  const { user, profile } = useAuth();
+
   return (
     <div className="relative w-full py-16 px-2 sm:px-8 bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/50 overflow-hidden">
       {/* Animated background orbs and pattern */}
@@ -173,8 +180,17 @@ function TrendingEvents() {
                 };
                 const handlePointerUp = (e: React.PointerEvent<HTMLDivElement>) => {
                   if (!moved) {
-                    const searchParam = encodeURIComponent(event.title);
-                    window.location.href = `/dashboard?search=${searchParam}`;
+                    // If not logged in, show auth form
+                    if (!user) {
+                      if (typeof showAuthForm === 'function') showAuthForm();
+                      return;
+                    }
+                    // Only allow dashboard navigation for brand users
+                    if (profile?.user_type === 'brand') {
+                      const searchParam = encodeURIComponent(event.title);
+                      window.location.href = `/dashboard?search=${searchParam}`;
+                    }
+                    // Do nothing for other user types
                   }
                 };
 

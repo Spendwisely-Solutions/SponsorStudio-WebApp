@@ -24,7 +24,6 @@ import {
   Clock8,
   Footprints,
   Users2,
-  CalendarRange,
   FileText as FileIcon,
   ExternalLink,
   Search,
@@ -34,7 +33,6 @@ import {
   Hash,
   Video,
   Upload,
-  File,
   Sparkles,
   Eye
 } from 'lucide-react';
@@ -44,13 +42,27 @@ type Opportunity = Database['public']['Tables']['opportunities']['Row'] & {
   creator_profile: (Database['public']['Tables']['profiles']['Row'] & { email?: string }) | null;
   categories: Database['public']['Tables']['categories']['Row'] | null;
   type: 'opportunity';
-  report: Database['public']['Tables']['reports']['Row'] | null;
   mou_id: string | null;
   mou_url: string | null;
   impression_count?: number;
+  is_vip?: boolean;
+  sheetlink?: string | null;
 };
 
-type Post = Database['public']['Tables']['posts']['Row'] & {
+type Post = {
+  id: string;
+  title: string;
+  description: string;
+  location: string;
+  status: 'active' | 'paused' | 'completed';
+  verification_status: 'pending' | 'approved' | 'rejected';
+  hashtags?: string;
+  video_url?: string;
+  reach?: number;
+  price_range?: any;
+  sheetlink?: string | null;
+  created_at: string;
+  updated_at: string;
   influencer_profile: (Database['public']['Tables']['profiles']['Row'] & { email?: string }) | null;
   categories: Database['public']['Tables']['categories']['Row'] | null;
   type: 'post';
@@ -58,6 +70,21 @@ type Post = Database['public']['Tables']['posts']['Row'] & {
 };
 
 type CombinedItem = Opportunity | Post;
+
+// Helper functions
+const formatDate = (dateString: string | null): string => {
+  if (!dateString) return 'No date';
+  return new Date(dateString).toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric'
+  });
+};
+
+const formatDateRange = (startDate: string | null, endDate: string | null): string => {
+  if (!startDate || !endDate) return 'Dates not set';
+  return `${formatDate(startDate)} - ${formatDate(endDate)}`;
+};
 
 interface OpportunitiesProps {
   searchTerm: string;
@@ -68,15 +95,15 @@ interface OpportunitiesProps {
     approved: number;
     rejected: number;
   };
-  setStats: (stats: Partial<{
+  setStats: React.Dispatch<React.SetStateAction<{
     total: number;
     pending: number;
     approved: number;
     rejected: number;
-  }>) => void;
+  }>>;
 }
 
-export default function Opportunities({ searchTerm, setSearchTerm, stats, setStats }: OpportunitiesProps) {
+function Opportunities({ searchTerm, setSearchTerm, stats, setStats }: OpportunitiesProps) {
   const navigate = useNavigate();
   const [items, setItems] = useState<CombinedItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -88,10 +115,6 @@ export default function Opportunities({ searchTerm, setSearchTerm, stats, setSta
   const [sheetLinkInput, setSheetLinkInput] = useState<Record<string, string>>({});
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [itemToDelete, setItemToDelete] = useState<{ id: string; type: 'opportunity' | 'post' } | null>(null);
-  const [isReportModalOpen, setIsReportModalOpen] = useState(false);
-  const [reportFile, setReportFile] = useState<File | null>(null);
-  const [reportOpportunityId, setReportOpportunityId] = useState<string | null>(null);
-  const [isUpdateReport, setIsUpdateReport] = useState(false);
   const [isMouModalOpen, setIsMouModalOpen] = useState(false);
   const [mouFile, setMouFile] = useState<File | null>(null);
   const [mouOpportunityId, setMouOpportunityId] = useState<string | null>(null);
@@ -304,9 +327,10 @@ export default function Opportunities({ searchTerm, setSearchTerm, stats, setSta
       );
 
       setStats(prev => ({
-        ...prev,
+        total: prev.total,
         pending: Math.max(0, prev.pending - 1),
-        approved: prev.approved + 1
+        approved: prev.approved + 1,
+        rejected: prev.rejected
       }));
 
       toast.success(`${type} approved successfully`);
@@ -371,8 +395,9 @@ export default function Opportunities({ searchTerm, setSearchTerm, stats, setSta
       );
 
       setStats(prev => ({
-        ...prev,
+        total: prev.total,
         pending: Math.max(0, prev.pending - 1),
+        approved: prev.approved,
         rejected: prev.rejected + 1
       }));
 
@@ -480,9 +505,10 @@ export default function Opportunities({ searchTerm, setSearchTerm, stats, setSta
       setItems(prevItems => prevItems.filter(item => item.id !== itemToDelete.id));
 
       setStats(prev => ({
-        ...prev,
+        total: Math.max(0, prev.total - 1),
+        pending: prev.pending,
         approved: Math.max(0, prev.approved - 1),
-        total: Math.max(0, prev.total - 1)
+        rejected: prev.rejected
       }));
 
       toast.success(`${itemToDelete.type} deleted successfully`);
@@ -494,99 +520,6 @@ export default function Opportunities({ searchTerm, setSearchTerm, stats, setSta
       setIsDeleteModalOpen(false);
       setItemToDelete(null);
       setExpandedItem(null);
-    }
-  };
-
-  const handleCreateReport = async () => {
-    if (!reportFile || !reportOpportunityId) {
-      toast.error('Please select a PDF file');
-      return;
-    }
-
-    if (reportFile.type !== 'application/pdf') {
-      toast.error('Please upload a valid PDF file');
-      return;
-    }
-
-    if (reportFile.size > 10 * 1024 * 1024) {
-      toast.error('File size must be less than 10MB');
-      return;
-    }
-
-    try {
-      setProcessingAction(reportOpportunityId);
-
-      const { data: existingReport, error: fetchError } = await supabase
-        .from('reports')
-        .select('id, pdf_path')
-        .eq('opportunity_id', reportOpportunityId)
-        .maybeSingle();
-
-      if (fetchError && fetchError.code !== 'PGRST116') {
-        throw new Error(`Failed to check existing report: ${fetchError.message}`);
-      }
-
-      if (existingReport?.id) {
-        const { error: storageError } = await supabase.storage
-          .from('reports')
-          .remove([existingReport.pdf_path]);
-
-        if (storageError) {
-          throw new Error(`Failed to delete existing report file: ${storageError.message}`);
-        }
-
-        const { error: deleteError } = await supabase
-          .from('reports')
-          .delete()
-          .eq('id', existingReport.id);
-
-        if (deleteError) {
-          throw new Error(`Failed to delete existing report record: ${deleteError.message}`);
-        }
-      }
-
-      const fileName = `${reportOpportunityId}_${Date.now()}.pdf`;
-      const filePath = `${reportOpportunityId}/${fileName}`;
-      const arrayBuffer = await reportFile.arrayBuffer();
-      const fileData = new Uint8Array(arrayBuffer);
-
-      const { error: uploadError } = await supabase.storage
-        .from('reports')
-        .upload(filePath, fileData, {
-          cacheControl: '3600',
-          upsert: false,
-          contentType: 'application/pdf',
-        });
-
-      if (uploadError) {
-        throw new Error(`Failed to upload report: ${uploadError.message}`);
-      }
-
-      const { error: insertError } = await supabase
-        .from('reports')
-        .insert({
-          opportunity_id: reportOpportunityId,
-          pdf_path: filePath,
-          filename: reportFile.name,
-        });
-
-      if (insertError) {
-        // Rollback: Delete uploaded file if database insert fails
-        await supabase.storage.from('reports').remove([filePath]);
-        throw new Error(`Failed to insert report record: ${insertError.message}`);
-      }
-
-      toast.success(`Report ${isUpdateReport ? 'updated' : 'created'} successfully`);
-      await fetchItems();
-    } catch (error) {
-      console.error('Error handling report:', String(error));
-      toast.error(`Failed to ${isUpdateReport ? 'update' : 'create'} report. Please try again.`);
-    } finally {
-      setProcessingAction(null);
-      setIsReportModalOpen(false);
-      setReportFile(null);
-      setReportOpportunityId(null);
-      setIsUpdateReport(false);
     }
   };
 
@@ -681,29 +614,6 @@ export default function Opportunities({ searchTerm, setSearchTerm, stats, setSta
     }
   };
 
-  const openReportModal = async (opportunityId: string) => {
-    try {
-      setReportOpportunityId(opportunityId);
-      setReportFile(null);
-
-      const { data: existingReport, error } = await supabase
-        .from('reports')
-        .select('id, filename, created_at')
-        .eq('opportunity_id', opportunityId)
-        .maybeSingle();
-
-      if (error && error.code !== 'PGRST116') {
-        throw new Error(`Failed to check report: ${error.message}`);
-      }
-
-      setIsUpdateReport(!!existingReport);
-      setIsReportModalOpen(true);
-    } catch (error) {
-      console.error('Error opening report modal:', String(error));
-      toast.error('Failed to open report modal. Please try again.');
-    }
-  };
-
   const openMouModal = async (opportunityId: string) => {
     try {
       setMouOpportunityId(opportunityId);
@@ -735,11 +645,6 @@ export default function Opportunities({ searchTerm, setSearchTerm, stats, setSta
       return;
     }
     navigate('/view-mou', { state: { mouId } });
-  };
-
-  const getReportUrl = (pdfPath: string): string => {
-    const { data } = supabase.storage.from('reports').getPublicUrl(pdfPath);
-    return data.publicUrl;
   };
 
   const getMouUrl = (pdfPath: string): string => {
@@ -798,110 +703,195 @@ export default function Opportunities({ searchTerm, setSearchTerm, stats, setSta
   });
 
   return (
-    <div className="p-6">
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Opportunities & Posts</h1>
-      </div>
-
-      <div className="flex flex-col md:flex-row gap-4 mb-6">
-        <div className="flex-1">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
-            <input
-              type="text"
-              placeholder="Search opportunities or posts..."
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
+    <div className="space-y-6">
+      {/* Header Section */}
+      <div className="bg-white/70 backdrop-blur-md rounded-2xl shadow-lg border border-gray-200/50 p-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
+              Opportunities & Posts
+            </h1>
+            <p className="text-gray-600 mt-1">Review and manage platform content</p>
           </div>
-        </div>
-        <div className="flex gap-2">
-          <select
-            className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-            value={filter}
-            onChange={(e) => setFilter(e.target.value as typeof filter)}
-          >
-            <option value="all">All</option>
-            <option value="pending">Pending</option>
-            <option value="approved">Approved</option>
-            <option value="rejected">Rejected</option>
-          </select>
-          <button
-            onClick={handleRefresh}
-            className="p-2 text-gray-600 hover:text-gray-900 border border-gray-300 rounded-lg"
-          >
-            <RefreshCw size={20} />
-          </button>
+          <div className="hidden md:block">
+            <div className="w-16 h-16 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-2xl flex items-center justify-center">
+              <FileText className="w-8 h-8 text-white" />
+            </div>
+          </div>
         </div>
       </div>
 
-      <div className="bg-white rounded-lg shadow overflow-hidden">
-        {loading ? (
-          <div className="p-8 text-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto"></div>
-            <p className="mt-4 text-gray-600">Loading...</p>
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <div className="bg-white/70 backdrop-blur-md p-6 rounded-2xl shadow-lg border border-gray-200/50 hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-gray-600 font-medium">Total Items</p>
+              <p className="text-3xl font-bold text-gray-900 mt-1">{stats.total}</p>
+              <p className="text-sm text-blue-600 font-medium mt-1">All content</p>
+            </div>
+            <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-blue-600 rounded-xl flex items-center justify-center">
+              <FileText className="text-white" size={20} />
+            </div>
           </div>
-        ) : filteredItems.length === 0 ? (
-          <div className="p-8 text-center">
-            <AlertTriangle className="mx-auto text-yellow-500" size={48} />
-            <p className="mt-4 text-gray-600">No items found</p>
+        </div>
+        <div className="bg-white/70 backdrop-blur-md p-6 rounded-2xl shadow-lg border border-gray-200/50 hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-gray-600 font-medium">Pending Review</p>
+              <p className="text-3xl font-bold text-gray-900 mt-1">{stats.pending}</p>
+              <p className="text-sm text-yellow-600 font-medium mt-1">Needs attention</p>
+            </div>
+            <div className="w-12 h-12 bg-gradient-to-r from-yellow-500 to-yellow-600 rounded-xl flex items-center justify-center">
+              <Clock className="text-white" size={20} />
+            </div>
+          </div>
+        </div>
+        <div className="bg-white/70 backdrop-blur-md p-6 rounded-2xl shadow-lg border border-gray-200/50 hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-gray-600 font-medium">Approved</p>
+              <p className="text-3xl font-bold text-gray-900 mt-1">{stats.approved}</p>
+              <p className="text-sm text-green-600 font-medium mt-1">Live content</p>
+            </div>
+            <div className="w-12 h-12 bg-gradient-to-r from-green-500 to-green-600 rounded-xl flex items-center justify-center">
+              <FileIcon className="text-white" size={20} />
+            </div>
+          </div>
+        </div>
+        <div className="bg-white/70 backdrop-blur-md p-6 rounded-2xl shadow-lg border border-gray-200/50 hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm text-gray-600 font-medium">Rejected</p>
+              <p className="text-3xl font-bold text-gray-900 mt-1">{stats.rejected}</p>
+              <p className="text-sm text-red-600 font-medium mt-1">Quality control</p>
+            </div>
+            <div className="w-12 h-12 bg-gradient-to-r from-red-500 to-red-600 rounded-xl flex items-center justify-center">
+              <AlertTriangle className="text-white" size={20} />
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Search and Filters */}
+      <div className="bg-white/70 backdrop-blur-md rounded-2xl shadow-lg border border-gray-200/50 p-6">
+        <div className="flex flex-col lg:flex-row gap-4">
+          <div className="flex-1">
+            <div className="relative">
+              <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
+              <input
+                type="text"
+                placeholder="Search opportunities, posts, creators..."
+                className="w-full pl-12 pr-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white/80 backdrop-blur-sm transition-all duration-200"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+              />
+            </div>
+          </div>
+          <div className="flex gap-3">
+            <select
+              className="px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white/80 backdrop-blur-sm font-medium min-w-[120px]"
+              value={filter}
+              onChange={(e) => setFilter(e.target.value as typeof filter)}
+            >
+              <option value="all">All Status</option>
+              <option value="pending">🟡 Pending</option>
+              <option value="approved">🟢 Approved</option>
+              <option value="rejected">🔴 Rejected</option>
+            </select>
             <button
               onClick={handleRefresh}
-              className="mt-4 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
+              className="p-3 text-gray-600 hover:text-blue-600 border border-gray-200 rounded-xl hover:bg-blue-50 transition-all duration-200 hover:shadow-md"
+              title="Refresh data"
             >
-              Retry
+              <RefreshCw size={20} />
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* Main Content */}
+      <div className="bg-white/70 backdrop-blur-md rounded-2xl shadow-lg border border-gray-200/50 overflow-hidden">
+        {loading ? (
+          <div className="p-12 text-center">
+            <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-full animate-spin mb-6">
+              <div className="w-12 h-12 border-4 border-white/30 border-t-white rounded-full animate-spin" />
+            </div>
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">Loading Content</h3>
+            <p className="text-gray-600">Fetching opportunities and posts...</p>
+          </div>
+        ) : filteredItems.length === 0 ? (
+          <div className="p-12 text-center">
+            <div className="w-20 h-20 bg-gradient-to-r from-gray-200 to-gray-300 rounded-2xl flex items-center justify-center mx-auto mb-6">
+              <AlertTriangle className="w-10 h-10 text-gray-500" />
+            </div>
+            <h3 className="text-xl font-semibold text-gray-900 mb-2">No Content Found</h3>
+            <p className="text-gray-600 mb-6">
+              {searchTerm ? `No items match "${searchTerm}"` : 'No items found with current filters'}
+            </p>
+            <button
+              onClick={handleRefresh}
+              className="inline-flex items-center px-6 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-medium rounded-xl hover:from-blue-700 hover:to-indigo-700 transition-all duration-200 transform hover:scale-105 shadow-lg"
+            >
+              <RefreshCw className="w-4 h-4 mr-2" />
+              Refresh Data
             </button>
           </div>
         ) : (
-          <div className="divide-y divide-gray-200">
+          <div className="divide-y divide-gray-200/50">
             {filteredItems.map((item) => {
               const isOpportunity = item.type === 'opportunity';
               const profile = isOpportunity ? (item as Opportunity).creator_profile : (item as Post).influencer_profile;
               return (
-                <div key={item.id} className="p-6">
+                <div key={item.id} className="p-6 hover:bg-gray-50/50 transition-all duration-200">
                   <div className="flex justify-between items-start">
                     <div className="flex-1">
-                      <div className="flex items-center gap-2 mb-2">
-                        <h3 className="text-lg font-semibold text-gray-900">{item.title || 'Untitled'}</h3>
-                        <span className={`px-2 py-0.5 text-xs rounded-full ${
-                          item.status === 'active' ? 'bg-green-100 text-green-800' : 
-                          item.status === 'paused' ? 'bg-yellow-100 text-yellow-800' : 
-                          'bg-gray-100 text-gray-800'
-                        }`}>
-                          {item.status ? `${item.status.charAt(0).toUpperCase()}${item.status.slice(1)}` : 'Unknown'}
-                        </span>
-                        <span className={`px-2 py-0.5 text-xs rounded-full ${
-                          item.verification_status === 'pending' ? 'bg-yellow-100 text-yellow-800' :
-                          item.verification_status === 'approved' ? 'bg-green-100 text-green-800' :
-                          'bg-red-100 text-red-800'
-                        }`}>
-                          {item.verification_status ? `${item.verification_status.charAt(0).toUpperCase()}${item.verification_status.slice(1)}` : 'Pending'}
-                        </span>
-                        <span className="px-2 py-0.5 text-xs rounded-full bg-blue-100 text-blue-800">
-                          {isOpportunity ? 'Opportunity' : 'Post'}
-                        </span>
-                        {isOpportunity && (item as Opportunity).is_vip && (
-                          <span className="px-2 py-0.5 text-xs rounded-full bg-amber-100 text-amber-800 flex items-center">
-                            <Sparkles className="w-3 h-3 mr-1" />
-                            VIP
+                      {/* Header with Title and Badges */}
+                      <div className="flex items-center gap-3 mb-4">
+                        <h3 className="text-xl font-bold text-gray-900 truncate flex-1">
+                          {item.title || 'Untitled'}
+                        </h3>
+                        <div className="flex items-center gap-2 flex-shrink-0">
+                          <span className={`px-3 py-1 text-xs font-semibold rounded-full transition-colors ${
+                            item.status === 'active' ? 'bg-green-100 text-green-800 border border-green-200' : 
+                            item.status === 'paused' ? 'bg-yellow-100 text-yellow-800 border border-yellow-200' : 
+                            'bg-gray-100 text-gray-800 border border-gray-200'
+                          }`}>
+                            {item.status ? `${item.status.charAt(0).toUpperCase()}${item.status.slice(1)}` : 'Unknown'}
                           </span>
-                        )}
+                          <span className={`px-3 py-1 text-xs font-semibold rounded-full transition-colors ${
+                            item.verification_status === 'pending' ? 'bg-yellow-100 text-yellow-800 border border-yellow-200' :
+                            item.verification_status === 'approved' ? 'bg-green-100 text-green-800 border border-green-200' :
+                            'bg-red-100 text-red-800 border border-red-200'
+                          }`}>
+                            {item.verification_status ? `${item.verification_status.charAt(0).toUpperCase()}${item.verification_status.slice(1)}` : 'Pending'}
+                          </span>
+                          <span className="px-3 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800 border border-blue-200">
+                            {isOpportunity ? '📋 Opportunity' : '📝 Post'}
+                          </span>
+                          {isOpportunity && (item as Opportunity).is_vip && (
+                            <span className="px-3 py-1 text-xs font-semibold rounded-full bg-gradient-to-r from-amber-100 to-yellow-100 text-amber-800 border border-amber-200 flex items-center">
+                              <Sparkles className="w-3 h-3 mr-1" />
+                              VIP
+                            </span>
+                          )}
+                        </div>
                       </div>
 
-                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mt-4">
-                        <div className="space-y-2">
+                      {/* Content Grid */}
+                      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-4">
+                        {/* Basic Info */}
+                        <div className="space-y-3">
+                          <h4 className="text-sm font-semibold text-gray-900 uppercase tracking-wide">Basic Information</h4>
                           {isOpportunity ? (
                             <>
-                              <div className="flex items-center text-sm text-gray-500">
-                                <MapPin size={16} className="mr-2 flex-shrink-0" />
-                                {(item as Opportunity).location || 'N/A'}
+                              <div className="flex items-center text-sm text-gray-600 bg-gray-50 rounded-lg p-3">
+                                <MapPin size={16} className="mr-3 flex-shrink-0 text-gray-400" />
+                                <span className="font-medium">{(item as Opportunity).location || 'Location not specified'}</span>
                               </div>
-                              <div className="flex items-center text-sm text-gray-500">
-                                <CalendarRange size={16} className="mr-2 flex-shrink-0" />
-                                {(item as Opportunity).start_date && (item as Opportunity).end_date 
-                                  ? `${new Date((item as Opportunity).start_date).toLocaleDateString()} - ${new Date((item as Opportunity).end_date).toLocaleDateString()}`
-                                  : 'Dates not set'}
+                              <div className="flex items-center text-sm text-gray-600 bg-gray-50 rounded-lg p-3">
+                                <Calendar size={16} className="mr-3 flex-shrink-0 text-gray-400" />
+                                <span className="font-medium">{formatDateRange((item as Opportunity).start_date, (item as Opportunity).end_date)}</span>
                               </div>
                             </>
                           ) : (
@@ -923,7 +913,7 @@ export default function Opportunities({ searchTerm, setSearchTerm, stats, setSta
                           {isOpportunity && (item as Opportunity).footfall && (
                             <div className="flex items-center text-sm text-gray-500">
                               <Footprints size={16} className="mr-2 flex-shrink-0" />
-                              {(item as Opportunity).footfall.toLocaleString()} footfall
+                              {(item as Opportunity).footfall?.toLocaleString() || 0} footfall
                             </div>
                           )}
                           <div className="flex items-center text-sm text-gray-500">
@@ -974,7 +964,7 @@ export default function Opportunities({ searchTerm, setSearchTerm, stats, setSta
                             <div className="flex items-center text-sm text-blue-600">
                               <Calendar size={16} className="mr-2 flex-shrink-0" />
                               <a 
-                                href={(item as Opportunity).calendly_link}
+                                href={(item as Opportunity).calendly_link || ''}
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className="hover:underline flex items-center"
@@ -988,7 +978,7 @@ export default function Opportunities({ searchTerm, setSearchTerm, stats, setSta
                             <div className="flex items-center text-sm text-blue-600">
                               <FileIcon size={16} className="mr-2 flex-shrink-0" />
                               <a 
-                                href={(item as Opportunity).sponsorship_brochure_url}
+                                href={(item as Opportunity).sponsorship_brochure_url || ''}
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className="hover:underline flex items-center"
@@ -1015,33 +1005,13 @@ export default function Opportunities({ searchTerm, setSearchTerm, stats, setSta
                           {isOpportunity && (item as Opportunity).media_urls?.length && (
                             <div className="flex items-center text-sm text-blue-600">
                               <LinkIcon size={16} className="mr-2 flex-shrink-0" />
-                              <span>{(item as Opportunity).media_urls.length} Media Files</span>
+                              <span>{(item as Opportunity).media_urls?.length || 0} Media Files</span>
                             </div>
                           )}
                           {!isOpportunity && (item as Post).video_url && (
                             <div className="flex items-center text-sm text-blue-600">
                               <Video size={16} className="mr-2 flex-shrink-0" />
                               <span>Video Content</span>
-                            </div>
-                          )}
-                          {isOpportunity && (item as Opportunity).report?.pdf_path && (
-                            <div className="flex items-center text-sm text-blue-600">
-                              <File size={16} className="mr-2 flex-shrink-0" />
-                              <a 
-                                href={getReportUrl((item as Opportunity).report!.pdf_path)}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                type="application/pdf"
-                                className="hover:underline flex items-center"
-                              >
-                                View Report
-                                <ExternalLink size={12} className="ml-1" />
-                              </a>
-                              <span className="ml-2 text-xs text-gray-500">
-                                (Added: {(item as Opportunity).report!.created_at 
-                                  ? new Date((item as Opportunity).report!.created_at).toLocaleDateString() 
-                                  : 'Unknown date'})
-                              </span>
                             </div>
                           )}
                           {isOpportunity && (item as Opportunity).is_vip && (item as Opportunity).mou_url && (
@@ -1188,7 +1158,7 @@ export default function Opportunities({ searchTerm, setSearchTerm, stats, setSta
                         <div className="mt-6">
                           <h4 className="font-semibold text-gray-900 mb-4">Media</h4>
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            {(item as Opportunity).media_urls.map((mediaUrl, index) => {
+                            {(item as Opportunity).media_urls?.map((mediaUrl, index) => {
                               const isImage = /\.(jpg|jpeg|png|gif)$/i.test(mediaUrl);
                               const isVideo = /\.(mp4|webm|ogg)$/i.test(mediaUrl);
                               const hasVideoError = videoErrors[mediaUrl];
@@ -1228,7 +1198,7 @@ export default function Opportunities({ searchTerm, setSearchTerm, stats, setSta
                         <div className="mt-6">
                           <h4 className="font-semibold text-gray-900 mb-4">Video</h4>
                           <div className="border rounded-lg p-2">
-                            {videoErrors[(item as Post).video_url] ? (
+                            {videoErrors[(item as Post).video_url || ''] ? (
                               <a
                                 href={(item as Post).video_url}
                                 target="_blank"
@@ -1242,7 +1212,12 @@ export default function Opportunities({ searchTerm, setSearchTerm, stats, setSta
                               <video
                                 controls
                                 className="w-full h-32 object-cover rounded"
-                                onError={() => handleVideoError((item as Post).video_url)}
+                                onError={() => {
+                                  const videoUrl = (item as Post).video_url;
+                                  if (videoUrl) {
+                                    handleVideoError(videoUrl);
+                                  }
+                                }}
                               >
                                 <source src={(item as Post).video_url} type="video/mp4" />
                                 Video not supported
@@ -1322,16 +1297,6 @@ export default function Opportunities({ searchTerm, setSearchTerm, stats, setSta
                                 <Trash2 size={16} className="mr-2" />
                                 {processingAction === item.id ? 'Processing...' : `Delete ${isOpportunity ? 'Opportunity' : 'Post'}`}
                               </button>
-                              {isOpportunity && (
-                                <button
-                                  onClick={() => openReportModal(item.id)}
-                                  disabled={processingAction === item.id}
-                                  className="flex items-center px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-50"
-                                >
-                                  <Upload size={16} className="mr-2" />
-                                  {(item as Opportunity).report ? 'Update Report' : 'Create Report'}
-                                </button>
-                              )}
                               {isOpportunity && (item as Opportunity).is_vip && (
                                 <button
                                   onClick={() => openMouModal(item.id)}
@@ -1378,45 +1343,7 @@ export default function Opportunities({ searchTerm, setSearchTerm, stats, setSta
         cancelText="Cancel"
       />
 
-      <Modal
-        isOpen={isReportModalOpen}
-        onClose={() => {
-          setIsReportModalOpen(false);
-          setReportFile(null);
-          setReportOpportunityId(null);
-          setIsUpdateReport(false);
-        }}
-        onConfirm={handleCreateReport}
-        title={isUpdateReport ? 'Update Report' : 'Create Report'}
-        message={
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Select PDF File</label>
-              <div className="flex items-center space-x-3">
-                <label className="flex-1 cursor-pointer bg-gray-100 border border-gray-300 rounded-lg p-3 hover:bg-gray-200">
-                  <input
-                    type="file"
-                    accept="application/pdf"
-                    onChange={(e) => e.target.files && setReportFile(e.target.files[0])}
-                    className="hidden"
-                  />
-                  <div className="flex items-center text-gray-600">
-                    <Upload size={20} className="mr-2" />
-                    <span>{reportFile ? reportFile.name : 'Choose PDF'}</span>
-                  </div>
-                </label>
-              </div>
-              <p className="mt-2 text-sm text-gray-500">
-                Upload a PDF (max 10MB). {isUpdateReport ? 'This will replace the existing report.' : 'Each opportunity can have only one report.'}
-              </p>
-            </div>
-          </div>
-        }
-        confirmText={processingAction ? 'Uploading...' : isUpdateReport ? 'Update' : 'Create'}
-        cancelText="Cancel"
-        confirmDisabled={processingAction !== null || !reportFile}
-      />
-
+      {/* MOU Upload Modal */}
       <Modal
         isOpen={isMouModalOpen}
         onClose={() => {
@@ -1427,34 +1354,12 @@ export default function Opportunities({ searchTerm, setSearchTerm, stats, setSta
         }}
         onConfirm={handleCreateMou}
         title={isUpdateMou ? 'Update MOU' : 'Upload MOU'}
-        message={
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">Select PDF File</label>
-              <div className="flex items-center space-x-3">
-                <label className="flex-1 cursor-pointer bg-gray-100 border border-gray-300 rounded-lg p-3 hover:bg-gray-200">
-                  <input
-                    type="file"
-                    accept="application/pdf"
-                    onChange={(e) => e.target.files && setMouFile(e.target.files[0])}
-                    className="hidden"
-                  />
-                  <div className="flex items-center text-gray-600">
-                    <Upload size={20} className="mr-2" />
-                    <span>{mouFile ? mouFile.name : 'Choose PDF'}</span>
-                  </div>
-                </label>
-              </div>
-              <p className="mt-2 text-sm text-gray-500">
-                Upload a PDF (max 10MB). {isUpdateMou ? 'This will replace the existing MOU.' : 'Each VIP opportunity can have only one MOU.'}
-              </p>
-            </div>
-          </div>
-        }
+        message="Select a PDF file to upload as MOU document. Upload a PDF (max 10MB). This will be used for VIP opportunities."
         confirmText={processingAction ? 'Uploading...' : isUpdateMou ? 'Update' : 'Upload'}
         cancelText="Cancel"
-        confirmDisabled={processingAction !== null || !mouFile}
       />
     </div>
   );
-}
+};
+
+export default Opportunities;

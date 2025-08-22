@@ -198,7 +198,7 @@ const Home: React.FC = () => {
       />
       {/* <HeroSection user={user} setShowAuthForm={setShowAuthForm} /> */}
       <HeroSectionNew user={user} setShowAuthForm={setShowAuthForm} />
-      <TrendingEvents />
+  <TrendingEvents showAuthForm={() => setShowAuthForm(true)} />
       {/* <HowWeWorkSection /> */}
       <ClientsSection loading={loading} clientLogos={clientLogos} />
       {/* <PricingSectionStatic /> */}
