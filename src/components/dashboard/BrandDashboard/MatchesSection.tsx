@@ -164,14 +164,6 @@ const MatchesSection: React.FC<MatchesSectionProps> = ({
                             Industry: {match.profiles.industry}
                           </p>
                         )}
-                        {match.profiles?.contact_person_name && (
-                          <p className="text-sm text-gray-600">
-                            Contact: {match.profiles.contact_person_name}
-                            {match.profiles.contact_person_phone
-                              ? ` (${match.profiles.contact_person_phone})`
-                              : ''}
-                          </p>
-                        )}
                         <p className="text-sm text-gray-600">
                           Sent: {formatDate(match.created_at)}
                         </p>
