@@ -12,9 +12,10 @@ type UserType = Database['public']['Tables']['profiles']['Row']['user_type'];
 interface AuthFormProps {
   onSuccess: () => void;
   onSignUpSuccess?: () => void;
+  preventRedirect?: boolean;
 }
 
-export default function AuthForm({ onSuccess, onSignUpSuccess }: AuthFormProps) {
+export default function AuthForm({ onSuccess, onSignUpSuccess, preventRedirect = false }: AuthFormProps) {
   const [isSignUp, setIsSignUp] = useState(false);
   const [isForgotPassword, setIsForgotPassword] = useState(false);
   const [email, setEmail] = useState('');
@@ -46,11 +47,13 @@ export default function AuthForm({ onSuccess, onSignUpSuccess }: AuthFormProps) 
         return;
       }
 
-      const { user, profile: userProfile } = await signIn(email, password);
+      await signIn(email, password);
       toast.success('Welcome back!');
       onSuccess();
-      // Redirect to dashboard
-      window.location.href = '/dashboard';
+      // Redirect to dashboard only if not prevented
+      if (!preventRedirect) {
+        window.location.href = '/dashboard';
+      }
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'An error occurred during sign in';
       setError(errorMessage);
@@ -101,8 +104,10 @@ export default function AuthForm({ onSuccess, onSignUpSuccess }: AuthFormProps) 
       toast.success('Account created successfully');
       if (onSignUpSuccess) onSignUpSuccess();
       onSuccess();
-      // Redirect to dashboard
-      window.location.href = '/dashboard';
+      // Redirect to dashboard only if not prevented
+      if (!preventRedirect) {
+        window.location.href = '/dashboard';
+      }
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'An error occurred during sign up';
       setError(errorMessage);
@@ -158,7 +163,7 @@ export default function AuthForm({ onSuccess, onSignUpSuccess }: AuthFormProps) 
 
   return (
     <div className="w-full max-w-sm mx-auto bg-gradient-to-br from-white to-gray-50 border border-gray-200 shadow-2xl rounded-2xl p-8 max-h-[90dvh] overflow-y-auto relative transition-all duration-300">
-      <style jsx>{`
+      <style>{`
         /* Minimal scrollbar with subtle color */
         div[class*="max-h-[90dvh]"]::-webkit-scrollbar {
           width: 4px;
