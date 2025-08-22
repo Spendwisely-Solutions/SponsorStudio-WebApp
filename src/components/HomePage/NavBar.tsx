@@ -183,9 +183,9 @@ const NavBar: React.FC<NavBarProps> = ({
             <a href="#success" className="nav-item px-3 py-2 rounded-full text-[#2B4B9B] hover:bg-blue-50 hover:text-[#1F3A7A] font-medium transition-all duration-300 text-sm lg:text-base">
               Success Stories
             </a>
-            <Link to="/faq" className="nav-item px-3 py-2 rounded-full text-[#2B4B9B] hover:bg-blue-50 hover:text-[#1F3A7A] font-medium transition-all duration-300 text-sm lg:text-base">
+            {/* <Link to="/faq" className="nav-item px-3 py-2 rounded-full text-[#2B4B9B] hover:bg-blue-50 hover:text-[#1F3A7A] font-medium transition-all duration-300 text-sm lg:text-base">
               FAQ
-            </Link>
+            </Link> */}
             <a href="#contact" className="nav-item px-3 py-2 rounded-full text-[#2B4B9B] hover:bg-blue-50 hover:text-[#1F3A7A] font-medium transition-all duration-300 text-sm lg:text-base">
               Contact
             </a>
