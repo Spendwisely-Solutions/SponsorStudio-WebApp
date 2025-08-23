@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { ChevronDown, ChevronUp, LogIn } from 'lucide-react';
+import { ChevronDown, LogIn } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import NavBar from '../HomePage/NavBar';
 import Footer from '../HomePage/Footer';
 import { useAuth } from '../../contexts/AuthContext';
@@ -21,11 +22,12 @@ interface FAQSectionProps {
 
 
 const FAQSection: React.FC<FAQSectionProps> = ({ isStandalonePage = false }) => {
-  const { user, profile } = useAuth();
+  const { user, profile, loading: authLoading } = useAuth();
   const [openItems, setOpenItems] = useState<number[]>([]);
   const [faqs, setFaqs] = useState<FAQItem[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+  // Initialize showAuthModal based on user state to prevent flash
   const [showAuthModal, setShowAuthModal] = useState<boolean>(false);
 
   // Determine user type: brand or creator
@@ -33,6 +35,9 @@ const FAQSection: React.FC<FAQSectionProps> = ({ isStandalonePage = false }) => 
   const isBrand = profile?.user_type === 'brand';
 
   useEffect(() => {
+    // Don't show auth modal until we know the auth state
+    if (authLoading) return;
+    
     const fetchFaqs = async () => {
       setLoading(true);
       setError(null);
@@ -55,19 +60,28 @@ const FAQSection: React.FC<FAQSectionProps> = ({ isStandalonePage = false }) => 
     // Only fetch FAQs if user is logged in
     if (user) {
       fetchFaqs();
+      // Close auth modal if user is logged in
+      if (showAuthModal) {
+        setShowAuthModal(false);
+      }
     } else {
       setLoading(false);
-      // Automatically show auth modal when no user is logged in
-      setShowAuthModal(true);
+      // Only show auth modal when no user is logged in and auth is not loading
+      if (!showAuthModal) {
+        setShowAuthModal(true);
+      }
     }
-  }, [isBrand, user]);
+  }, [isBrand, user, authLoading, showAuthModal]);
 
   const toggleItem = (id: number) => {
-    setOpenItems(prev => 
-      prev.includes(id) 
-        ? prev.filter(i => i !== id)
-        : [...prev, id]
-    );
+    setOpenItems(prev => {
+      // If the clicked item is already open, close it
+      if (prev.includes(id)) {
+        return [];
+      }
+      // Otherwise, close all others and open only the clicked item
+      return [id];
+    });
   };
 
   const faqContent = (
@@ -99,28 +113,75 @@ const FAQSection: React.FC<FAQSectionProps> = ({ isStandalonePage = false }) => 
           </div>
 
           {/* FAQ Items */}
-          <div className="space-y-6">
+          <motion.div 
+            className="space-y-6"
+            initial="hidden"
+            animate="visible"
+            variants={{
+              visible: {
+                transition: {
+                  staggerChildren: 0.1
+                }
+              }
+            }}
+          >
             {!user ? (
               // Show login prompt when user is not logged in
-              <div className="text-center py-16">
-                <div className="bg-white/90 backdrop-blur-md rounded-2xl shadow-lg border border-blue-100/40 p-12">
-                  <LogIn className="w-16 h-16 text-blue-600 mx-auto mb-6" />
-                  <h3 className="text-2xl font-bold text-gray-900 mb-4">
+              <motion.div 
+                className="text-center py-16"
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.5, ease: "easeOut" }}
+              >
+                <motion.div 
+                  className="bg-white/90 backdrop-blur-md rounded-2xl shadow-lg border border-blue-100/40 p-12"
+                  whileHover={{ 
+                    scale: 1.02,
+                    transition: { duration: 0.2 }
+                  }}
+                >
+                  <motion.div
+                    initial={{ y: 20, opacity: 0 }}
+                    animate={{ y: 0, opacity: 1 }}
+                    transition={{ delay: 0.2, duration: 0.5 }}
+                  >
+                    <LogIn className="w-16 h-16 text-blue-600 mx-auto mb-6" />
+                  </motion.div>
+                  <motion.h3 
+                    className="text-2xl font-bold text-gray-900 mb-4"
+                    initial={{ y: 20, opacity: 0 }}
+                    animate={{ y: 0, opacity: 1 }}
+                    transition={{ delay: 0.3, duration: 0.5 }}
+                  >
                     Sign in to View FAQs
-                  </h3>
-                  <p className="text-gray-600 mb-8 leading-relaxed">
+                  </motion.h3>
+                  <motion.p 
+                    className="text-gray-600 mb-8 leading-relaxed"
+                    initial={{ y: 20, opacity: 0 }}
+                    animate={{ y: 0, opacity: 1 }}
+                    transition={{ delay: 0.4, duration: 0.5 }}
+                  >
                     Access personalized frequently asked questions based on your account type.
                     Sign in to get answers tailored specifically for you.
-                  </p>
-                  <button
+                  </motion.p>
+                  <motion.button
                     onClick={() => setShowAuthModal(true)}
-                    className="inline-flex items-center px-8 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-semibold rounded-lg hover:from-blue-700 hover:to-indigo-700 transition-all duration-200 transform hover:scale-105 shadow-lg"
+                    className="inline-flex items-center px-8 py-3 bg-gradient-to-r from-blue-600 to-indigo-600 text-white font-semibold rounded-lg hover:from-blue-700 hover:to-indigo-700 shadow-lg"
+                    initial={{ y: 20, opacity: 0 }}
+                    animate={{ y: 0, opacity: 1 }}
+                    transition={{ delay: 0.5, duration: 0.5 }}
+                    whileHover={{ 
+                      scale: 1.05,
+                      boxShadow: "0 10px 20px rgba(0, 0, 0, 0.2)",
+                      transition: { duration: 0.2 }
+                    }}
+                    whileTap={{ scale: 0.95 }}
                   >
                     <LogIn className="w-5 h-5 mr-2" />
                     Sign In
-                  </button>
-                </div>
-              </div>
+                  </motion.button>
+                </motion.div>
+              </motion.div>
             ) : loading ? (
               <div className="text-center py-8 text-blue-600 animate-pulse">Loading FAQs...</div>
             ) : error ? (
@@ -129,39 +190,86 @@ const FAQSection: React.FC<FAQSectionProps> = ({ isStandalonePage = false }) => 
               <div className="text-center py-8 text-gray-500">No FAQs found for your user type.</div>
             ) : (
               faqs.map((item) => (
-                <div 
+                <motion.div 
                   key={item.id}
-                  className="bg-white/90 backdrop-blur-md rounded-2xl shadow-lg border border-blue-100/40 overflow-hidden transition-all duration-300 hover:shadow-xl"
+                  variants={{
+                    hidden: { opacity: 0, y: 20 },
+                    visible: { opacity: 1, y: 0 }
+                  }}
+                  transition={{ duration: 0.5, ease: "easeOut" }}
+                  className="bg-white/90 backdrop-blur-md rounded-2xl shadow-lg border border-blue-100/40 overflow-hidden"
+                  whileHover={{ 
+                    y: -4,
+                    boxShadow: "0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)",
+                    transition: { duration: 0.2, ease: "easeOut" }
+                  }}
                 >
-                  <button
+                  <motion.button
                     onClick={() => toggleItem(item.id)}
-                    className="w-full px-6 py-6 text-left flex items-center justify-between hover:bg-blue-50/50 transition-colors duration-200"
+                    className="w-full px-6 py-6 text-left flex items-center justify-between hover:bg-blue-50/50"
+                    whileTap={{ scale: 0.995 }}
+                    transition={{ duration: 0.1 }}
                     aria-expanded={openItems.includes(item.id)}
                   >
                     <span className="text-lg font-semibold text-gray-900 pr-4">
                       {item.question}
                     </span>
-                    <div className="flex-shrink-0">
-                      {openItems.includes(item.id) ? (
-                        <ChevronUp className="w-5 h-5 text-blue-600" />
-                      ) : (
-                        <ChevronDown className="w-5 h-5 text-blue-600" />
-                      )}
-                    </div>
-                  </button>
-                  {openItems.includes(item.id) && (
-                    <div className="px-6 pb-6">
-                      <div className="pt-2 border-t border-gray-100">
-                        <p className="text-gray-600 leading-relaxed">
-                          {item.answer}
-                        </p>
-                      </div>
-                    </div>
-                  )}
-                </div>
+                    <motion.div 
+                      className="flex-shrink-0"
+                      animate={{ 
+                        rotate: openItems.includes(item.id) ? 180 : 0 
+                      }}
+                      transition={{ 
+                        duration: 0.3, 
+                        ease: "easeInOut" 
+                      }}
+                    >
+                      <ChevronDown className="w-5 h-5 text-blue-600" />
+                    </motion.div>
+                  </motion.button>
+                  
+                  <AnimatePresence>
+                    {openItems.includes(item.id) && (
+                      <motion.div
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ 
+                          height: "auto", 
+                          opacity: 1,
+                        }}
+                        exit={{ 
+                          height: 0, 
+                          opacity: 0,
+                        }}
+                        transition={{ 
+                          duration: 0.4,
+                          ease: [0.04, 0.62, 0.23, 0.98]
+                        }}
+                        className="overflow-hidden"
+                      >
+                        <motion.div 
+                          className="px-6 pb-6"
+                          initial={{ y: -10, opacity: 0 }}
+                          animate={{ y: 0, opacity: 1 }}
+                          exit={{ y: -10, opacity: 0 }}
+                          transition={{ 
+                            duration: 0.3,
+                            delay: 0.1,
+                            ease: "easeOut"
+                          }}
+                        >
+                          <div className="pt-2 border-t border-gray-100">
+                            <p className="text-gray-600 leading-relaxed">
+                              {item.answer}
+                            </p>
+                          </div>
+                        </motion.div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </motion.div>
               ))
             )}
-          </div>
+          </motion.div>
 
           {/* Contact CTA */}
           <div className="mt-16 text-center bg-white/90 backdrop-blur-md rounded-2xl shadow-lg border border-blue-100/40 p-8">
@@ -182,21 +290,39 @@ const FAQSection: React.FC<FAQSectionProps> = ({ isStandalonePage = false }) => 
       </div>
 
       {/* Auth Modal */}
-      {showAuthModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 pointer-events-auto">
-          <AuthForm
-            onSuccess={() => {
-              setShowAuthModal(false);
-              // Don't redirect to dashboard, just close modal and refresh FAQs
-            }}
-            onSignUpSuccess={() => {
-              setShowAuthModal(false);
-              // Don't redirect to dashboard, just close modal and refresh FAQs
-            }}
-            preventRedirect={true}
-          />
-        </div>
-      )}
+      <AnimatePresence>
+        {!authLoading && !user && showAuthModal && (
+          <motion.div 
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 pointer-events-auto"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.3 }}
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.9, opacity: 0, y: 20 }}
+              transition={{ 
+                duration: 0.3,
+                ease: [0.04, 0.62, 0.23, 0.98]
+              }}
+            >
+              <AuthForm
+                onSuccess={() => {
+                  setShowAuthModal(false);
+                  // Don't redirect to dashboard, just close modal and refresh FAQs
+                }}
+                onSignUpSuccess={() => {
+                  setShowAuthModal(false);
+                  // Don't redirect to dashboard, just close modal and refresh FAQs
+                }}
+                preventRedirect={true}
+              />
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Custom Animations */}
       <style>{`
