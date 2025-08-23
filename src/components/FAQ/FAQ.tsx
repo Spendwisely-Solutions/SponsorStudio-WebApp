@@ -192,10 +192,8 @@ const FAQSection: React.FC<FAQSectionProps> = ({ isStandalonePage = false }) => 
               faqs.map((item) => (
                 <motion.div 
                   key={item.id}
-                  variants={{
-                    hidden: { opacity: 0, y: 20 },
-                    visible: { opacity: 1, y: 0 }
-                  }}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.5, ease: "easeOut" }}
                   className="bg-white/90 backdrop-blur-md rounded-2xl shadow-lg border border-blue-100/40 overflow-hidden"
                   whileHover={{ 
@@ -300,6 +298,7 @@ const FAQSection: React.FC<FAQSectionProps> = ({ isStandalonePage = false }) => 
             transition={{ duration: 0.3 }}
           >
             <motion.div
+              className="w-full max-w-md"
               initial={{ scale: 0.9, opacity: 0, y: 20 }}
               animate={{ scale: 1, opacity: 1, y: 0 }}
               exit={{ scale: 0.9, opacity: 0, y: 20 }}
