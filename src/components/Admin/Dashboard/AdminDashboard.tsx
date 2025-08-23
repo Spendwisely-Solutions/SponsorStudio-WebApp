@@ -239,10 +239,10 @@ export default function AdminDashboard() {
 
       {/* Sidebar */}
       <div className={`
-        fixed top-0 left-0 h-full w-64 bg-white/95 backdrop-blur-md shadow-2xl border-r border-gray-200/50 z-30 transform transition-transform duration-300 ease-in-out
+        fixed top-0 left-0 h-full w-64 bg-white/95 backdrop-blur-md shadow-2xl border-r border-gray-200/50 z-30 transform transition-transform duration-300 ease-in-out flex flex-col
         ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0
       `}>
-        <div className="p-6">
+        <div className="flex-shrink-0 p-6">
           {/* Header */}
           <div className="flex items-center justify-between mb-8">
             <div>
@@ -258,8 +258,10 @@ export default function AdminDashboard() {
               <X className="w-5 h-5 text-gray-500" />
             </button>
           </div>
+        </div>
 
-          {/* Navigation */}
+        {/* Scrollable Navigation */}
+        <div className="flex-1 overflow-y-auto px-6 pb-4 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent hover:scrollbar-thumb-gray-400">
           <nav className="space-y-1">
             {menuItems.map((item) => {
               const Icon = item.icon;
@@ -294,17 +296,17 @@ export default function AdminDashboard() {
               );
             })}
           </nav>
+        </div>
 
-          {/* Logout Button */}
-          <div className="mt-8 pt-6 border-t border-gray-200">
-            <button
-              onClick={handleLogout}
-              className="flex items-center w-full px-4 py-3 text-red-600 hover:text-red-800 hover:bg-red-50 rounded-xl transition-all duration-200 group"
-            >
-              <LogOut className="w-5 h-5 mr-3" />
-              <span className="font-medium">Logout</span>
-            </button>
-          </div>
+        {/* Logout Button */}
+        <div className="flex-shrink-0 p-6 pt-0 border-t border-gray-200">
+          <button
+            onClick={handleLogout}
+            className="flex items-center w-full px-4 py-3 text-red-600 hover:text-red-800 hover:bg-red-50 rounded-xl transition-all duration-200 group"
+          >
+            <LogOut className="w-5 h-5 mr-3" />
+            <span className="font-medium">Logout</span>
+          </button>
         </div>
       </div>
 
