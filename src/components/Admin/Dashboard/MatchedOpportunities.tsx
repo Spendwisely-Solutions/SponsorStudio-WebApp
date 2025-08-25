@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { supabase } from '../../../lib/supabase';
 import toast from 'react-hot-toast';
+import { formatDate } from '../../../utils/formatDate';
 import { 
   AlertTriangle, 
   Calendar, 
@@ -13,13 +14,18 @@ import {
   Clock,
   Building2,
   Globe,
-  Phone,
   Mail,
   Tag,
   CheckSquare,
   CalendarRange,
   Search,
-  Users
+  Users,
+  Filter,
+  RefreshCw,
+  Eye,
+  ExternalLink,
+  Star,
+  Activity
 } from 'lucide-react';
 import type { Database } from '../../../lib/database.types';
 
@@ -62,7 +68,7 @@ interface MatchedOpportunitiesProps {
   }>) => void;
 }
 
-export default function MatchedOpportunities({ searchTerm, setSearchTerm, stats, setStats }: MatchedOpportunitiesProps) {
+export default function MatchedOpportunities({ searchTerm, setSearchTerm, setStats }: MatchedOpportunitiesProps) {
   const [matches, setMatches] = useState<Match[]>([]);
   const [loading, setLoading] = useState(true);
   const [expandedMatch, setExpandedMatch] = useState<string | null>(null);
@@ -290,274 +296,506 @@ export default function MatchedOpportunities({ searchTerm, setSearchTerm, stats,
   };
 
   return (
-    <div>
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Matched Opportunities</h1>
-      </div>
-
-      <div className="flex flex-col md:flex-row gap-4 mb-6">
-        <div className="flex-1">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
-            <input
-              type="text"
-              placeholder="Search matches..."
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-            />
+    <div className="space-y-6">
+      {/* Header Section */}
+      <div className="bg-white/70 backdrop-blur-md rounded-2xl shadow-lg border border-gray-200/50 p-4 sm:p-6">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+          <div className="mb-4 sm:mb-0">
+            <h1 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+              Matched Opportunities
+            </h1>
+            <p className="text-gray-600 mt-1 text-sm sm:text-base">
+              Manage and track opportunity matches between brands and creators
+              {filteredMatches.length !== matches.length && (
+                <span className="ml-2 text-blue-600">
+                  (Showing {filteredMatches.length} of {matches.length})
+                </span>
+              )}
+            </p>
+          </div>
+          <div className="flex items-center space-x-3">
+            <button
+              onClick={fetchMatches}
+              className="p-2.5 sm:p-3 text-gray-600 hover:text-blue-600 border border-gray-200 rounded-lg sm:rounded-xl hover:bg-blue-50 transition-all duration-200 hover:shadow-md flex items-center justify-center"
+              title="Refresh data"
+            >
+              <RefreshCw size={18} />
+            </button>
+            <div className="hidden sm:block">
+              <div className="w-12 h-12 sm:w-16 sm:h-16 bg-gradient-to-r from-blue-500 to-purple-500 rounded-2xl flex items-center justify-center">
+                <Activity className="w-6 h-6 sm:w-8 sm:h-8 text-white" />
+              </div>
+            </div>
           </div>
         </div>
-        <div className="flex gap-2">
-          <select
-            className="px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-            value={matchFilter}
-            onChange={(e) => { 
-              setMatchFilter(e.target.value as typeof matchFilter); 
-            }}
-          >
-            <option value="all">All Matches</option>
-            <option value="pending">Pending Matches</option>
-            <option value="accepted">Accepted Matches</option>
-            <option value="rejected">Rejected Matches</option>
-          </select>
+      </div>
+
+      {/* Search and Filter Section */}
+      <div className="bg-white/70 backdrop-blur-md rounded-xl sm:rounded-2xl shadow-lg border border-gray-200/50 p-4 sm:p-6">
+        <div className="flex flex-col gap-4">
+          <div className="flex flex-col sm:flex-row gap-3">
+            <div className="flex-1">
+              <div className="relative">
+                <Search className="absolute left-3 sm:left-4 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
+                <input
+                  type="text"
+                  placeholder="Search by opportunity title, brand, or creator..."
+                  className="w-full pl-10 sm:pl-12 pr-4 py-2.5 sm:py-3 border border-gray-200 rounded-lg sm:rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white/80 backdrop-blur-sm transition-all duration-200 text-sm sm:text-base"
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                />
+              </div>
+            </div>
+            <div className="flex gap-3">
+              <div className="relative">
+                <Filter className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={16} />
+                <select
+                  className="pl-9 pr-4 py-2.5 sm:py-3 border border-gray-200 rounded-lg sm:rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white/80 backdrop-blur-sm text-sm sm:text-base min-w-[140px]"
+                  value={matchFilter}
+                  onChange={(e) => { 
+                    setMatchFilter(e.target.value as typeof matchFilter); 
+                  }}
+                >
+                  <option value="all">All Matches</option>
+                  <option value="pending">Pending</option>
+                  <option value="accepted">Accepted</option>
+                  <option value="rejected">Rejected</option>
+                </select>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
-      <div className="bg-white rounded-lg shadow overflow-hidden">
+      {/* Main Content */}
+      <div className="bg-white/70 backdrop-blur-md rounded-xl sm:rounded-2xl shadow-lg border border-gray-200/50 overflow-hidden">
         {loading ? (
-          <div className="p-8 text-center">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto"></div>
-            <p className="mt-4 text-gray-600">Loading matches...</p>
+          <div className="p-6 sm:p-12 text-center">
+            <div className="inline-flex items-center justify-center w-12 h-12 sm:w-16 sm:h-16 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full animate-spin mb-4 sm:mb-6">
+              <div className="w-8 h-8 sm:w-12 sm:h-12 border-4 border-white/30 border-t-white rounded-full animate-spin" />
+            </div>
+            <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-2">Loading Matches</h3>
+            <p className="text-sm sm:text-base text-gray-600">Fetching match data...</p>
           </div>
         ) : filteredMatches.length === 0 ? (
-          <div className="p-8 text-center">
-            <AlertTriangle className="mx-auto text-yellow-500" size={48} />
-            <p className="mt-4 text-gray-600">No matches found</p>
+          <div className="p-6 sm:p-12 text-center">
+            <div className="w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-r from-gray-200 to-gray-300 rounded-xl sm:rounded-2xl flex items-center justify-center mx-auto mb-4 sm:mb-6">
+              <AlertTriangle className="w-8 h-8 sm:w-10 sm:h-10 text-gray-500" />
+            </div>
+            <h3 className="text-lg sm:text-xl font-semibold text-gray-900 mb-2">No Matches Found</h3>
+            <p className="text-sm sm:text-base text-gray-600 mb-4 sm:mb-6">
+              {searchTerm ? `No matches found for "${searchTerm}"` : 'No matches found with current filters'}
+            </p>
+            <button
+              onClick={fetchMatches}
+              className="inline-flex items-center px-4 sm:px-6 py-2 sm:py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white font-medium rounded-lg sm:rounded-xl hover:from-blue-700 hover:to-purple-700 transition-all duration-200 transform hover:scale-105 shadow-lg text-sm sm:text-base"
+            >
+              <RefreshCw className="w-4 h-4 mr-2" />
+              Refresh Data
+            </button>
           </div>
         ) : (
-          <div className="divide-y divide-gray-200">
+          <div className="divide-y divide-gray-200/50">
             {filteredMatches.map((match) => (
-              <div key={match.id} className="p-6">
+              <div key={match.id} className="p-4 sm:p-6 hover:bg-gray-50/50 transition-all duration-200">
                 <div className="flex justify-between items-start">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 mb-2">
-                      <h3 className="text-lg font-semibold text-gray-900">
+                  <div className="flex-1 min-w-0">
+                    <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-3 mb-3">
+                      <h3 className="text-lg font-semibold text-gray-900 truncate">
                         {match.opportunity?.title || 'Opportunity not found'}
                       </h3>
-                      <span className={`px-2 py-0.5 text-xs rounded-full ${
-                        match.status?.trim().toLowerCase() === 'pending'
-                          ? 'bg-yellow-100 text-yellow-800'
-                          : match.status?.trim().toLowerCase() === 'accepted'
-                          ? 'bg-green-100 text-green-800'
-                          : 'bg-red-100 text-red-800'
-                      }`}>
-                        {match.status?.charAt(0).toUpperCase() + match.status?.slice(1)}
-                      </span>
+                      <div className="flex items-center gap-2">
+                        <span className={`inline-flex items-center px-2.5 py-1 text-xs font-medium rounded-full ${
+                          match.status?.trim().toLowerCase() === 'pending'
+                            ? 'bg-yellow-100 text-yellow-800 border border-yellow-200'
+                            : match.status?.trim().toLowerCase() === 'accepted'
+                            ? 'bg-green-100 text-green-800 border border-green-200'
+                            : 'bg-red-100 text-red-800 border border-red-200'
+                        }`}>
+                          <div className={`w-1.5 h-1.5 rounded-full mr-1.5 ${
+                            match.status?.trim().toLowerCase() === 'pending'
+                              ? 'bg-yellow-500'
+                              : match.status?.trim().toLowerCase() === 'accepted'
+                              ? 'bg-green-500'
+                              : 'bg-red-500'
+                          }`} />
+                          {match.status?.charAt(0).toUpperCase() + match.status?.slice(1)}
+                        </span>
+                        {match.meeting_link && (
+                          <span className="inline-flex items-center px-2 py-1 text-xs font-medium bg-blue-100 text-blue-800 rounded-full border border-blue-200">
+                            <Calendar className="w-3 h-3 mr-1" />
+                            Meeting Set
+                          </span>
+                        )}
+                      </div>
                     </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
-                      <div className="space-y-2">
-                        <div className="flex items-start space-x-3">
-                          <Building2 size={16} className="text-gray-400 flex-shrink-0 mt-1" />
+                    
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mt-4">
+                      {/* Brand Section */}
+                      <div className="bg-white/50 rounded-xl p-4 border border-gray-100/50">
+                        <div className="flex items-center mb-3">
+                          <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-blue-600 rounded-lg flex items-center justify-center mr-3">
+                            <Building2 className="w-4 h-4 text-white" />
+                          </div>
                           <div>
-                            <p className="font-medium text-gray-900">
-                              Brand: {match.brand_profile?.company_name || 'Not set'}
-                            </p>
-                            <p className="text-sm text-gray-500">
+                            <h4 className="font-medium text-gray-900">Brand</h4>
+                            <p className="text-sm text-gray-500">Company Details</p>
+                          </div>
+                        </div>
+                        <div className="space-y-2">
+                          <div className="flex items-center">
+                            <Building2 size={14} className="text-gray-400 mr-2 flex-shrink-0" />
+                            <span className="text-sm font-medium text-gray-900 truncate">
+                              {match.brand_profile?.company_name || 'Not set'}
+                            </span>
+                          </div>
+                          <div className="flex items-center">
+                            <Tag size={14} className="text-gray-400 mr-2 flex-shrink-0" />
+                            <span className="text-sm text-gray-600 truncate">
                               {match.brand_profile?.industry || 'Industry not set'}
-                            </p>
+                            </span>
                           </div>
+                          {match.brand_profile?.contact_person_name && (
+                            <div className="flex items-center">
+                              <Users size={14} className="text-gray-400 mr-2 flex-shrink-0" />
+                              <span className="text-sm text-gray-600 truncate">
+                                {match.brand_profile.contact_person_name}
+                              </span>
+                            </div>
+                          )}
+                          {match.brand_profile?.email && (
+                            <div className="flex items-center">
+                              <Mail size={14} className="text-gray-400 mr-2 flex-shrink-0" />
+                              <span className="text-sm text-gray-600 truncate">
+                                {match.brand_profile.email}
+                              </span>
+                            </div>
+                          )}
                         </div>
-                        {match.brand_profile?.email && (
-                          <div className="flex items-center space-x-3">
-                            <Mail size={16} className="text-gray-400" />
-                            <p className="text-gray-900">{match.brand_profile.email}</p>
-                          </div>
-                        )}
-                        {match.brand_profile?.contact_person_name && (
-                          <div className="flex items-center space-x-3">
-                            <Users size={16} className="text-gray-400" />
-                            <p className="text-gray-900">{match.brand_profile.contact_person_name}</p>
-                          </div>
-                        )}
-                        {match.brand_profile?.contact_person_phone && (
-                          <div className="flex items-center space-x-3">
-                            <Phone size={16} className="text-gray-400" />
-                            <p className="text-gray-900">{match.brand_profile.contact_person_phone}</p>
-                          </div>
-                        )}
                       </div>
-                      <div className="space-y-2">
-                        <div className="flex items-start space-x-3">
-                          <Building2 size={16} className="text-gray-400 flex-shrink-0 mt-1" />
+
+                      {/* Creator Section */}
+                      <div className="bg-white/50 rounded-xl p-4 border border-gray-100/50">
+                        <div className="flex items-center mb-3">
+                          <div className="w-8 h-8 bg-gradient-to-r from-purple-500 to-purple-600 rounded-lg flex items-center justify-center mr-3">
+                            <Star className="w-4 h-4 text-white" />
+                          </div>
                           <div>
-                            <p className="font-medium text-gray-900">
-                              Creator: {match.opportunity?.creator_profile?.company_name || 'Not set'}
-                            </p>
-                            <p className="text-sm text-gray-500">
-                              {match.opportunity?.creator_profile?.industry || 'Industry not set'}
-                            </p>
+                            <h4 className="font-medium text-gray-900">Creator</h4>
+                            <p className="text-sm text-gray-500">Content Creator</p>
                           </div>
                         </div>
-                        {match.opportunity?.creator_profile?.email && (
-                          <div className="flex items-center space-x-3">
-                            <Mail size={16} className="text-gray-400" />
-                            <p className="text-gray-900">{match.opportunity?.creator_profile?.email}</p>
+                        <div className="space-y-2">
+                          <div className="flex items-center">
+                            <Building2 size={14} className="text-gray-400 mr-2 flex-shrink-0" />
+                            <span className="text-sm font-medium text-gray-900 truncate">
+                              {match.opportunity?.creator_profile?.company_name || 'Not set'}
+                            </span>
                           </div>
-                        )}
-                        {match.opportunity?.creator_profile?.contact_person_name && (
-                          <div className="flex items-center space-x-3">
-                            <Users size={16} className="text-gray-400" />
-                            <p className="text-gray-900">{match.opportunity?.creator_profile?.contact_person_name}</p>
+                          <div className="flex items-center">
+                            <Tag size={14} className="text-gray-400 mr-2 flex-shrink-0" />
+                            <span className="text-sm text-gray-600 truncate">
+                              {match.opportunity?.creator_profile?.industry || 'Industry not set'}
+                            </span>
                           </div>
-                        )}
-                        {match.opportunity?.creator_profile?.contact_person_phone && (
-                          <div className="flex items-center space-x-3">
-                            <Phone size={16} className="text-gray-400" />
-                            <p className="text-gray-900">{match.opportunity?.creator_profile?.contact_person_phone}</p>
-                          </div>
-                        )}
+                          {match.opportunity?.creator_profile?.contact_person_name && (
+                            <div className="flex items-center">
+                              <Users size={14} className="text-gray-400 mr-2 flex-shrink-0" />
+                              <span className="text-sm text-gray-600 truncate">
+                                {match.opportunity?.creator_profile?.contact_person_name}
+                              </span>
+                            </div>
+                          )}
+                          {match.opportunity?.creator_profile?.email && (
+                            <div className="flex items-center">
+                              <Mail size={14} className="text-gray-400 mr-2 flex-shrink-0" />
+                              <span className="text-sm text-gray-600 truncate">
+                                {match.opportunity?.creator_profile?.email}
+                              </span>
+                            </div>
+                          )}
+                        </div>
                       </div>
+                    </div>
+
+                    {/* Quick Info Bar */}
+                    <div className="flex flex-wrap items-center gap-4 mt-4 pt-4 border-t border-gray-100">
+                      <div className="flex items-center text-sm text-gray-500">
+                        <Clock size={14} className="mr-1.5 flex-shrink-0" />
+                        Matched {formatDate(match.created_at)}
+                      </div>
+                      {match.opportunity?.location && (
+                        <div className="flex items-center text-sm text-gray-500">
+                          <MapPin size={14} className="mr-1.5 flex-shrink-0" />
+                          {match.opportunity.location}
+                        </div>
+                      )}
+                      {match.opportunity && (
+                        <div className="flex items-center text-sm text-gray-500">
+                          <DollarSign size={14} className="mr-1.5 flex-shrink-0" />
+                          {formatPrice(match.opportunity.price_range)}
+                        </div>
+                      )}
                     </div>
                   </div>
-                  <button
-                    onClick={() => setExpandedMatch(match.id === expandedMatch ? null : match.id)}
-                    className="p-2 text-gray-500 hover:text-gray-700"
-                  >
-                    {match.id === expandedMatch ? (
-                      <ChevronUp size={20} />
-                    ) : (
-                      <ChevronDown size={20} />
-                    )}
-                  </button>
+                  
+                  <div className="flex items-center gap-2 ml-4">
+                    <button
+                      onClick={() => setExpandedMatch(match.id === expandedMatch ? null : match.id)}
+                      className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-all duration-200"
+                      title={match.id === expandedMatch ? "Collapse details" : "Expand details"}
+                    >
+                      {match.id === expandedMatch ? (
+                        <ChevronUp size={20} />
+                      ) : (
+                        <ChevronDown size={20} />
+                      )}
+                    </button>
+                  </div>
                 </div>
                 {match.id === expandedMatch && (
-                  <div className="mt-6 p-6 bg-gray-50 rounded-lg">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      <div>
-                        <h4 className="font-semibold text-gray-900 mb-4">Opportunity Details</h4>
-                        <div className="space-y-4">
+                  <div className="mt-6 p-6 bg-gradient-to-br from-gray-50 to-gray-100/50 rounded-xl border border-gray-200/50">
+                    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                      {/* Opportunity Details */}
+                      <div className="bg-white/80 backdrop-blur-sm rounded-xl p-5 border border-gray-200/50">
+                        <div className="flex items-center mb-4">
+                          <div className="w-10 h-10 bg-gradient-to-r from-green-500 to-emerald-500 rounded-xl flex items-center justify-center mr-3">
+                            <Eye className="w-5 h-5 text-white" />
+                          </div>
                           <div>
-                            <h5 className="text-sm font-medium text-gray-700 mb-2">Description</h5>
-                            <p className="text-gray-600">{match.opportunity?.description || 'No description available'}</p>
+                            <h4 className="font-semibold text-gray-900">Opportunity Details</h4>
+                            <p className="text-sm text-gray-500">Complete opportunity information</p>
                           </div>
-                          <div className="flex items-center text-sm text-gray-500">
-                            <MapPin size={16} className="mr-2 flex-shrink-0" />
-                            {match.opportunity?.location || 'Location not set'}
+                        </div>
+                        <div className="space-y-4">
+                          <div className="bg-gray-50/50 rounded-lg p-3">
+                            <h5 className="text-sm font-medium text-gray-700 mb-2 flex items-center">
+                              <FileText className="w-4 h-4 mr-2" />
+                              Description
+                            </h5>
+                            <p className="text-gray-600 text-sm leading-relaxed">
+                              {match.opportunity?.description || 'No description available'}
+                            </p>
                           </div>
-                          <div className="flex items-center text-sm text-gray-500">
-                            <CalendarRange size={16} className="mr-2 flex-shrink-0" />
-                            {match.opportunity?.start_date && match.opportunity?.end_date 
-                              ? `${new Date(match.opportunity.start_date).toLocaleDateString()} - ${new Date(match.opportunity.end_date).toLocaleDateString()}`
-                              : 'Dates not set'
-                            }
+                          
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <div className="flex items-center p-3 bg-blue-50/50 rounded-lg">
+                              <MapPin size={16} className="mr-3 text-blue-600 flex-shrink-0" />
+                              <div>
+                                <p className="text-xs font-medium text-blue-700 uppercase tracking-wide">Location</p>
+                                <p className="text-sm text-blue-900">{match.opportunity?.location || 'Not set'}</p>
+                              </div>
+                            </div>
+                            
+                            <div className="flex items-center p-3 bg-green-50/50 rounded-lg">
+                              <DollarSign size={16} className="mr-3 text-green-600 flex-shrink-0" />
+                              <div>
+                                <p className="text-xs font-medium text-green-700 uppercase tracking-wide">Budget</p>
+                                <p className="text-sm text-green-900">
+                                  {match.opportunity ? formatPrice(match.opportunity.price_range) : 'Not set'}
+                                </p>
+                              </div>
+                            </div>
                           </div>
-                          <div className="flex items-center text-sm text-gray-500">
-                            <DollarSign size={16} className="mr-2 flex-shrink-0" />
-                            {match.opportunity ? formatPrice(match.opportunity.price_range) : 'Price not set'}
+
+                          <div className="flex items-center p-3 bg-purple-50/50 rounded-lg">
+                            <CalendarRange size={16} className="mr-3 text-purple-600 flex-shrink-0" />
+                            <div>
+                              <p className="text-xs font-medium text-purple-700 uppercase tracking-wide">Duration</p>
+                              <p className="text-sm text-purple-900">
+                                {match.opportunity?.start_date && match.opportunity?.end_date 
+                                  ? `${formatDate(match.opportunity.start_date)} - ${formatDate(match.opportunity.end_date)}`
+                                  : 'Dates not set'
+                                }
+                              </p>
+                            </div>
                           </div>
+
                           {match.opportunity?.categories?.name && (
-                            <div className="flex items-center text-sm text-gray-500">
-                              <Tag size={16} className="mr-2 flex-shrink-0" />
-                              Category: {match.opportunity.categories.name}
+                            <div className="flex items-center p-3 bg-orange-50/50 rounded-lg">
+                              <Tag size={16} className="mr-3 text-orange-600 flex-shrink-0" />
+                              <div>
+                                <p className="text-xs font-medium text-orange-700 uppercase tracking-wide">Category</p>
+                                <p className="text-sm text-orange-900">{match.opportunity.categories.name}</p>
+                              </div>
                             </div>
                           )}
                         </div>
                       </div>
-                      <div>
-                        <h4 className="font-semibold text-gray-900 mb-4">Match Details</h4>
+                      
+                      {/* Match Details */}
+                      <div className="bg-white/80 backdrop-blur-sm rounded-xl p-5 border border-gray-200/50">
+                        <div className="flex items-center mb-4">
+                          <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-xl flex items-center justify-center mr-3">
+                            <Activity className="w-5 h-5 text-white" />
+                          </div>
+                          <div>
+                            <h4 className="font-semibold text-gray-900">Match Information</h4>
+                            <p className="text-sm text-gray-500">Connection and meeting details</p>
+                          </div>
+                        </div>
                         <div className="space-y-4">
-                          <div className="flex items-center text-sm text-gray-500">
-                            <Clock size={16} className="mr-2 flex-shrink-0" />
-                            Matched on: {new Date(match.created_at).toLocaleDateString()}
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <div className="flex items-center p-3 bg-gray-50/50 rounded-lg">
+                              <Clock size={16} className="mr-3 text-gray-600 flex-shrink-0" />
+                              <div>
+                                <p className="text-xs font-medium text-gray-700 uppercase tracking-wide">Matched Date</p>
+                                <p className="text-sm text-gray-900">{formatDate(match.created_at)}</p>
+                              </div>
+                            </div>
+                            
+                            <div className="flex items-center p-3 bg-gray-50/50 rounded-lg">
+                              <CheckSquare size={16} className="mr-3 text-gray-600 flex-shrink-0" />
+                              <div>
+                                <p className="text-xs font-medium text-gray-700 uppercase tracking-wide">Status</p>
+                                <p className="text-sm text-gray-900">
+                                  {match.status?.charAt(0).toUpperCase() + match.status?.slice(1)}
+                                </p>
+                              </div>
+                            </div>
                           </div>
-                          <div className="flex items-center text-sm text-gray-500">
-                            <CheckSquare size={16} className="mr-2 flex-shrink-0" />
-                            Status: {match.status?.charAt(0).toUpperCase() + match.status?.slice(1)}
-                          </div>
+
                           {match.meeting_scheduled_at && (
-                            <div className="flex items-center text-sm text-gray-500">
-                              <Calendar size={16} className="mr-2 flex-shrink-0" />
-                              Meeting Scheduled: {new Date(match.meeting_scheduled_at).toLocaleString()}
+                            <div className="flex items-center p-3 bg-indigo-50/50 rounded-lg">
+                              <Calendar size={16} className="mr-3 text-indigo-600 flex-shrink-0" />
+                              <div>
+                                <p className="text-xs font-medium text-indigo-700 uppercase tracking-wide">Meeting Scheduled</p>
+                                <p className="text-sm text-indigo-900">
+                                  {new Date(match.meeting_scheduled_at).toLocaleString()}
+                                </p>
+                              </div>
                             </div>
                           )}
+                          
                           {match.meeting_link && (
-                            <div className="flex items-center text-sm text-[#2B4B9B]">
-                              <LinkIcon size={16} className="mr-2 flex-shrink-0" />
-                              <a href={match.meeting_link} target="_blank" rel="noopener noreferrer" className="hover:underline">
-                                Meeting Link
+                            <div className="p-3 bg-blue-50/50 rounded-lg">
+                              <div className="flex items-center mb-2">
+                                <LinkIcon size={16} className="mr-2 text-blue-600" />
+                                <p className="text-xs font-medium text-blue-700 uppercase tracking-wide">Meeting Link</p>
+                              </div>
+                              <a 
+                                href={match.meeting_link} 
+                                target="_blank" 
+                                rel="noopener noreferrer" 
+                                className="inline-flex items-center text-sm text-blue-600 hover:text-blue-800 hover:underline"
+                              >
+                                Join Meeting
+                                <ExternalLink size={14} className="ml-1" />
                               </a>
                             </div>
                           )}
+
+                          {/* Contact Links */}
+                          <div className="space-y-2">
+                            {match.brand_profile?.website && (
+                              <div className="flex items-center justify-between p-3 bg-emerald-50/50 rounded-lg">
+                                <div className="flex items-center">
+                                  <Globe size={16} className="mr-3 text-emerald-600" />
+                                  <span className="text-sm font-medium text-emerald-900">Brand Website</span>
+                                </div>
+                                <a 
+                                  href={match.brand_profile.website}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="inline-flex items-center text-sm text-emerald-600 hover:text-emerald-800"
+                                >
+                                  Visit
+                                  <ExternalLink size={14} className="ml-1" />
+                                </a>
+                              </div>
+                            )}
+                            
+                            {match.opportunity?.creator_profile?.website && (
+                              <div className="flex items-center justify-between p-3 bg-purple-50/50 rounded-lg">
+                                <div className="flex items-center">
+                                  <Globe size={16} className="mr-3 text-purple-600" />
+                                  <span className="text-sm font-medium text-purple-900">Creator Website</span>
+                                </div>
+                                <a 
+                                  href={match.opportunity?.creator_profile?.website}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="inline-flex items-center text-sm text-purple-600 hover:text-purple-800"
+                                >
+                                  Visit
+                                  <ExternalLink size={14} className="ml-1" />
+                                </a>
+                              </div>
+                            )}
+                          </div>
+
                           {match.notes && (
-                            <div className="flex items-start text-sm text-gray-500">
-                              <FileText size={16} className="mr-2 flex-shrink-0 mt-1" />
-                              <p>Notes: {match.notes}</p>
-                            </div>
-                          )}
-                          {match.brand_profile?.website && (
-                            <div className="flex items-center space-x-3">
-                              <Globe size={16} className="text-gray-400" />
-                              <a 
-                                href={match.brand_profile.website}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="text-[#2B4B9B] hover:underline"
-                              >
-                                Brand Website
-                              </a>
-                            </div>
-                          )}
-                          {match.opportunity?.creator_profile?.website && (
-                            <div className="flex items-center space-x-3">
-                              <Globe size={16} className="text-gray-400" />
-                              <a 
-                                href={match.opportunity?.creator_profile?.website}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="text-[#2B4B9B] hover:underline"
-                              >
-                                Creator Website
-                              </a>
+                            <div className="p-3 bg-amber-50/50 rounded-lg">
+                              <div className="flex items-start">
+                                <FileText size={16} className="mr-3 text-amber-600 flex-shrink-0 mt-0.5" />
+                                <div>
+                                  <p className="text-xs font-medium text-amber-700 uppercase tracking-wide mb-1">Notes</p>
+                                  <p className="text-sm text-amber-900">{match.notes}</p>
+                                </div>
+                              </div>
                             </div>
                           )}
                         </div>
                       </div>
                     </div>
                     {match.status?.trim().toLowerCase() === 'accepted' && (
-                      <div className="mt-6">
-                        <h4 className="font-semibold text-gray-900 mb-4">Set Meeting Details</h4>
-                        <div className="flex flex-col md:flex-row gap-2">
-                          <input
-                            type="text"
-                            value={newMeetingLink}
-                            onChange={(e) => setNewMeetingLink(e.target.value)}
-                            placeholder="Enter meeting link (e.g., https://meet.google.com/xxx-yyyy-zzz)"
-                            className="w-full md:w-1/2 p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#2B4B9B] focus:border-[#2B4B9B]"
-                          />
-                          <input
-                            type="datetime-local"
-                            value={meetingScheduledAt}
-                            onChange={(e) => setMeetingScheduledAt(e.target.value)}
-                            className="w-full md:w-1/2 p-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-[#2B4B9B] focus:border-[#2B4B9B]"
-                          />
-                          <button
-                            onClick={() => handleSaveMeetingLink(match.id)}
-                            disabled={processingAction === match.id || !newMeetingLink || !meetingScheduledAt}
-                            className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:opacity-50"
-                          >
-                            {processingAction === match.id ? 'Saving...' : 'Save'}
-                          </button>
-                          {(match.meeting_link && match.meeting_scheduled_at) && (
-                            <a
-                              href={generateGoogleCalendarLink(match)}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 text-center"
+                      <div className="mt-6 bg-white/80 backdrop-blur-sm rounded-xl p-5 border border-blue-200/50">
+                        <div className="flex items-center mb-4">
+                          <div className="w-10 h-10 bg-gradient-to-r from-blue-500 to-blue-600 rounded-xl flex items-center justify-center mr-3">
+                            <Calendar className="w-5 h-5 text-white" />
+                          </div>
+                          <div>
+                            <h4 className="font-semibold text-gray-900">Meeting Management</h4>
+                            <p className="text-sm text-gray-500">Schedule and manage meeting details</p>
+                          </div>
+                        </div>
+                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-3">
+                          <div className="lg:col-span-1">
+                            <label className="block text-sm font-medium text-gray-700 mb-2">Meeting Link</label>
+                            <input
+                              type="text"
+                              value={newMeetingLink}
+                              onChange={(e) => setNewMeetingLink(e.target.value)}
+                              placeholder="https://meet.google.com/xxx-yyyy-zzz"
+                              className="w-full p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white/50 text-sm"
+                            />
+                          </div>
+                          <div className="lg:col-span-1">
+                            <label className="block text-sm font-medium text-gray-700 mb-2">Scheduled Date & Time</label>
+                            <input
+                              type="datetime-local"
+                              value={meetingScheduledAt}
+                              onChange={(e) => setMeetingScheduledAt(e.target.value)}
+                              className="w-full p-3 border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 bg-white/50 text-sm"
+                            />
+                          </div>
+                          <div className="lg:col-span-1 flex flex-col justify-end gap-2">
+                            <button
+                              onClick={() => handleSaveMeetingLink(match.id)}
+                              disabled={processingAction === match.id || !newMeetingLink || !meetingScheduledAt}
+                              className="flex-1 px-4 py-3 bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg hover:from-blue-600 hover:to-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 font-medium text-sm"
                             >
-                              Add to Google Calendar
-                            </a>
-                          )}
+                              {processingAction === match.id ? (
+                                <div className="flex items-center justify-center">
+                                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2" />
+                                  Saving...
+                                </div>
+                              ) : (
+                                'Save Meeting'
+                              )}
+                            </button>
+                            {(match.meeting_link && match.meeting_scheduled_at) && (
+                              <a
+                                href={generateGoogleCalendarLink(match)}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="flex items-center justify-center px-4 py-3 bg-gradient-to-r from-green-500 to-green-600 text-white rounded-lg hover:from-green-600 hover:to-green-700 transition-all duration-200 font-medium text-sm"
+                              >
+                                <Calendar className="w-4 h-4 mr-2" />
+                                Add to Calendar
+                              </a>
+                            )}
+                          </div>
                         </div>
                       </div>
                     )}
