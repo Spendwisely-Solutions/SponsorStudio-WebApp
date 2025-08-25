@@ -212,7 +212,7 @@ export default function AdminDashboard() {
   const menuItems = [
     { path: '/admin/dashboard', label: 'Dashboard', icon: LayoutDashboard, color: 'text-blue-600' },
     { path: '/admin/opportunities', label: 'Opportunities', icon: Briefcase, color: 'text-green-600' },
-    { path: '/admin/matched-opportunities', label: 'Matched Opportunities', icon: LinkIcon, color: 'text-purple-600' },
+    { path: '/admin/matched-opportunities', label: 'Matches', icon: LinkIcon, color: 'text-purple-600' },
     { path: '/admin/risk-analysis', label: 'Risk Analysis', icon: Shield, color: 'text-red-600' },
     { path: '/admin/create-risk-analysis', label: 'Create Reports', icon: FileText, color: 'text-orange-600' },
     { path: '/admin/manage-users', label: 'Manage Users', icon: Users, color: 'text-indigo-600' },
@@ -242,14 +242,15 @@ export default function AdminDashboard() {
         fixed top-0 left-0 h-full w-64 bg-white/95 backdrop-blur-md shadow-2xl border-r border-gray-200/50 z-30 transform transition-transform duration-300 ease-in-out flex flex-col
         ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0
       `}>
-        <div className="flex-shrink-0 p-6">
+        <div className="flex-shrink-0 p-6 pt-1 pb-1">
           {/* Header */}
-          <div className="flex items-center justify-between mb-8">
-            <div>
-              <h2 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
-                Admin Panel
-              </h2>
-              <p className="text-sm text-gray-500 mt-1">SponsorStudio</p>
+          <div className="flex items-center justify-between mb-0">
+            <div className="flex items-center">
+              <img 
+                src="/sponsor_studio_logo.png" 
+                alt="SponsorStudio" 
+                className="h-20 w-auto"
+              />
             </div>
             <button
               onClick={() => setSidebarOpen(false)}
