@@ -1,7 +1,24 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from '../../../lib/supabase';
 import toast from 'react-hot-toast';
-import { UserCog, Trash2, Edit, Search } from 'lucide-react';
+import { formatDate } from '../../../utils/formatDate';
+import { 
+  Trash2, 
+  Edit, 
+  Search,
+  Users,
+  Building2,
+  Calendar,
+  Mail,
+  MapPin,
+  RefreshCw,
+  TrendingUp,
+  UserCog,
+  Filter,
+  ChevronUp,
+  ChevronDown,
+  ArrowUpDown
+} from 'lucide-react';
 import Modal from '../../Modal';
 
 interface Profile {
@@ -51,6 +68,17 @@ export default function ManageUsers({ searchTerm: externalSearchTerm, setSearchT
   const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isSelectionMode, setIsSelectionMode] = useState(false);
+  const [showFilters, setShowFilters] = useState(false);
+  const [filters, setFilters] = useState({
+    userType: 'all',
+    joinDate: 'all',
+    location: 'all',
+    companySize: 'all'
+  });
+  const [sortConfig, setSortConfig] = useState<{
+    key: string;
+    direction: 'asc' | 'desc';
+  } | null>(null);
   const longPressTimer = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
@@ -220,9 +248,103 @@ export default function ManageUsers({ searchTerm: externalSearchTerm, setSearchT
     }
   };
 
+  const getUserTypeConfig = (userType: string | null) => {
+    switch (userType) {
+      case 'brand':
+        return {
+          label: 'Brands',
+          subtitle: 'Companies',
+          color: '#10b981',
+          gradient: 'linear-gradient(135deg, #10b981, #059669)',
+          icon: Building2
+        };
+      case 'creator':
+        return {
+          label: 'Creators',
+          subtitle: 'Content makers',
+          color: '#f59e0b',
+          gradient: 'linear-gradient(135deg, #f59e0b, #d97706)',
+          icon: Users
+        };
+      case 'event_organizer':
+        return {
+          label: 'Event Organizers',
+          subtitle: 'Event hosts',
+          color: '#8b5cf6',
+          gradient: 'linear-gradient(135deg, #8b5cf6, #7c3aed)',
+          icon: Calendar
+        };
+      case 'agency':
+        return {
+          label: 'Agencies',
+          subtitle: 'Marketing firms',
+          color: '#ef4444',
+          gradient: 'linear-gradient(135deg, #ef4444, #dc2626)',
+          icon: Building2
+        };
+      case 'influencer':
+        return {
+          label: 'Influencers',
+          subtitle: 'Social media',
+          color: '#ec4899',
+          gradient: 'linear-gradient(135deg, #ec4899, #db2777)',
+          icon: Users
+        };
+      default:
+        return {
+          label: 'Unknown',
+          subtitle: 'Unspecified',
+          color: '#6b7280',
+          gradient: 'linear-gradient(135deg, #6b7280, #4b5563)',
+          icon: UserCog
+        };
+    }
+  };
+
   const handleDoubleClick = (userId: string) => {
     setIsSelectionMode(true);
     setSelectedUsers(prev => prev.includes(userId) ? prev : [...prev, userId]);
+  };
+
+  const handleSort = (key: string) => {
+    let direction: 'asc' | 'desc' = 'asc';
+    if (sortConfig && sortConfig.key === key && sortConfig.direction === 'asc') {
+      direction = 'desc';
+    }
+    setSortConfig({ key, direction });
+  };
+
+  const getSortIcon = (columnKey: string) => {
+    if (!sortConfig || sortConfig.key !== columnKey) {
+      return <ArrowUpDown className="w-3 h-3 text-gray-400" />;
+    }
+    return sortConfig.direction === 'asc' 
+      ? <ChevronUp className="w-3 h-3 text-blue-600" />
+      : <ChevronDown className="w-3 h-3 text-blue-600" />;
+  };
+
+  const getUniqueValues = (key: keyof Profile) => {
+    const values = users
+      .map(user => user[key])
+      .filter(value => value && value !== '')
+      .map(value => String(value));
+    return Array.from(new Set(values)).sort();
+  };
+
+  const handleFilterChange = (filterType: string, value: string) => {
+    setFilters(prev => ({
+      ...prev,
+      [filterType]: value
+    }));
+  };
+
+  const clearFilters = () => {
+    setFilters({
+      userType: 'all',
+      joinDate: 'all',
+      location: 'all',
+      companySize: 'all'
+    });
   };
 
   const filteredUsers = users.filter(user => {
@@ -232,224 +354,680 @@ export default function ManageUsers({ searchTerm: externalSearchTerm, setSearchT
       (user.company_name?.toLowerCase().includes(searchTerm.toLowerCase()) || false) ||
       (user.email?.toLowerCase().includes(searchTerm.toLowerCase()) || false) ||
       (user.website?.toLowerCase().includes(searchTerm.toLowerCase()) || false) ||
-      (user.industry?.toLowerCase().includes(searchTerm.toLowerCase()) || false) ||
-      (user.company_size?.toLowerCase().includes(searchTerm.toLowerCase()) || false) ||
       (user.location?.toLowerCase().includes(searchTerm.toLowerCase()) || false) ||
+      (user.company_size?.toLowerCase().includes(searchTerm.toLowerCase()) || false) ||
       (user.phone_number?.toLowerCase().includes(searchTerm.toLowerCase()) || false);
 
+    const matchesFilters = 
+      (filters.userType === 'all' || user.user_type === filters.userType) &&
+      (filters.joinDate === 'all' || (() => {
+        if (!user.created_at) return false;
+        const joinDate = new Date(user.created_at);
+        const now = new Date();
+        const daysDiff = Math.floor((now.getTime() - joinDate.getTime()) / (1000 * 60 * 60 * 24));
+        
+        switch (filters.joinDate) {
+          case 'last-7-days': return daysDiff <= 7;
+          case 'last-30-days': return daysDiff <= 30;
+          case 'last-90-days': return daysDiff <= 90;
+          case 'last-year': return daysDiff <= 365;
+          default: return true;
+        }
+      })()) &&
+      (filters.location === 'all' || user.location === filters.location) &&
+      (filters.companySize === 'all' || user.company_size === filters.companySize);
 
-    return matchesSearchTerm;
+    return matchesSearchTerm && matchesFilters;
+  }).sort((a, b) => {
+    if (!sortConfig) return 0;
+
+    const { key, direction } = sortConfig;
+    let aValue = a[key as keyof Profile];
+    let bValue = b[key as keyof Profile];
+
+    // Handle null/undefined values
+    if (!aValue && !bValue) return 0;
+    if (!aValue) return direction === 'asc' ? 1 : -1;
+    if (!bValue) return direction === 'asc' ? -1 : 1;
+
+    // Convert to strings for comparison
+    aValue = String(aValue).toLowerCase();
+    bValue = String(bValue).toLowerCase();
+
+    if (aValue < bValue) {
+      return direction === 'asc' ? -1 : 1;
+    }
+    if (aValue > bValue) {
+      return direction === 'asc' ? 1 : -1;
+    }
+    return 0;
   });
 
 
   return (
-    <div className="relative w-full">
+    <div className="space-y-6">
       {/* Progress Bar Overlay */}
       {isDeleting && (
-        <div className="fixed inset-0 flex items-center justify-center bg-black bg-opacity-50 z-50">
-          <div className="bg-white p-6 rounded-lg shadow-lg w-full max-w-md">
-            <p className="text-center text-gray-700 mb-4">Deleting users...</p>
-            <div className="w-full bg-gray-200 rounded-full h-4 overflow-hidden">
-              <div
-                className="bg-gradient-to-r from-blue-500 to-blue-700 h-4 rounded-full animate-progress"
-                style={{ width: '100%' }}
-              ></div>
+        <div className="fixed inset-0 flex items-center justify-center bg-black/50 backdrop-blur-sm z-50">
+          <div className="bg-white/90 backdrop-blur-md p-6 sm:p-8 rounded-2xl shadow-2xl border border-gray-200/50 w-full max-w-md mx-4">
+            <div className="text-center">
+              <div className="w-16 h-16 bg-gradient-to-r from-red-500 to-pink-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                <Trash2 className="w-8 h-8 text-white" />
+              </div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">Deleting Users</h3>
+              <p className="text-gray-600 mb-6">Please wait while we remove the selected users...</p>
+              <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
+                <div className="bg-gradient-to-r from-red-500 to-pink-500 h-3 rounded-full animate-pulse" style={{ width: '100%' }}></div>
+              </div>
             </div>
           </div>
         </div>
       )}
 
-      <div className="flex justify-between items-center mb-6">
-        <h1 className="text-2xl font-bold text-gray-900">Manage Users</h1>
-        {selectedUsers.length > 0 && (
-          <button
-            onClick={() => openModal(selectedUsers)}
-            className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
-          >
-            Delete Selected ({selectedUsers.length})
-          </button>
-        )}
+      {/* Header Section */}
+      <div className="bg-white/70 backdrop-blur-md rounded-2xl shadow-lg border border-gray-200/50 p-4 sm:p-6">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+          <div className="mb-4 sm:mb-0">
+            <h1 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+              Manage Users
+            </h1>
+            <p className="text-gray-600 mt-1 text-sm sm:text-base">
+              Oversee and manage all registered users
+              {filteredUsers.length !== users.length && (
+                <span className="ml-2 text-blue-600">
+                  (Showing {filteredUsers.length} of {users.length})
+                </span>
+              )}
+              {sortConfig && (
+                <span className="ml-2 text-green-600">
+                  • Sorted by {sortConfig.key.replace('_', ' ')} ({sortConfig.direction})
+                </span>
+              )}
+            </p>
+          </div>
+          <div className="flex items-center space-x-3">
+            <div className="hidden sm:block">
+              <div className="w-12 h-12 sm:w-16 sm:h-16 bg-gradient-to-r from-blue-500 to-purple-500 rounded-2xl flex items-center justify-center">
+                <Users className="w-6 h-6 sm:w-8 sm:h-8 text-white" />
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-5 gap-4 mb-6">
-        <div className="bg-blue-100 p-4 rounded-lg text-center">
-          <h3 className="text-lg font-semibold text-blue-800">Total Users</h3>
-          <p className="text-2xl font-bold text-blue-600">{users.length}</p>
+      {/* Stats Cards */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3 sm:gap-6">
+        <div className="bg-white/70 backdrop-blur-md p-4 sm:p-6 rounded-xl sm:rounded-2xl shadow-lg border border-gray-200/50 hover:shadow-xl transition-all duration-300 hover:-translate-y-1">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+            <div className="mb-2 sm:mb-0">
+              <p className="text-xs sm:text-sm text-gray-600 font-medium">Total Users</p>
+              <p className="text-xl sm:text-3xl font-bold text-gray-900 mt-1">{users.length}</p>
+              <p className="text-xs sm:text-sm text-blue-600 font-medium mt-1">All registered</p>
+            </div>
+            <div className="w-8 h-8 sm:w-12 sm:h-12 bg-gradient-to-r from-blue-500 to-blue-600 rounded-lg sm:rounded-xl flex items-center justify-center self-end sm:self-auto">
+              <TrendingUp className="text-white" size={16} />
+            </div>
+          </div>
         </div>
-        {userTypeCounts.map((count, index) => {
-          const userTypeLabel =
-            count.user_type === 'brand' ? 'Brands' :
-            count.user_type === 'event_organizer' ? 'Event Organizers' :
-            count.user_type === 'agency' ? 'Agencies' :
-            count.user_type === 'creator' ? 'Creators' :
-            count.user_type === 'influencer' ? 'Influencers' :
-            'Unknown';
+        {userTypeCounts.map((count) => {
+          const userTypeConfig = getUserTypeConfig(count.user_type);
           return (
             <div
               key={count.user_type || 'unknown'}
-              className={`p-4 rounded-lg text-center ${getTileColor(index)}`}
+              className="bg-white/70 backdrop-blur-md p-4 sm:p-6 rounded-xl sm:rounded-2xl shadow-lg border border-gray-200/50 hover:shadow-xl transition-all duration-300 hover:-translate-y-1"
             >
-              <h3 className="text-lg font-semibold text-blue-800">{userTypeLabel}</h3>
-              <p className="text-2xl font-bold text-blue-600">{count.count}</p>
+              <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+                <div className="mb-2 sm:mb-0">
+                  <p className="text-xs sm:text-sm text-gray-600 font-medium">{userTypeConfig.label}</p>
+                  <p className="text-xl sm:text-3xl font-bold text-gray-900 mt-1">{count.count}</p>
+                  <p className="text-xs sm:text-sm font-medium mt-1" style={{color: userTypeConfig.color}}>
+                    {userTypeConfig.subtitle}
+                  </p>
+                </div>
+                <div 
+                  className="w-8 h-8 sm:w-12 sm:h-12 rounded-lg sm:rounded-xl flex items-center justify-center self-end sm:self-auto"
+                  style={{background: userTypeConfig.gradient}}
+                >
+                  <userTypeConfig.icon className="text-white" size={16} />
+                </div>
+              </div>
             </div>
           );
         })}
       </div>
 
-      <div className="mb-6">
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
-          <input
-            type="text"
-            placeholder="Search users by name, email, company, website, industry, company size, location, or phone..."
-            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-            value={searchTerm}
-            onChange={handleSearchChange}
-          />
+      {/* Search and Filters */}
+      <div className="bg-white/70 backdrop-blur-md rounded-xl sm:rounded-2xl shadow-lg border border-gray-200/50 p-4 sm:p-6">
+        <div className="flex flex-col gap-4">
+          <div className="flex flex-col sm:flex-row gap-3">
+            <div className="flex-1">
+              <div className="relative">
+                <Search className="absolute left-3 sm:left-4 top-1/2 transform -translate-y-1/2 text-gray-400" size={18} />
+                <input
+                  type="text"
+                  placeholder="Search by name, email, company, website, location, or phone..."
+                  className="w-full pl-10 sm:pl-12 pr-4 py-2.5 sm:py-3 border border-gray-200 rounded-lg sm:rounded-xl focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white/80 backdrop-blur-sm transition-all duration-200 text-sm sm:text-base"
+                  value={searchTerm}
+                  onChange={handleSearchChange}
+                />
+              </div>
+            </div>
+            <button
+              onClick={() => setShowFilters(!showFilters)}
+              className={`px-3 sm:px-4 py-2.5 sm:py-3 border rounded-lg sm:rounded-xl transition-all duration-200 font-medium text-sm sm:text-base flex items-center ${
+                showFilters 
+                  ? 'text-blue-600 border-blue-200 bg-blue-50' 
+                  : 'text-gray-600 border-gray-200 hover:bg-gray-50'
+              }`}
+            >
+              <Filter className="w-4 h-4 mr-2" />
+              Filters
+              {(filters.userType !== 'all' || filters.joinDate !== 'all' || filters.location !== 'all' || filters.companySize !== 'all') && (
+                <span className="ml-2 px-2 py-0.5 bg-blue-600 text-white text-xs rounded-full">
+                  Active
+                </span>
+              )}
+            </button>
+          </div>
+
+          {/* Filter Controls */}
+          {showFilters && (
+            <div className="border-t border-gray-200 pt-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">User Type</label>
+                  <select
+                    value={filters.userType}
+                    onChange={(e) => handleFilterChange('userType', e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white text-sm"
+                  >
+                    <option value="all">All Types</option>
+                    {getUniqueValues('user_type').map(type => (
+                      <option key={type} value={type}>{type.charAt(0).toUpperCase() + type.slice(1)}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">Join Date</label>
+                  <select
+                    value={filters.joinDate}
+                    onChange={(e) => handleFilterChange('joinDate', e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white text-sm"
+                  >
+                    <option value="all">All Time</option>
+                    <option value="last-7-days">Last 7 Days</option>
+                    <option value="last-30-days">Last 30 Days</option>
+                    <option value="last-90-days">Last 90 Days</option>
+                    <option value="last-year">Last Year</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">Location</label>
+                  <select
+                    value={filters.location}
+                    onChange={(e) => handleFilterChange('location', e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white text-sm"
+                  >
+                    <option value="all">All Locations</option>
+                    {getUniqueValues('location').map(location => (
+                      <option key={location} value={location}>{location}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">Company Size</label>
+                  <select
+                    value={filters.companySize}
+                    onChange={(e) => handleFilterChange('companySize', e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white text-sm"
+                  >
+                    <option value="all">All Sizes</option>
+                    {getUniqueValues('company_size').map(size => (
+                      <option key={size} value={size}>{size}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+              <div className="flex justify-between items-center mt-3 pt-3 border-t border-gray-100">
+                <div className="text-sm text-gray-600">
+                  Showing {filteredUsers.length} of {users.length} users
+                </div>
+                <button
+                  onClick={clearFilters}
+                  className="px-3 py-1.5 text-gray-600 hover:text-gray-800 border border-gray-200 rounded-lg hover:bg-gray-50 transition-all duration-200 text-sm"
+                >
+                  Clear Filters
+                </button>
+              </div>
+            </div>
+          )}
+
+          <div className="flex flex-col sm:flex-row gap-3 justify-between">
+            <div className="flex gap-3">
+              <button
+                onClick={fetchUsers}
+                className="p-2.5 sm:p-3 text-gray-600 hover:text-blue-600 border border-gray-200 rounded-lg sm:rounded-xl hover:bg-blue-50 transition-all duration-200 hover:shadow-md flex items-center justify-center"
+                title="Refresh data"
+              >
+                <RefreshCw size={18} />
+              </button>
+              {!isSelectionMode && filteredUsers.length > 0 && (
+                <button
+                  onClick={() => {
+                    setIsSelectionMode(true);
+                    setSelectedUsers([]);
+                  }}
+                  className="px-3 sm:px-4 py-2.5 sm:py-3 text-blue-600 hover:text-blue-800 border border-blue-200 rounded-lg sm:rounded-xl hover:bg-blue-50 transition-all duration-200 font-medium text-sm sm:text-base"
+                >
+                  Select Mode
+                </button>
+              )}
+            </div>
+            {isSelectionMode && (
+              <div className="flex gap-2">
+                <button
+                  onClick={handleSelectAll}
+                  className="px-3 sm:px-4 py-2.5 sm:py-3 text-blue-600 hover:text-blue-800 border border-blue-200 rounded-lg sm:rounded-xl hover:bg-blue-50 transition-all duration-200 font-medium text-sm sm:text-base"
+                >
+                  {selectedUsers.length === filteredUsers.length ? 'Deselect All' : 'Select All'}
+                </button>
+                <button
+                  onClick={() => {
+                    setIsSelectionMode(false);
+                    setSelectedUsers([]);
+                  }}
+                  className="px-3 sm:px-4 py-2.5 sm:py-3 text-gray-600 hover:text-gray-800 border border-gray-200 rounded-lg sm:rounded-xl hover:bg-gray-50 transition-all duration-200 font-medium text-sm sm:text-base"
+                >
+                  Cancel Selection
+                </button>
+              </div>
+            )}
+          </div>
+          {isSelectionMode && selectedUsers.length > 0 && (
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-3">
+              <div className="flex items-center justify-between">
+                <span className="text-sm font-medium text-blue-800">
+                  {selectedUsers.length} user{selectedUsers.length > 1 ? 's' : ''} selected
+                </span>
+                <button
+                  onClick={() => openModal(selectedUsers)}
+                  className="inline-flex items-center px-3 py-1.5 bg-red-600 text-white rounded-lg hover:bg-red-700 text-xs font-medium transition-colors duration-200"
+                >
+                  <Trash2 className="w-3 h-3 mr-1" />
+                  Delete Selected
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       </div>
 
-      {loading ? (
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-gray-900 mx-auto"></div>
-          <p className="mt-4 text-gray-600">Loading users...</p>
-        </div>
-      ) : error ? (
-        <div className="text-center text-red-600">
-          <p>{error}</p>
-          <button
-            onClick={fetchUsers}
-            className="mt-4 px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
-          >
-            Retry
-          </button>
-        </div>
-      ) : filteredUsers.length === 0 ? (
-        <div className="text-center">
-          <p className="text-gray-600">No users found</p>
-        </div>
-      ) : (
-        <div className="w-full bg-white rounded-lg shadow">
-          <table className="w-full table-auto text-left">
-            <thead className="bg-blue-100">
-              <tr>
-                {selectedUsers.length > 0 && (
-                  <th className="px-2 py-2 text-xs font-semibold text-gray-600 uppercase border-r border-blue-200 min-w-[40px]">
-                    <input
-                      type="checkbox"
-                      checked={selectedUsers.length === filteredUsers.length && filteredUsers.length > 0}
-                      onChange={handleSelectAll}
-                      className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                    />
-                  </th>
-                )}
-                <th className="px-2 py-2 text-xs font-semibold text-gray-600 uppercase border-r border-blue-200 min-w-[100px]">Name</th>
-                <th className="px-2 py-2 text-xs font-semibold text-gray-600 uppercase border-r border-blue-200 min-w-[100px]">Contact Person</th>
-                <th className="px-2 py-2 text-xs font-semibold text-gray-600 uppercase border-r border-blue-200 min-w-[120px] hidden sm:table-cell">Email</th>
-                <th className="px-2 py-2 text-xs font-semibold text-gray-600 uppercase border-r border-blue-200 min-w-[80px] hidden md:table-cell">Role</th>
-                <th className="px-2 py-2 text-xs font-semibold text-gray-600 uppercase border-r border-blue-200 min-w-[100px] hidden lg:table-cell">Website</th>
-                <th className="px-2 py-2 text-xs font-semibold text-gray-600 uppercase border-r border-blue-200 min-w-[80px] hidden lg:table-cell">Industry</th>
-                <th className="px-2 py-2 text-xs font-semibold text-gray-600 uppercase border-r border-blue-200 min-w-[80px] hidden xl:table-cell">Company Size</th>
-                <th className="px-2 py-2 text-xs font-semibold text-gray-600 uppercase border-r border-blue-200 min-w-[80px] hidden xl:table-cell">Location</th>
-                <th className="px-2 py-2 text-xs font-semibold text-gray-600 uppercase border-r border-blue-200 min-w-[80px] hidden 2xl:table-cell">Created At</th>
-                <th className="px-2 py-2 text-xs font-semibold text-gray-600 uppercase border-r border-blue-200 min-w-[80px] hidden lg:table-cell">Phone Number</th>
-                <th className="px-2 py-2 text-xs font-semibold text-gray-600 uppercase min-w-[80px]">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-200">
-              {filteredUsers.map((user) => (
-                <tr
-                  key={user.id}
+      {/* Main Content */}
+      <div className="bg-white/70 backdrop-blur-md rounded-xl sm:rounded-2xl shadow-lg border border-gray-200/50 overflow-hidden">
+        {loading ? (
+          <div className="p-6 sm:p-12 text-center">
+            <div className="inline-flex items-center justify-center w-12 h-12 sm:w-16 sm:h-16 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full animate-spin mb-4 sm:mb-6">
+              <div className="w-8 h-8 sm:w-12 sm:h-12 border-4 border-white/30 border-t-white rounded-full animate-spin" />
+            </div>
+            <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-2">Loading Users</h3>
+            <p className="text-sm sm:text-base text-gray-600">Fetching user data...</p>
+          </div>
+        ) : error ? (
+          <div className="p-6 sm:p-12 text-center">
+            <div className="w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-r from-red-200 to-red-300 rounded-xl sm:rounded-2xl flex items-center justify-center mx-auto mb-4 sm:mb-6">
+              <Users className="w-8 h-8 sm:w-10 sm:h-10 text-red-600" />
+            </div>
+            <h3 className="text-lg sm:text-xl font-semibold text-gray-900 mb-2">Error Loading Users</h3>
+            <p className="text-sm sm:text-base text-red-600 mb-4 sm:mb-6">{error}</p>
+            <button
+              onClick={fetchUsers}
+              className="inline-flex items-center px-4 sm:px-6 py-2 sm:py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white font-medium rounded-lg sm:rounded-xl hover:from-blue-700 hover:to-purple-700 transition-all duration-200 transform hover:scale-105 shadow-lg text-sm sm:text-base"
+            >
+              <RefreshCw className="w-4 h-4 mr-2" />
+              Retry Loading
+            </button>
+          </div>
+        ) : filteredUsers.length === 0 ? (
+          <div className="p-6 sm:p-12 text-center">
+            <div className="w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-r from-gray-200 to-gray-300 rounded-xl sm:rounded-2xl flex items-center justify-center mx-auto mb-4 sm:mb-6">
+              <Users className="w-8 h-8 sm:w-10 sm:h-10 text-gray-500" />
+            </div>
+            <h3 className="text-lg sm:text-xl font-semibold text-gray-900 mb-2">No Users Found</h3>
+            <p className="text-sm sm:text-base text-gray-600 mb-4 sm:mb-6">
+              {searchTerm ? `No users match "${searchTerm}"` : 'No users found with current filters'}
+            </p>
+            <button
+              onClick={fetchUsers}
+              className="inline-flex items-center px-4 sm:px-6 py-2 sm:py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white font-medium rounded-lg sm:rounded-xl hover:from-blue-700 hover:to-purple-700 transition-all duration-200 transform hover:scale-105 shadow-lg text-sm sm:text-base"
+            >
+              <RefreshCw className="w-4 h-4 mr-2" />
+              Refresh Data
+            </button>
+          </div>
+        ) : (
+          <>
+            {/* Desktop Table View */}
+            <div className="hidden lg:block">
+              <div className="overflow-x-auto">
+                <table className="w-full min-w-[1000px]">
+                  <thead className="bg-gray-50/50 border-b border-gray-200">
+                    <tr>
+                      {(selectedUsers.length > 0 || isSelectionMode) && (
+                        <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider w-12">
+                          <input
+                            type="checkbox"
+                            checked={selectedUsers.length === filteredUsers.length && filteredUsers.length > 0}
+                            onChange={handleSelectAll}
+                            className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                          />
+                        </th>
+                      )}
+                      <th 
+                        className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider min-w-[150px] cursor-pointer hover:bg-gray-100/50 transition-colors duration-200"
+                        onClick={() => handleSort('company_name')}
+                      >
+                        <div className="flex items-center space-x-1">
+                          <span>Company</span>
+                          {getSortIcon('company_name')}
+                        </div>
+                      </th>
+                      <th 
+                        className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider min-w-[140px] cursor-pointer hover:bg-gray-100/50 transition-colors duration-200"
+                        onClick={() => handleSort('contact_person_name')}
+                      >
+                        <div className="flex items-center space-x-1">
+                          <span>Contact Person</span>
+                          {getSortIcon('contact_person_name')}
+                        </div>
+                      </th>
+                      <th 
+                        className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider min-w-[180px] cursor-pointer hover:bg-gray-100/50 transition-colors duration-200"
+                        onClick={() => handleSort('email')}
+                      >
+                        <div className="flex items-center space-x-1">
+                          <span>Email</span>
+                          {getSortIcon('email')}
+                        </div>
+                      </th>
+                      <th 
+                        className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider min-w-[100px] cursor-pointer hover:bg-gray-100/50 transition-colors duration-200"
+                        onClick={() => handleSort('user_type')}
+                      >
+                        <div className="flex items-center space-x-1">
+                          <span>Role</span>
+                          {getSortIcon('user_type')}
+                        </div>
+                      </th>
+                      <th 
+                        className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider min-w-[120px] cursor-pointer hover:bg-gray-100/50 transition-colors duration-200"
+                        onClick={() => handleSort('created_at')}
+                      >
+                        <div className="flex items-center space-x-1">
+                          <span>Join Date</span>
+                          {getSortIcon('created_at')}
+                        </div>
+                      </th>
+                      <th 
+                        className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider min-w-[120px] cursor-pointer hover:bg-gray-100/50 transition-colors duration-200"
+                        onClick={() => handleSort('location')}
+                      >
+                        <div className="flex items-center space-x-1">
+                          <span>Location</span>
+                          {getSortIcon('location')}
+                        </div>
+                      </th>
+                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider min-w-[120px]">Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-200/50">
+                    {filteredUsers.map((user) => (
+                      <tr
+                        key={user.id}
+                        onMouseDown={() => startLongPress(user.id)}
+                        onMouseUp={cancelLongPress}
+                        onMouseLeave={cancelLongPress}
+                        onDoubleClick={() => handleDoubleClick(user.id)}
+                        onClick={() => handleSelectUser(user.id)}
+                        className={`cursor-pointer transition-colors duration-200 ${
+                          selectedUsers.includes(user.id) ? 'bg-blue-50' : 'hover:bg-gray-50/50'
+                        }`}
+                      >
+                        {(selectedUsers.length > 0 || isSelectionMode) && (
+                          <td className="px-4 py-3 whitespace-nowrap">
+                            <input
+                              type="checkbox"
+                              checked={selectedUsers.includes(user.id)}
+                              onChange={() => handleSelectUser(user.id)}
+                              onClick={(e) => e.stopPropagation()}
+                              className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                            />
+                          </td>
+                        )}
+                        <td className="px-4 py-3 whitespace-nowrap">
+                          <div className="flex items-center max-w-[150px]">
+                            <Building2 className="w-4 h-4 text-gray-400 mr-2 flex-shrink-0" />
+                            <div className="truncate">
+                              <div className="text-sm font-medium text-gray-900 truncate" title={user.company_name || 'N/A'}>
+                                {user.company_name || 'N/A'}
+                              </div>
+                              <div className="text-xs text-gray-500">Company</div>
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-4 py-3 whitespace-nowrap">
+                          <div className="max-w-[140px] truncate">
+                            <div className="text-sm text-gray-900 truncate" title={user.contact_person_name || 'N/A'}>
+                              {user.contact_person_name || 'N/A'}
+                            </div>
+                            <div className="text-xs text-gray-500 truncate" title={user.contact_person_position || 'Position'}>
+                              {user.contact_person_position || 'Position'}
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-4 py-3 whitespace-nowrap">
+                          <div className="flex items-center max-w-[180px]">
+                            <Mail className="w-4 h-4 text-gray-400 mr-2 flex-shrink-0" />
+                            <div className="text-sm text-gray-900 truncate" title={user.email || 'N/A'}>
+                              {user.email || 'N/A'}
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-4 py-3 whitespace-nowrap">
+                          <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800 max-w-[100px] truncate">
+                            {user.user_type || 'Unknown'}
+                          </span>
+                        </td>
+                        <td className="px-4 py-3 whitespace-nowrap">
+                          <div className="text-sm text-gray-900 max-w-[120px] truncate" title={formatDate(user.created_at)}>
+                            {formatDate(user.created_at)}
+                          </div>
+                        </td>
+                        <td className="px-4 py-3 whitespace-nowrap">
+                          <div className="flex items-center max-w-[120px]">
+                            <MapPin className="w-4 h-4 text-gray-400 mr-2 flex-shrink-0" />
+                            <div className="text-sm text-gray-900 truncate" title={user.location || 'N/A'}>
+                              {user.location || 'N/A'}
+                            </div>
+                          </div>
+                        </td>
+                        <td className="px-4 py-3 whitespace-nowrap">
+                          <div className="flex items-center space-x-1">
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                alert(`Edit user ${user.contact_person_name} (ID: ${user.id})`);
+                              }}
+                              className="inline-flex items-center px-2 py-1 bg-blue-100 text-blue-800 rounded-lg hover:bg-blue-200 text-xs font-medium transition-colors duration-200"
+                              title="Edit User"
+                            >
+                              <Edit className="w-3 h-3" />
+                            </button>
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                openModal(user.id);
+                              }}
+                              className="inline-flex items-center px-2 py-1 bg-red-100 text-red-800 rounded-lg hover:bg-red-200 text-xs font-medium transition-colors duration-200"
+                              title="Delete User"
+                            >
+                              <Trash2 className="w-3 h-3" />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            {/* Mobile Card View */}
+            <div className="lg:hidden">
+              {/* Mobile Sort Controls */}
+              <div className="border-b border-gray-200 p-4">
+                <div className="flex items-center justify-between">
+                  <span className="text-sm font-medium text-gray-700">Sort by:</span>
+                  <select
+                    value={sortConfig ? `${sortConfig.key}-${sortConfig.direction}` : ''}
+                    onChange={(e) => {
+                      if (e.target.value) {
+                        const [key, direction] = e.target.value.split('-');
+                        setSortConfig({ key, direction: direction as 'asc' | 'desc' });
+                      } else {
+                        setSortConfig(null);
+                      }
+                    }}
+                    className="ml-3 px-3 py-1.5 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white text-sm"
+                  >
+                    <option value="">Default Order</option>
+                    <option value="company_name-asc">Company A-Z</option>
+                    <option value="company_name-desc">Company Z-A</option>
+                    <option value="contact_person_name-asc">Contact A-Z</option>
+                    <option value="contact_person_name-desc">Contact Z-A</option>
+                    <option value="user_type-asc">Role A-Z</option>
+                    <option value="user_type-desc">Role Z-A</option>
+                    <option value="created_at-asc">Join Date (Oldest)</option>
+                    <option value="created_at-desc">Join Date (Newest)</option>
+                    <option value="location-asc">Location A-Z</option>
+                    <option value="location-desc">Location Z-A</option>
+                  </select>
+                </div>
+              </div>
+              
+              <div className="divide-y divide-gray-200/50">
+                {filteredUsers.map((user) => (
+                <div 
+                  key={user.id} 
+                  className={`p-4 sm:p-6 transition-colors duration-200 ${
+                    selectedUsers.includes(user.id) ? 'bg-blue-50' : 'hover:bg-gray-50/50'
+                  }`}
                   onMouseDown={() => startLongPress(user.id)}
                   onMouseUp={cancelLongPress}
                   onMouseLeave={cancelLongPress}
                   onDoubleClick={() => handleDoubleClick(user.id)}
                   onClick={() => handleSelectUser(user.id)}
-                  className={`cursor-pointer ${
-                    selectedUsers.includes(user.id) ? 'bg-blue-50' : 'hover:bg-gray-50'
-                  }`}
                 >
-                  {selectedUsers.length > 0 && (
-                    <td className="px-2 py-2 border-r border-gray-200">
-                      <input
-                        type="checkbox"
-                        checked={selectedUsers.includes(user.id)}
-                        onChange={() => handleSelectUser(user.id)}
-                        onClick={(e) => e.stopPropagation()}
-                        className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                      />
-                    </td>
-                  )}
-                  <td className="px-2 py-2 border-r border-gray-200 truncate max-w-[100px]" title={user.company_name || ' - '}>
-                    {user.company_name || ' - '}
-                  </td>
-                  <td className="px-2 py-2 border-r border-gray-200 truncate max-w-[100px]" title={user.contact_person_name || ' - '}>
-                    {user.contact_person_name || ' - '}
-                  </td>
-                  <td className="px-2 py-2 border-r border-gray-200 truncate max-w-[120px] hidden sm:table-cell" title={user.email || ' - '}>
-                    {user.email || ' - '}
-                  </td>
-                  <td className="px-2 py-2 border-r border-gray-200 truncate max-w-[80px] hidden md:table-cell" title={user.user_type || ' - '}>
-                    {user.user_type || ' - '}
-                  </td>
-                  <td className="px-2 py-2 border-r border-gray-200 truncate max-w-[100px] hidden lg:table-cell" title={user.website || ' - '}>
-                    {user.website ? (
-                      <a
-                        href={user.website}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-blue-600 hover:underline"
-                      >
-                        {user.website}
-                      </a>
-                    ) : (
-                      ' - '
-                    )}
-                  </td>
-                  <td className="px-2 py-2 border-r border-gray-200 truncate max-w-[80px] hidden lg:table-cell" title={user.industry || ' - '}>
-                    {user.industry || ' - '}
-                  </td>
-                  <td className="px-2 py-2 border-r border-gray-200 truncate max-w-[80px] hidden xl:table-cell" title={user.company_size || ' - '}>
-                    {user.company_size || ' - '}
-                  </td>
-                  <td className="px-2 py-2 border-r border-blue-200 truncate max-w-[80px] hidden xl:table-cell" title={user.location || ' - '}>
-                    {user.location || ' - '}
-                  </td>
-                  <td className="px-2 py-2 border-r border-blue-200 truncate max-w-[80px] hidden 2xl:table-cell" title={user.created_at ? new Date(user.created_at).toLocaleDateString() : ' - '}>
-                    {user.created_at ? new Date(user.created_at).toLocaleDateString() : ' - '}
-                  </td>
-                  <td className="px-2 py-2 border-r border-blue-200 truncate max-w-[80px] hidden lg:table-cell" title={user.phone_number || ' - '}>
-                    {user.contact_person_phone || ' - '}
-                  </td>
-                  <td className="px-2 py-2">
-                    <div className="flex space-x-1">
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          alert(`Edit user ${user.contact_person_name} (ID: ${user.id})`);
-                        }}
-                        className="px-1 py-1 bg-blue-500 text-white rounded-lg hover:bg-blue-600"
-                      >
-                        <Edit size={14} />
-                      </button>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          openModal(user.id);
-                        }}
-                        className="px-1 py-1 bg-red-500 text-white rounded-lg hover:bg-red-600"
-                      >
-                        <Trash2 size={14} />
-                      </button>
+                  <div className="flex items-start justify-between mb-4">
+                    <div className="flex items-center flex-1 min-w-0">
+                      <div className="w-12 h-12 bg-gradient-to-r from-blue-100 to-purple-100 rounded-xl flex items-center justify-center mr-3 flex-shrink-0">
+                        <Building2 className="w-6 h-6 text-blue-600" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="text-sm font-medium text-gray-900 truncate" title={user.company_name || 'N/A'}>
+                          {user.company_name || 'N/A'}
+                        </div>
+                        <div className="text-xs text-gray-500 mt-1">Company</div>
+                      </div>
                     </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
-      <Modal
+                    {(selectedUsers.length > 0 || isSelectionMode) && (
+                      <div className="ml-3 flex-shrink-0">
+                        <input
+                          type="checkbox"
+                          checked={selectedUsers.includes(user.id)}
+                          onChange={() => handleSelectUser(user.id)}
+                          onClick={(e) => e.stopPropagation()}
+                          className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                        />
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="space-y-3 mb-4">
+                    <div className="flex items-center min-w-0">
+                      <Users className="w-4 h-4 text-gray-400 mr-2 flex-shrink-0" />
+                      <span className="text-sm text-gray-900 truncate" title={user.contact_person_name || 'N/A'}>
+                        {user.contact_person_name || 'N/A'}
+                      </span>
+                    </div>
+                    <div className="flex items-center min-w-0">
+                      <Mail className="w-4 h-4 text-gray-400 mr-2 flex-shrink-0" />
+                      <span className="text-sm text-gray-900 truncate" title={user.email || 'N/A'}>
+                        {user.email || 'N/A'}
+                      </span>
+                    </div>
+                    <div className="flex items-center min-w-0">
+                      <Calendar className="w-4 h-4 text-gray-400 mr-2 flex-shrink-0" />
+                      <span className="text-sm text-gray-900 truncate" title={user.created_at ? `Joined ${formatDate(user.created_at)}` : 'Join date unknown'}>
+                        {user.created_at ? `Joined ${formatDate(user.created_at)}` : 'Join date unknown'}
+                      </span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className="inline-flex px-2 py-1 text-xs font-semibold rounded-full bg-blue-100 text-blue-800">
+                        {user.user_type || 'Unknown'}
+                      </span>
+                      {user.location && (
+                        <div className="flex items-center min-w-0 ml-2">
+                          <MapPin className="w-4 h-4 text-gray-400 mr-1 flex-shrink-0" />
+                          <span className="text-sm text-gray-600 truncate" title={user.location}>
+                            {user.location}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="flex flex-wrap gap-2 pt-2 border-t border-gray-100">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        alert(`Edit user ${user.contact_person_name} (ID: ${user.id})`);
+                      }}
+                      className="inline-flex items-center px-3 py-1.5 bg-blue-100 text-blue-800 rounded-lg hover:bg-blue-200 text-xs font-medium transition-colors duration-200 flex-1 justify-center sm:flex-none"
+                    >
+                      <Edit className="w-3 h-3 mr-1" />
+                      Edit
+                    </button>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        openModal(user.id);
+                      }}
+                      className="inline-flex items-center px-3 py-1.5 bg-red-100 text-red-800 rounded-lg hover:bg-red-200 text-xs font-medium transition-colors duration-200 flex-1 justify-center sm:flex-none"
+                    >
+                      <Trash2 className="w-3 h-3 mr-1" />
+                      Delete
+                    </button>
+                    {!isSelectionMode && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setIsSelectionMode(true);
+                          setSelectedUsers([user.id]);
+                        }}
+                        className="inline-flex items-center px-3 py-1.5 bg-gray-100 text-gray-700 rounded-lg hover:bg-gray-200 text-xs font-medium transition-colors duration-200"
+                        title="Select this user"
+                      >
+                        Select
+                      </button>
+                    )}
+                  </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </>
+        )}
+      </div>      <Modal
         isOpen={isModalOpen}
         onClose={closeModal}
         onConfirm={confirmDelete}
@@ -463,32 +1041,3 @@ export default function ManageUsers({ searchTerm: externalSearchTerm, setSearchT
   );
 }
 
-const getTileColor = (index: number) => {
-  const colors = [
-    'bg-green-200', // Brands
-    'bg-red-300', // Creators
-    'bg-yellow-200', // Event Organizers
-    'bg-purple-200', // Agencies
-    'bg-pink-200', // Influencers
-  ];
-  return colors[index % colors.length] || 'bg-blue-100';
-};
-
-// Add custom CSS for the progress bar animation and truncation
-const style = document.createElement('style');
-style.textContent = `
-  @keyframes progress {
-    0% {  transform: translateX(-100%); }
-    50% { transform: translateX(100%); }
-    100% { transform: translateX(-100%); }
-  }
-  .animate-progress {
-    animation: progress 2s linear infinite;
-  }
-  .truncate {
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
-  }
-`;
-document.head.appendChild(style);
