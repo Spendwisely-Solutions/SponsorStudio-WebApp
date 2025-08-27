@@ -22,7 +22,8 @@ import {
   TrendingUp,
   Users,
   Shield,
-  Bell
+  Bell,
+  Handshake
 } from 'lucide-react';
 import Opportunities from './Opportunities';
 import MatchedOpportunities from './MatchedOpportunities';
@@ -32,6 +33,7 @@ import ManageBlogs from './ManageBlogs';
 import ManageClientsLogos from './ManageClientsLogos';
 import ManageMedia from './ManageMedia';
 import ManageFaq from './ManageFaq';
+import ManageConsultation from './ManageConsultation';
 
 export default function AdminDashboard() {
   const navigate = useNavigate();
@@ -213,6 +215,7 @@ export default function AdminDashboard() {
     { path: '/admin/dashboard', label: 'Dashboard', icon: LayoutDashboard, color: 'text-blue-600' },
     { path: '/admin/opportunities', label: 'Opportunities', icon: Briefcase, color: 'text-green-600' },
     { path: '/admin/matched-opportunities', label: 'Matches', icon: LinkIcon, color: 'text-purple-600' },
+    { path: '/admin/manage-consultation', label: 'Consultation', icon: Handshake, color: 'text-blue-600' },
     { path: '/admin/risk-analysis', label: 'Risk Analysis', icon: Shield, color: 'text-red-600' },
     { path: '/admin/create-risk-analysis', label: 'Create Reports', icon: FileText, color: 'text-orange-600' },
     { path: '/admin/manage-users', label: 'Manage Users', icon: Users, color: 'text-indigo-600' },
@@ -605,6 +608,12 @@ export default function AdminDashboard() {
                 stats={stats}
                 setStats={(newStats) => setStats(prev => ({ ...prev, ...newStats }))}
               />
+            }
+          />
+          <Route
+            path="/manage-consultation"
+            element={
+              <ManageConsultation />
             }
           />
           <Route
