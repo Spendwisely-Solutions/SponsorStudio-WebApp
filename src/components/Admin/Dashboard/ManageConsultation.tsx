@@ -70,11 +70,52 @@ const ManageConsultations = () => {
   const [sortBy, setSortBy] = useState<string>('created_at');
   const [sortOrder, setSortOrder] = useState<'asc' | 'desc'>('desc');
   const [expandedBooking, setExpandedBooking] = useState<string | null>(null);
+  
+  // Slots state
+  const [slotsAvailable, setSlotsAvailable] = useState<number | null>(null);
+  const [bookedThisMonth, setBookedThisMonth] = useState<number | null>(null);
+  const [slotsLoading, setSlotsLoading] = useState(true);
+  const [slotsError, setSlotsError] = useState<string | null>(null);
 
   // Fetch bookings from Supabase
   useEffect(() => {
     fetchBookings();
+    fetchSlotsData();
   }, []);
+
+  // Fetch slots data from both APIs
+  const fetchSlotsData = async () => {
+    try {
+      setSlotsLoading(true);
+      setSlotsError(null);
+
+      // Fetch both APIs in parallel
+      const [slotsResponse, bookingsResponse] = await Promise.all([
+        fetch('https://urablfvmqregyvfyaovi.functions.supabase.co/slots-count-available'),
+        fetch('https://server.sponsorstudio.in/api/current-month-bookings')
+      ]);
+
+      if (!slotsResponse.ok) {
+        throw new Error(`Slots API error: ${slotsResponse.status} ${slotsResponse.statusText}`);
+      }
+
+      if (!bookingsResponse.ok) {
+        throw new Error(`Bookings API error: ${bookingsResponse.status} ${bookingsResponse.statusText}`);
+      }
+
+      const slotsData = await slotsResponse.json();
+      const bookingsData = await bookingsResponse.json();
+
+      setSlotsAvailable(slotsData.slots_available || 0);
+      setBookedThisMonth(bookingsData.booked_count_this_month || 0);
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to fetch slots data';
+      console.error('Error fetching slots data:', err);
+      setSlotsError(errorMessage);
+    } finally {
+      setSlotsLoading(false);
+    }
+  };
 
   const fetchBookings = async () => {
     try {
@@ -112,6 +153,11 @@ const ManageConsultations = () => {
       setRetryLoading(false); // Reset retry loading state
     }
   };
+
+  // Calculate remaining slots
+  const slotsLeft = slotsAvailable !== null && bookedThisMonth !== null 
+    ? Math.max(0, slotsAvailable - bookedThisMonth) 
+    : null;
 
   // Update booking status with confirmation for critical changes
   const updateStatus = async (id: string, newStatus: string) => {
@@ -313,6 +359,7 @@ const ManageConsultations = () => {
             onClick={() => {
               setRetryLoading(true);
               fetchBookings();
+              fetchSlotsData();
             }}
             disabled={retryLoading}
             className={`inline-flex items-center px-4 sm:px-6 py-2 sm:py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white font-medium rounded-lg sm:rounded-xl hover:from-blue-700 hover:to-purple-700 transition-all duration-200 transform hover:scale-105 shadow-lg text-sm sm:text-base disabled:opacity-50 disabled:cursor-not-allowed`}
@@ -332,6 +379,73 @@ const ManageConsultations = () => {
 
   return (
     <div className="space-y-6">
+      {/* Slots Available Section */}
+      <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-2xl shadow-lg p-4 sm:p-6">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
+          <div className="mb-4 sm:mb-0">
+            <h2 className="text-lg sm:text-xl font-bold">Consultation Slots This Month</h2>
+            <p className="text-blue-100 text-sm sm:text-base">Track available consultation capacity</p>
+          </div>
+          <div className="flex flex-col sm:flex-row gap-3 sm:gap-6">
+            {slotsLoading ? (
+              <div className="flex items-center space-x-2">
+                <div className="animate-spin rounded-full h-5 w-5 border-2 border-white/30 border-t-white"></div>
+                <span className="text-sm">Loading slots...</span>
+              </div>
+            ) : slotsError ? (
+              <div className="flex items-center space-x-2 text-red-200">
+                <AlertCircle className="h-5 w-5" />
+                <span className="text-sm">Error loading slots</span>
+                <button
+                  onClick={fetchSlotsData}
+                  className="ml-2 text-white hover:text-blue-200 underline text-sm"
+                  title="Retry loading slots"
+                >
+                  Retry
+                </button>
+              </div>
+            ) : (
+              <>
+                <div className="text-center">
+                  <div className="text-2xl sm:text-3xl font-bold">
+                    {slotsAvailable !== null && bookedThisMonth !== null 
+                      ? Math.max(0, slotsAvailable - bookedThisMonth) 
+                      : '---'}
+                  </div>
+                  <div className="text-xs sm:text-sm text-blue-100">Slots Left</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-lg sm:text-xl font-semibold text-blue-200">
+                    {bookedThisMonth ?? '---'}
+                  </div>
+                  <div className="text-xs sm:text-sm text-blue-100">Booked</div>
+                </div>
+                <div className="text-center">
+                  <div className="text-lg sm:text-xl font-semibold text-blue-200">
+                    {slotsAvailable ?? '---'}
+                  </div>
+                  <div className="text-xs sm:text-sm text-blue-100">Total Available</div>
+                </div>
+              </>
+            )}
+          </div>
+        </div>
+        {!slotsLoading && !slotsError && slotsAvailable !== null && bookedThisMonth !== null && (
+          <div className="mt-4">
+            <div className="flex items-center justify-between text-sm text-blue-100 mb-2">
+              <span>Capacity Used</span>
+              <span>{Math.round((bookedThisMonth / slotsAvailable) * 100)}%</span>
+            </div>
+            <div className="w-full bg-blue-800/30 rounded-full h-2">
+              <div 
+                className="bg-white/80 h-2 rounded-full transition-all duration-300"
+                style={{ width: `${Math.min(100, (bookedThisMonth / slotsAvailable) * 100)}%` }}
+              ></div>
+            </div>
+          </div>
+        )}
+      </div>
+
       {/* Header Section */}
       <div className="bg-white/70 backdrop-blur-md rounded-2xl shadow-lg border border-gray-200/50 p-4 sm:p-6">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
@@ -353,7 +467,10 @@ const ManageConsultations = () => {
               {filteredBookings.length} paid bookings
             </div>
             <button
-              onClick={fetchBookings}
+              onClick={() => {
+                fetchBookings();
+                fetchSlotsData();
+              }}
               className="p-2.5 sm:p-3 text-gray-600 hover:text-blue-600 border border-gray-200 rounded-lg sm:rounded-xl hover:bg-blue-50 transition-all duration-200 hover:shadow-md flex items-center justify-center"
               title="Refresh data"
               aria-label="Refresh consultation data"
