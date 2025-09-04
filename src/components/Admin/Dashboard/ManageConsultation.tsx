@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { supabase } from '../../../lib/supabase';
 import { formatDate } from '../../../utils/formatDate';
 import toast from 'react-hot-toast';
+import { CustomModal } from '../../CustomModal';
 import {
   Calendar,
   Clock,
@@ -22,7 +23,9 @@ import {
   Video,
   ArrowUp,
   ArrowDown,
-  SlidersHorizontal
+  SlidersHorizontal,
+  Settings,
+  Plus
 } from 'lucide-react';
 
 // Define the ConsultationBooking interface with stricter types
@@ -76,6 +79,19 @@ const ManageConsultations = () => {
   const [bookedThisMonth, setBookedThisMonth] = useState<number | null>(null);
   const [slotsLoading, setSlotsLoading] = useState(true);
   const [slotsError, setSlotsError] = useState<string | null>(null);
+  
+  // Slots update modal state
+  const [showSlotsModal, setShowSlotsModal] = useState(false);
+  const [newSlotsValue, setNewSlotsValue] = useState('');
+  const [updatingSlots, setUpdatingSlots] = useState(false);
+  
+  // Status confirmation modal state
+  const [showStatusModal, setShowStatusModal] = useState(false);
+  const [pendingStatusUpdate, setPendingStatusUpdate] = useState<{
+    bookingId: string;
+    newStatus: string;
+    companyName: string;
+  } | null>(null);
 
   // Fetch bookings from Supabase
   useEffect(() => {
@@ -159,13 +175,69 @@ const ManageConsultations = () => {
     ? Math.max(0, slotsAvailable - bookedThisMonth) 
     : null;
 
+  // Update slots in settings table
+  const updateSlots = async (newValue: number) => {
+    try {
+      setUpdatingSlots(true);
+      
+      const { error } = await supabase
+        .from('settings')
+        .update({ value: newValue.toString() })
+        .eq('key', 'slots_available');
+
+      if (error) throw error;
+
+      setSlotsAvailable(newValue);
+      setShowSlotsModal(false);
+      setNewSlotsValue('');
+      toast.success('Slots updated successfully');
+      
+      // Refresh the slots data
+      fetchSlotsData();
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'Failed to update slots';
+      console.error('Error updating slots:', err);
+      toast.error(errorMessage);
+    } finally {
+      setUpdatingSlots(false);
+    }
+  };
+
+  // Handle preset slot selection
+  const handlePresetSlots = (value: number) => {
+    setNewSlotsValue(value.toString());
+  };
+
+  // Handle slots update confirmation
+  const handleSlotsUpdate = () => {
+    const value = parseInt(newSlotsValue);
+    if (isNaN(value) || value < 0) {
+      toast.error('Please enter a valid number of slots');
+      return;
+    }
+    updateSlots(value);
+  };
+
   // Update booking status with confirmation for critical changes
   const updateStatus = async (id: string, newStatus: string) => {
-    // Confirm critical status changes (e.g., cancelling)
-    if (newStatus === 'cancelled' && !confirm('Are you sure you want to cancel this booking?')) {
+    // Show confirmation modal for critical status changes (e.g., cancelling)
+    if (newStatus === 'cancelled') {
+      const booking = bookings.find(b => b.id === id);
+      setPendingStatusUpdate({
+        bookingId: id,
+        newStatus: newStatus,
+        companyName: booking?.company_name || 'Unknown Company'
+      });
+      setShowStatusModal(true);
       return;
     }
 
+    // For non-critical status changes, update directly
+    await performStatusUpdate(id, newStatus);
+  };
+
+  // Perform the actual status update
+  const performStatusUpdate = async (id: string, newStatus: string) => {
     try {
       // Optimistic update
       setBookings((prev) =>
@@ -187,6 +259,15 @@ const ManageConsultations = () => {
       toast.error('Failed to update status');
       // Revert optimistic update on error
       await fetchBookings();
+    }
+  };
+
+  // Handle status confirmation
+  const handleStatusConfirmation = async () => {
+    if (pendingStatusUpdate) {
+      await performStatusUpdate(pendingStatusUpdate.bookingId, pendingStatusUpdate.newStatus);
+      setShowStatusModal(false);
+      setPendingStatusUpdate(null);
     }
   };
 
@@ -336,7 +417,7 @@ const ManageConsultations = () => {
     return (
       <div className="space-y-6" aria-busy="true">
         <div className="p-6 sm:p-12 text-center">
-          <div className="inline-flex items-center justify-center w-12 h-12 sm:w-16 sm:h-16 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full animate-spin mb-4 sm:mb-6">
+          <div className="inline-flex items-center justify-center w-12 h-12 sm:w-16 sm:h-16 bg-blue-500 rounded-full animate-spin mb-4 sm:mb-6">
             <div className="w-8 h-8 sm:w-12 sm:h-12 border-4 border-white/30 border-t-white rounded-full animate-spin" />
           </div>
           <h3 className="text-base sm:text-lg font-semibold text-gray-900 mb-2">Loading Consultations</h3>
@@ -350,7 +431,7 @@ const ManageConsultations = () => {
     return (
       <div className="space-y-6">
         <div className="p-6 sm:p-12 text-center">
-          <div className="w-16 h-16 sm:w-20 sm:h-20 bg-gradient-to-r from-red-200 to-red-300 rounded-xl sm:rounded-2xl flex items-center justify-center mx-auto mb-4 sm:mb-6">
+          <div className="w-16 h-16 sm:w-20 sm:h-20 bg-red-200 rounded-xl sm:rounded-2xl flex items-center justify-center mx-auto mb-4 sm:mb-6">
             <XCircle className="w-8 h-8 sm:w-10 sm:h-10 text-red-600" />
           </div>
           <h3 className="text-lg sm:text-xl font-semibold text-gray-900 mb-2">Error Loading Consultations</h3>
@@ -362,7 +443,7 @@ const ManageConsultations = () => {
               fetchSlotsData();
             }}
             disabled={retryLoading}
-            className={`inline-flex items-center px-4 sm:px-6 py-2 sm:py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white font-medium rounded-lg sm:rounded-xl hover:from-blue-700 hover:to-purple-700 transition-all duration-200 transform hover:scale-105 shadow-lg text-sm sm:text-base disabled:opacity-50 disabled:cursor-not-allowed`}
+            className={`inline-flex items-center px-4 sm:px-6 py-2 sm:py-3 bg-blue-600 text-white font-medium rounded-lg sm:rounded-xl hover:bg-blue-700 transition-all duration-200 shadow-lg text-sm sm:text-base disabled:opacity-50 disabled:cursor-not-allowed`}
             aria-label="Retry loading consultations"
           >
             {retryLoading ? (
@@ -380,7 +461,7 @@ const ManageConsultations = () => {
   return (
     <div className="space-y-6">
       {/* Slots Available Section */}
-      <div className="bg-gradient-to-r from-blue-600 to-purple-600 text-white rounded-2xl shadow-lg p-4 sm:p-6">
+      <div className="bg-blue-600 text-white rounded-2xl shadow-lg p-4 sm:p-6">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
           <div className="mb-4 sm:mb-0">
             <h2 className="text-lg sm:text-xl font-bold">Consultation Slots This Month</h2>
@@ -426,6 +507,17 @@ const ManageConsultations = () => {
                   </div>
                   <div className="text-xs sm:text-sm text-blue-100">Total Available</div>
                 </div>
+                <button
+                  onClick={() => {
+                    setNewSlotsValue(slotsAvailable?.toString() || '');
+                    setShowSlotsModal(true);
+                  }}
+                  className="flex items-center space-x-2 px-3 py-2 bg-white text-blue-600 hover:bg-blue-50 rounded-lg transition-all duration-200 hover:shadow-lg text-sm font-medium"
+                  title="Update available slots"
+                >
+                  <Settings className="h-4 w-4" />
+                  <span>Update Slots</span>
+                </button>
               </>
             )}
           </div>
@@ -450,7 +542,7 @@ const ManageConsultations = () => {
       <div className="bg-white/70 backdrop-blur-md rounded-2xl shadow-lg border border-gray-200/50 p-4 sm:p-6">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
           <div className="mb-4 sm:mb-0">
-            <h1 className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+            <h1 className="text-2xl sm:text-3xl font-bold text-blue-600">
               Paid Consultation Bookings
             </h1>
             <p className="text-gray-600 mt-1 text-sm sm:text-base">
@@ -478,7 +570,7 @@ const ManageConsultations = () => {
               <RefreshCw size={18} />
             </button>
             <div className="hidden sm:block">
-              <div className="w-12 h-12 sm:w-16 sm:h-16 bg-gradient-to-r from-blue-500 to-purple-500 rounded-2xl flex items-center justify-center">
+              <div className="w-12 h-12 sm:w-16 sm:h-16 bg-blue-600 rounded-2xl flex items-center justify-center">
                 <Calendar className="w-6 h-6 sm:w-8 sm:h-8 text-white" />
               </div>
             </div>
@@ -830,6 +922,161 @@ const ManageConsultations = () => {
           })}
         </div>
       )}
+
+      {/* Slots Update Modal */}
+      <CustomModal
+        isOpen={showSlotsModal}
+        onClose={() => {
+          setShowSlotsModal(false);
+          setNewSlotsValue('');
+        }}
+        title="Update Available Slots"
+        customStyles={{ maxWidth: '28rem' }}
+      >
+        <div className="space-y-6">
+          <div>
+            <p className="text-gray-600 text-sm mb-4">
+              Set the total number of consultation slots available for this month.
+            </p>
+            
+            {/* Current Value Display */}
+            <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4">
+              <div className="flex items-center justify-between text-sm">
+                <span className="text-blue-800 font-medium">Current Available Slots:</span>
+                <span className="text-blue-600 font-bold text-lg">{slotsAvailable ?? 'N/A'}</span>
+              </div>
+            </div>
+
+            {/* Preset Options */}
+            <div className="mb-4">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                Quick Select:
+              </label>
+              <div className="grid grid-cols-4 gap-2">
+                {[5, 10, 15, 20].map((preset) => (
+                  <button
+                    key={preset}
+                    onClick={() => handlePresetSlots(preset)}
+                    className={`px-3 py-2 text-sm font-medium rounded-lg border transition-all duration-200 ${
+                      newSlotsValue === preset.toString()
+                        ? 'bg-blue-600 text-white border-blue-600 shadow-md'
+                        : 'bg-white text-gray-700 border-gray-300 hover:border-blue-400 hover:bg-blue-50'
+                    }`}
+                  >
+                    {preset}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Custom Input */}
+            <div>
+              <label htmlFor="slots-input" className="block text-sm font-medium text-gray-700 mb-2">
+                Custom Value:
+              </label>
+              <div className="relative">
+                <Plus className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <input
+                  id="slots-input"
+                  type="number"
+                  min="0"
+                  max="100"
+                  value={newSlotsValue}
+                  onChange={(e) => setNewSlotsValue(e.target.value)}
+                  placeholder="Enter number of slots"
+                  className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
+                />
+              </div>
+              <p className="text-xs text-gray-500 mt-1">
+                Enter a value between 0 and 100 slots
+              </p>
+            </div>
+          </div>
+
+          {/* Action Buttons */}
+          <div className="flex justify-end space-x-3 pt-4 border-t border-gray-200">
+            <button
+              onClick={() => {
+                setShowSlotsModal(false);
+                setNewSlotsValue('');
+              }}
+              disabled={updatingSlots}
+              className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-all duration-200 disabled:opacity-50"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleSlotsUpdate}
+              disabled={updatingSlots || !newSlotsValue || parseInt(newSlotsValue) < 0}
+              className="px-4 py-2 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed flex items-center space-x-2"
+            >
+              {updatingSlots && (
+                <div className="animate-spin rounded-full h-4 w-4 border-2 border-white/30 border-t-white"></div>
+              )}
+              <span>{updatingSlots ? 'Updating...' : 'Update Slots'}</span>
+            </button>
+          </div>
+        </div>
+      </CustomModal>
+
+      {/* Status Confirmation Modal */}
+      <CustomModal
+        isOpen={showStatusModal}
+        onClose={() => {
+          setShowStatusModal(false);
+          setPendingStatusUpdate(null);
+        }}
+        title="Confirm Status Change"
+        customStyles={{ maxWidth: '24rem' }}
+      >
+        <div className="space-y-4">
+          <div className="flex items-center space-x-3">
+            <div className="flex-shrink-0">
+              <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center">
+                <AlertCircle className="w-5 h-5 text-red-600" />
+              </div>
+            </div>
+            <div>
+              <h3 className="text-sm font-medium text-gray-900">
+                Cancel Consultation
+              </h3>
+              <p className="text-sm text-gray-600">
+                Are you sure you want to cancel the consultation for{' '}
+                <span className="font-medium text-gray-900">
+                  {pendingStatusUpdate?.companyName}
+                </span>
+                ?
+              </p>
+            </div>
+          </div>
+          
+          <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-3">
+            <p className="text-sm text-yellow-800">
+              <strong>Warning:</strong> This action will mark the consultation as cancelled. 
+              You may want to inform the client about this change.
+            </p>
+          </div>
+
+          <div className="flex justify-end space-x-3 pt-2">
+            <button
+              onClick={() => {
+                setShowStatusModal(false);
+                setPendingStatusUpdate(null);
+              }}
+              className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-all duration-200"
+            >
+              Keep Consultation
+            </button>
+            <button
+              onClick={handleStatusConfirmation}
+              className="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 transition-all duration-200 flex items-center space-x-2"
+            >
+              <XCircle className="w-4 h-4" />
+              <span>Cancel Consultation</span>
+            </button>
+          </div>
+        </div>
+      </CustomModal>
     </div>
   );
 };
