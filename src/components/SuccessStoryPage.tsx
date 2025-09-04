@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
-import { useParams, Link, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
-import { Menu, X } from 'lucide-react';
+import { Calendar, Clock, ArrowLeft } from 'lucide-react';
 import type { Database } from '../lib/database.types';
 
 type SuccessStory = Database['public']['Tables']['success_stories']['Row'];
@@ -11,7 +11,14 @@ export default function SuccessStoryPage() {
   const navigate = useNavigate();
   const [story, setStory] = useState<SuccessStory | null>(null);
   const [loading, setLoading] = useState(true);
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
+
+  // Helper function to calculate reading time
+  const calculateReadingTime = (content: string) => {
+    const wordsPerMinute = 200;
+    const textLength = content.replace(/<[^>]*>/g, '').split(' ').length;
+    const readingTime = Math.ceil(textLength / wordsPerMinute);
+    return readingTime;
+  };
 
   useEffect(() => {
     async function fetchStory() {
@@ -36,7 +43,7 @@ export default function SuccessStoryPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#2B4B9B]"></div>
       </div>
     );
@@ -44,112 +51,61 @@ export default function SuccessStoryPage() {
 
   if (!story) {
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <p className="text-xl text-gray-600">Story not found</p>
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <h1 className="text-2xl font-bold text-gray-900 mb-2">Story not found</h1>
+          <p className="text-gray-600">The blog post you're looking for doesn't exist.</p>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-white">
-      <nav className="fixed w-full bg-white shadow-sm z-50">
-        <div className="container mx-auto px-6">
-          <div className="flex items-center justify-between">
-            <img 
-              src="https://i.ibb.co/ZzPfwrxP/logo-final-png.png" 
-              alt="Sponsor Studio" 
-              className="h-24 cursor-pointer"
-              onClick={() => navigate('/')}
-            />
-            <div className="hidden md:flex space-x-8">
-              <Link to="/#about" className="text-[#2B4B9B] hover:text-[#1a2f61] font-medium">About</Link>
-              <Link to="/#clients" className="text-[#2B4B9B] hover:text-[#1a2f61] font-medium">Clients</Link>
-              <Link to="/#success" className="text-[#2B4B9B] hover:text-[#1a2f61] font-medium">Success Stories</Link>
-              <Link to="/#contact" className="text-[#2B4B9B] hover:text-[#1a2f61] font-medium">Contact</Link>
-            </div>
-            <button 
-              className="md:hidden text-[#2B4B9B]"
-              onClick={() => setIsMenuOpen(!isMenuOpen)}
-            >
-              {isMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-            </button>
-          </div>
-          
-          {isMenuOpen && (
-            <div className="md:hidden absolute top-full left-0 right-0 bg-white shadow-lg py-4 px-6 transition-all duration-300">
-              <div className="flex flex-col space-y-4">
-                <Link 
-                  to="/#about" 
-                  className="text-[#2B4B9B] hover:text-[#1a2f61] font-medium"
-                  onClick={() => setIsMenuOpen(false)}
-                >
-                  About
-                </Link>
-                <Link 
-                  to="/#clients" 
-                  className="text-[#2B4B9B] hover:text-[#1a2f61] font-medium"
-                  onClick={() => setIsMenuOpen(false)}
-                >
-                  Clients
-                </Link>
-                <Link 
-                  to="/#success" 
-                  className="text-[#2B4B9B] hover:text-[#1a2f61] font-medium"
-                  onClick={() => setIsMenuOpen(false)}
-                >
-                  Success Stories
-                </Link>
-                <Link 
-                  to="/#contact" 
-                  className="text-[#2B4B9B] hover:text-[#1a2f61] font-medium"
-                  onClick={() => setIsMenuOpen(false)}
-                >
-                  Contact
-                </Link>
-              </div>
-            </div>
-          )}
-        </div>
-      </nav>
-
-      <article className="container mx-auto px-6 py-32 max-w-4xl">
-        <Link 
-          to="/#success" 
-          className="inline-flex items-center text-[#2B4B9B] hover:text-[#1a2f61] mb-8"
+    <div className="min-h-screen bg-gray-50">
+      <div className="container mx-auto px-4 py-8 max-w-4xl">
+        {/* Back Button */}
+        <button 
+          onClick={() => navigate(-1)}
+          className="inline-flex items-center space-x-2 text-[#2B4B9B] hover:text-[#1a2f61] mb-6 group"
         >
-          ← Back to Success Stories
-        </Link>
-        <img
-          src={story.preview_image}
-          alt={story.title}
-          className="w-full h-[400px] object-cover rounded-xl mb-8"
-        />
-        <h1 className="text-4xl font-bold text-[#2B4B9B] mb-8">{story.title}</h1>
-        <div className="prose max-w-none" dangerouslySetInnerHTML={{ __html: story.content }} />
-        
-        {story.media && story.media.length > 0 && (
-          <div className="mt-12 grid gap-8">
-            {story.media.map((media, index) => (
-              <div key={index} className="rounded-lg overflow-hidden">
-                {media.type === 'image' ? (
-                  <img src={media.url} alt={media.caption || ''} className="w-full" />
-                ) : (
-                  <div className="aspect-video">
-                    <iframe
-                      src={media.url}
-                      className="w-full h-full"
-                      allowFullScreen
-                    ></iframe>
-                  </div>
-                )}
-                {media.caption && (
-                  <p className="text-gray-600 mt-2 text-center">{media.caption}</p>
-                )}
-              </div>
-            ))}
+          <ArrowLeft className="h-4 w-4 transition-transform group-hover:-translate-x-1" />
+          <span>Back</span>
+        </button>
+
+        {/* Thumbnail Image */}
+        <div className="mb-6">
+          <img
+            src={story.preview_image}
+            alt={story.title}
+            className="w-full h-64 sm:h-80 lg:h-96 object-cover rounded-xl shadow-lg"
+            onError={(e) => {
+              (e.target as HTMLImageElement).src = 'https://via.placeholder.com/800x400?text=No+Image';
+            }}
+          />
+        </div>
+
+        {/* Date and Reading Time */}
+        <div className="flex flex-wrap items-center gap-4 text-sm text-gray-600 mb-6">
+          <div className="flex items-center space-x-2">
+            <Calendar className="h-4 w-4" />
+            <span>Published: {new Date(story.created_at).toLocaleDateString('en-US', {
+              year: 'numeric',
+              month: 'long',
+              day: 'numeric'
+            })}</span>
           </div>
-        )}
-      </article>
+          <div className="flex items-center space-x-2">
+            <Clock className="h-4 w-4" />
+            <span>{calculateReadingTime(story.content)} min read</span>
+          </div>
+        </div>
+
+        {/* Blog Content */}
+        <div 
+          className="prose prose-lg max-w-none prose-headings:text-[#2B4B9B] prose-headings:font-semibold prose-p:text-gray-700 prose-p:leading-relaxed prose-a:text-[#2B4B9B] prose-a:no-underline hover:prose-a:underline prose-strong:text-gray-900 prose-blockquote:border-l-[#2B4B9B] prose-blockquote:bg-blue-50 prose-blockquote:rounded-r-lg prose-blockquote:px-6 prose-blockquote:py-4 prose-img:rounded-xl prose-img:shadow-lg prose-pre:bg-gray-900 prose-code:bg-gray-100 prose-code:px-2 prose-code:py-1 prose-code:rounded prose-code:text-sm prose-table:border-gray-200" 
+          dangerouslySetInnerHTML={{ __html: story.content }} 
+        />
+      </div>
     </div>
   );
 }

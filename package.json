@@ -16,6 +16,8 @@
     "@dnd-kit/utilities": "^3.2.2",
     "@emailjs/browser": "^4.4.1",
     "@supabase/supabase-js": "2.39.7",
+    "@tailwindcss/typography": "^0.5.16",
+    "@tinymce/tinymce-react": "^6.3.0",
     "@vercel/node": "^5.1.15",
     "aos": "^2.3.4",
     "axios": "^1.9.0",
@@ -47,6 +49,7 @@
     "react-tooltip": "^5.28.1",
     "slick-carousel": "^1.8.1",
     "tailwind-scrollbar": "^3.0.5",
+    "tinymce": "^8.0.2",
     "twilio": "^5.5.2",
     "typescript": "5.2.2",
     "uuid": "^11.1.0"
