@@ -23,7 +23,9 @@ import {
   Users,
   Shield,
   Bell,
-  Handshake
+  Handshake,
+  ChevronLeft,
+  ChevronRight
 } from 'lucide-react';
 import Opportunities from './Opportunities';
 import MatchedOpportunities from './MatchedOpportunities';
@@ -41,6 +43,7 @@ export default function AdminDashboard() {
   const { user } = useAuth();
   const [searchTerm, setSearchTerm] = useState('');
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
   const [notifications, setNotifications] = useState<any[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -242,30 +245,51 @@ export default function AdminDashboard() {
 
       {/* Sidebar */}
       <div className={`
-        fixed top-0 left-0 h-full w-64 bg-white/95 backdrop-blur-md shadow-2xl border-r border-gray-200/50 z-30 transform transition-transform duration-300 ease-in-out flex flex-col
+        fixed top-0 left-0 h-full bg-white/95 backdrop-blur-md shadow-2xl border-r border-gray-200/50 z-30 transform transition-all duration-300 ease-in-out flex flex-col
         ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0
+        ${sidebarCollapsed ? 'w-16' : 'w-64'}
       `}>
         <div className="flex-shrink-0 p-6 pt-1 pb-1">
           {/* Header */}
           <div className="flex items-center justify-between mb-0">
             <div className="flex items-center">
-              <img 
-                src="/sponsor_studio_logo.png" 
-                alt="SponsorStudio" 
-                className="h-20 w-auto"
-              />
+              {!sidebarCollapsed && (
+                <img 
+                  src="/sponsor_studio_logo.png" 
+                  alt="SponsorStudio" 
+                  className="h-20 w-auto"
+                />
+              )}
+              {sidebarCollapsed && (
+                <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-lg flex items-center justify-center">
+                  <span className="text-white text-sm font-bold">SS</span>
+                </div>
+              )}
             </div>
-            <button
-              onClick={() => setSidebarOpen(false)}
-              className="lg:hidden p-2 rounded-lg hover:bg-gray-100 transition-colors"
-            >
-              <X className="w-5 h-5 text-gray-500" />
-            </button>
+            <div className="flex items-center space-x-2">
+              <button
+                onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+                className="hidden lg:flex p-1.5 rounded-lg hover:bg-gray-100 transition-colors"
+                title={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+              >
+                {sidebarCollapsed ? (
+                  <ChevronRight className="w-4 h-4 text-gray-500" />
+                ) : (
+                  <ChevronLeft className="w-4 h-4 text-gray-500" />
+                )}
+              </button>
+              <button
+                onClick={() => setSidebarOpen(false)}
+                className="lg:hidden p-2 rounded-lg hover:bg-gray-100 transition-colors"
+              >
+                <X className="w-5 h-5 text-gray-500" />
+              </button>
+            </div>
           </div>
         </div>
 
         {/* Scrollable Navigation */}
-        <div className="flex-1 overflow-y-auto px-6 pb-4 scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent hover:scrollbar-thumb-gray-400">
+        <div className={`flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-gray-300 scrollbar-track-transparent hover:scrollbar-thumb-gray-400 ${sidebarCollapsed ? 'px-2' : 'px-6'} pb-4`}>
           <nav className="space-y-1">
             {menuItems.map((item) => {
               const Icon = item.icon;
@@ -276,25 +300,43 @@ export default function AdminDashboard() {
                   to={item.path}
                   onClick={() => setSidebarOpen(false)}
                   className={`
-                    flex items-center px-4 py-3 rounded-xl transition-all duration-200 group
+                    flex items-center rounded-xl transition-all duration-200 group relative
+                    ${sidebarCollapsed ? 'justify-center p-3' : 'px-4 py-3'}
                     ${isActive 
                       ? 'bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200/50 shadow-sm' 
                       : 'hover:bg-gray-50 hover:shadow-sm'
                     }
                   `}
+                  title={sidebarCollapsed ? item.label : undefined}
                 >
                   <Icon className={`
-                    w-5 h-5 mr-3 transition-colors duration-200
+                    w-5 h-5 transition-colors duration-200
+                    ${sidebarCollapsed ? '' : 'mr-3'}
                     ${isActive ? item.color : 'text-gray-500 group-hover:text-gray-700'}
                   `} />
-                  <span className={`
-                    font-medium transition-colors duration-200
-                    ${isActive ? 'text-gray-900' : 'text-gray-700 group-hover:text-gray-900'}
-                  `}>
-                    {item.label}
-                  </span>
-                  {isActive && (
-                    <div className="ml-auto w-2 h-2 rounded-full bg-gradient-to-r from-blue-500 to-indigo-500" />
+                  {!sidebarCollapsed && (
+                    <>
+                      <span className={`
+                        font-medium transition-colors duration-200
+                        ${isActive ? 'text-gray-900' : 'text-gray-700 group-hover:text-gray-900'}
+                      `}>
+                        {item.label}
+                      </span>
+                      {isActive && (
+                        <div className="ml-auto w-2 h-2 rounded-full bg-gradient-to-r from-blue-500 to-indigo-500" />
+                      )}
+                    </>
+                  )}
+                  {sidebarCollapsed && isActive && (
+                    <div className="absolute right-1 top-1 w-2 h-2 rounded-full bg-gradient-to-r from-blue-500 to-indigo-500" />
+                  )}
+                  
+                  {/* Tooltip for collapsed state */}
+                  {sidebarCollapsed && (
+                    <div className="absolute left-full ml-2 px-3 py-2 bg-gray-900 text-white text-sm rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
+                      {item.label}
+                      <div className="absolute left-0 top-1/2 transform -translate-y-1/2 -translate-x-1 w-0 h-0 border-r-4 border-r-gray-900 border-t-4 border-b-4 border-t-transparent border-b-transparent" />
+                    </div>
                   )}
                 </Link>
               );
@@ -303,19 +345,33 @@ export default function AdminDashboard() {
         </div>
 
         {/* Logout Button */}
-        <div className="flex-shrink-0 p-6 pt-0 border-t border-gray-200">
+        <div className={`flex-shrink-0 border-t border-gray-200 ${sidebarCollapsed ? 'p-2' : 'p-6'} pt-0`}>
           <button
             onClick={handleLogout}
-            className="flex items-center w-full px-4 py-3 text-red-600 hover:text-red-800 hover:bg-red-50 rounded-xl transition-all duration-200 group"
+            className={`
+              flex items-center w-full text-red-600 hover:text-red-800 hover:bg-red-50 rounded-xl transition-all duration-200 group relative
+              ${sidebarCollapsed ? 'justify-center p-3' : 'px-4 py-3'}
+            `}
+            title={sidebarCollapsed ? 'Logout' : undefined}
           >
-            <LogOut className="w-5 h-5 mr-3" />
-            <span className="font-medium">Logout</span>
+            <LogOut className={`w-5 h-5 ${sidebarCollapsed ? '' : 'mr-3'}`} />
+            {!sidebarCollapsed && (
+              <span className="font-medium">Logout</span>
+            )}
+            
+            {/* Tooltip for collapsed state */}
+            {sidebarCollapsed && (
+              <div className="absolute left-full ml-2 px-3 py-2 bg-gray-900 text-white text-sm rounded-lg opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-50">
+                Logout
+                <div className="absolute left-0 top-1/2 transform -translate-y-1/2 -translate-x-1 w-0 h-0 border-r-4 border-r-gray-900 border-t-4 border-b-4 border-t-transparent border-b-transparent" />
+              </div>
+            )}
           </button>
         </div>
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 lg:ml-64">
+      <div className={`flex-1 transition-all duration-300 ${sidebarCollapsed ? 'lg:ml-16' : 'lg:ml-64'}`}>
         {/* Top Header */}
         <div className="bg-white/80 backdrop-blur-md border-b border-gray-200/50 sticky top-0 z-10">
           <div className="px-6 py-4">
