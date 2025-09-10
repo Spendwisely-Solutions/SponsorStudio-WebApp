@@ -90,27 +90,49 @@ const HowItWorks = () => {
 
           {/* Toggle Buttons */}
           <div className="flex justify-center mb-8">
-            <div className="bg-white/80 backdrop-blur-md rounded-2xl p-1 border border-blue-200/50 shadow-lg">
-              <button
+            <div className="relative bg-white/80 backdrop-blur-md rounded-2xl p-1 border border-blue-200/50 shadow-lg">
+              {/* Animated background indicator */}
+              <motion.div
+                className="absolute top-1 bottom-1 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-xl shadow-lg"
+                initial={false}
+                animate={{
+                  left: activeTab === 'brands' ? '4px' : '50%',
+                  width: activeTab === 'brands' ? 'calc(50% - 4px)' : 'calc(50% - 4px)',
+                }}
+                transition={{
+                  type: "spring",
+                  stiffness: 300,
+                  damping: 30,
+                  duration: 0.3
+                }}
+              />
+              
+              <motion.button
                 onClick={() => setActiveTab('brands')}
-                className={`px-6 py-3 rounded-xl font-medium transition-all duration-300 ${
+                className={`relative z-10 px-6 py-3 rounded-xl font-medium transition-colors duration-300 ${
                   activeTab === 'brands'
-                    ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg'
-                    : 'text-blue-700 hover:bg-blue-50'
+                    ? 'text-white'
+                    : 'text-blue-700 hover:text-blue-800'
                 }`}
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                transition={{ type: "spring", stiffness: 400, damping: 17 }}
               >
                 For Brands
-              </button>
-              <button
+              </motion.button>
+              <motion.button
                 onClick={() => setActiveTab('events')}
-                className={`px-6 py-3 rounded-xl font-medium transition-all duration-300 ${
+                className={`relative z-10 px-6 py-3 rounded-xl font-medium transition-colors duration-300 ${
                   activeTab === 'events'
-                    ? 'bg-gradient-to-r from-blue-600 to-indigo-600 text-white shadow-lg'
-                    : 'text-blue-700 hover:bg-blue-50'
+                    ? 'text-white'
+                    : 'text-blue-700 hover:text-blue-800'
                 }`}
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                transition={{ type: "spring", stiffness: 400, damping: 17 }}
               >
                 For Events
-              </button>
+              </motion.button>
             </div>
           </div>
           <motion.h2
