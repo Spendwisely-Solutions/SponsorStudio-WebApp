@@ -170,7 +170,7 @@ const NavBar: React.FC<NavBarProps> = ({
             />
           </Link>
           <div className="hidden md:flex items-center space-x-2 lg:space-x-8">
-            <a href="#about" className="nav-item px-3 py-2 rounded-full text-[#2B4B9B] hover:bg-blue-50 hover:text-[#1F3A7A] font-medium transition-all duration-300 text-sm lg:text-base">
+            <a href="#how-we-work" className="nav-item px-3 py-2 rounded-full text-[#2B4B9B] hover:bg-blue-50 hover:text-[#1F3A7A] font-medium transition-all duration-300 text-sm lg:text-base">
               About
             </a>
             <a href="#clients" className="nav-item px-3 py-2 rounded-full text-[#2B4B9B] hover:bg-blue-50 hover:text-[#1F3A7A] font-medium transition-all duration-300 text-sm lg:text-base">
@@ -246,7 +246,7 @@ const NavBar: React.FC<NavBarProps> = ({
           <div className="md:hidden mt-4 py-4 border-t border-gray-100 bg-white/95 backdrop-blur-md rounded-b-2xl shadow-lg mobile-menu">
             <div className="flex flex-col space-y-3 px-2">
               <a
-                href="#about"
+                href="#how-we-work"
                 className="px-4 py-3 rounded-xl text-gray-700 hover:bg-blue-50 hover:text-[#2B4B9B] font-medium transition-all duration-200 flex items-center"
                 onClick={() => setMobileMenuOpen(false)}
               >
