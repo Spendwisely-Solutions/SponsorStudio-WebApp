@@ -18,6 +18,7 @@ import AOS from 'aos';
 import 'aos/dist/aos.css'; // Import AOS styles
 import TrendingEvents from './TrendingEvents';
 import { FAQSection } from '../FAQ/FAQ';
+import HowItWorks from './HowItWorks';
 
 // Shared types
 interface Database {
@@ -200,6 +201,7 @@ const Home: React.FC = () => {
       <HeroSectionNew user={user} setShowAuthForm={setShowAuthForm} />
   <TrendingEvents showAuthForm={() => setShowAuthForm(true)} />
       {/* <HowWeWorkSection /> */}
+      <HowItWorks />
       <ClientsSection loading={loading} clientLogos={clientLogos} />
       {/* <PricingSectionStatic /> */}
       <SuccessStoriesSection
