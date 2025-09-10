@@ -35,13 +35,13 @@ const HowItWorks = () => {
     {
       step: "1",
       title: "List Your Event",
-      description: "Submit your event to Sponsor Studio (we verify & approve)",
+      description: "Submit your event; we verify and approve it",
       icon: Calendar
     },
     {
       step: "2",
       title: "Connect with Brands",
-      description: "Our team reviews and verifies your event to ensure quality and authenticity",
+      description: "Discover interested brands and unlock matches.",
       icon: Users
     },
     {
@@ -53,7 +53,7 @@ const HowItWorks = () => {
     {
       step: "4",
       title: "Track Performance",
-      description: "Monitor engagement, manage sponsor relationships, and analyze event success",
+      description: "Manage sponsors, track engagement, and measure event success",
       icon: TrendingUp
     }
   ];
@@ -143,7 +143,7 @@ const HowItWorks = () => {
             transition={{ duration: 0.4, delay: 0.3, ease: "easeOut" }}
             key={activeTab} // Re-animate when tab changes
           >
-            How We Works
+            How We Work
           </motion.h2>
           <motion.p
             className="mt-6 max-w-2xl mx-auto text-xl sm:text-2xl text-gray-600 leading-relaxed font-light animate-fadein2"
@@ -154,8 +154,8 @@ const HowItWorks = () => {
             key={`${activeTab}-desc`} // Re-animate when tab changes
           >
             {activeTab === 'brands' 
-              ? "Our streamlined process makes finding and securing sponsorship deals simple, transparent, and effective."
-              : "Join our platform and connect with brands looking for authentic sponsorship opportunities at your events."
+              ? "We make it easy for brands to find the right events, connect with organizers, and secure valuable partnerships.":
+              "We help events get discovered by the right brands and secure sponsorships with ease."
             }
           </motion.p>
         </motion.div>
