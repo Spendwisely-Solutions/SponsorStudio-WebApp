@@ -46,7 +46,7 @@
 	<priority>0.6</priority>
 </url>
 
-
+<!-- Note: Dynamic success story pages (/story/:id) are generated automatically with individual OG images and meta tags -->
 
 <!-- Static Homepage Sections (for SEO) -->
 <url>

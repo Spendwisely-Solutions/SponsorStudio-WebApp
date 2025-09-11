@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
+import { Helmet } from 'react-helmet-async';
 import { supabase } from '../lib/supabase';
 import { Calendar, Clock, ArrowLeft } from 'lucide-react';
 import type { Database } from '../lib/database.types';
@@ -11,6 +12,12 @@ export default function SuccessStoryPage() {
   const navigate = useNavigate();
   const [story, setStory] = useState<SuccessStory | null>(null);
   const [loading, setLoading] = useState(true);
+
+  // Helper function to strip HTML tags and create description
+  const createMetaDescription = (content: string) => {
+    const textContent = content.replace(/<[^>]*>/g, '').trim();
+    return textContent.length > 160 ? textContent.substring(0, 157) + '...' : textContent;
+  };
 
   // Helper function to calculate reading time
   const calculateReadingTime = (content: string) => {
@@ -62,6 +69,36 @@ export default function SuccessStoryPage() {
 
   return (
     <div className="min-h-screen bg-gray-50">
+      <Helmet>
+        <title>{story.title} | Sponsor Studio</title>
+        <meta name="description" content={createMetaDescription(story.content)} />
+        
+        {/* Open Graph / Facebook */}
+        <meta property="og:type" content="article" />
+        <meta property="og:url" content={`https://www.sponsorstudio.in/story/${story.id}`} />
+        <meta property="og:title" content={story.title} />
+        <meta property="og:description" content={createMetaDescription(story.content)} />
+        <meta property="og:image" content={story.preview_image} />
+        <meta property="og:site_name" content="Sponsor Studio" />
+        
+        {/* Twitter */}
+        <meta name="twitter:card" content="summary_large_image" />
+        <meta name="twitter:url" content={`https://www.sponsorstudio.in/story/${story.id}`} />
+        <meta name="twitter:title" content={story.title} />
+        <meta name="twitter:description" content={createMetaDescription(story.content)} />
+        <meta name="twitter:image" content={story.preview_image} />
+        
+        {/* Article specific */}
+        <meta property="article:published_time" content={story.created_at} />
+        <meta property="article:author" content="Sponsor Studio" />
+        <meta property="article:section" content="Success Stories" />
+        
+        {/* Additional SEO */}
+        <meta name="keywords" content="sponsor studio, success stories, brand partnerships, event sponsorship" />
+        <meta name="author" content="Sponsor Studio" />
+        <link rel="canonical" href={`https://www.sponsorstudio.in/story/${story.id}`} />
+      </Helmet>
+
       <div className="container mx-auto px-4 py-8 max-w-4xl">
         {/* Back Button */}
         <button 
