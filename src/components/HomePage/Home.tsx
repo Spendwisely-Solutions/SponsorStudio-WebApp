@@ -138,7 +138,10 @@ const Home: React.FC = () => {
   };
 
   const fetchSuccessStories = async () => {
-    const { data, error } = await supabase.from('success_stories').select('*');
+    const { data, error } = await supabase
+      .from('success_stories')
+      .select('*')
+      .order('created_at', { ascending: false }); // Latest blogs first
     if (error) {
       console.error('Error fetching success stories:', error);
       throw error;
