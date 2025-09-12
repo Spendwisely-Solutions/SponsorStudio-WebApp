@@ -1,23 +1,20 @@
 import React, { useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import Skeleton from 'react-loading-skeleton';
 import SuccessStoryCard from './SuccessStoryCard';
 import { SuccessStory as SuccessStoryType } from '../../App';
 import AOS from 'aos';
 import 'aos/dist/aos.css'; // Import AOS styles
-import { ChevronDown, ChevronUp } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
 
 interface SuccessStoriesSectionProps {
   loading: boolean;
   successStories: SuccessStoryType[];
-  showAllStories: boolean;
-  setShowAllStories: (value: boolean) => void;
 }
 
 const SuccessStoriesSection: React.FC<SuccessStoriesSectionProps> = ({
   loading,
   successStories,
-  showAllStories,
-  setShowAllStories,
 }) => {
   // Initialize AOS with enhanced settings
   useEffect(() => {
@@ -29,13 +26,13 @@ const SuccessStoriesSection: React.FC<SuccessStoriesSectionProps> = ({
       mirror: true // Animations can be triggered when scrolling back up
     });
 
-    // Refresh AOS after stories are loaded or visibility changes
+    // Refresh AOS after stories are loaded
     const timer = setTimeout(() => {
       AOS.refresh();
     }, 100);
 
     return () => clearTimeout(timer);
-  }, [successStories, showAllStories]);
+  }, [successStories]);
 
   return (
     <section className="py-24 bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/50 relative overflow-hidden" id="success">
@@ -114,7 +111,7 @@ const SuccessStoriesSection: React.FC<SuccessStoriesSectionProps> = ({
               </div>
             ))
           ) : (
-            (showAllStories ? successStories : successStories.slice(0, 3)).map((story, index) => {
+            successStories.slice(0, 3).map((story, index) => {
               const delay = index * 150; // Increased delay between cards for better staggering effect
               const animationType = ['fade-up', 'zoom-in-up', 'fade-right'][index % 3]; // Different animation types
               const storyNumber = index + 1; // Start numbering from 1
@@ -138,29 +135,17 @@ const SuccessStoriesSection: React.FC<SuccessStoriesSectionProps> = ({
             data-aos="fade-up"
             data-aos-delay="300"
           >
-            <button
-              onClick={() => setShowAllStories(!showAllStories)}
+            <Link
+              to="/story"
               className="group inline-flex items-center justify-center gap-3 px-10 py-4 bg-gradient-to-r from-blue-600 to-indigo-600 text-white text-lg font-semibold rounded-2xl hover:from-blue-700 hover:to-indigo-700 shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1"
             >
-              {showAllStories ? (
-                <>
-                  Show Fewer Stories
-                  <ChevronUp className="w-5 h-5 group-hover:-translate-y-1 transition-transform duration-200" />
-                </>
-              ) : (
-                <>
-                  View All Stories
-                  <ChevronDown className="w-5 h-5 group-hover:translate-y-1 transition-transform duration-200" />
-                </>
-              )}
-            </button>
+              View All Stories
+              <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform duration-200" />
+            </Link>
             
-            {/* Alternative secondary button */}
-            {!showAllStories && (
-              <p className="mt-4 text-gray-600 text-sm">
-                {successStories.length - 3} more event blogs available
-              </p>
-            )}
+            <p className="mt-4 text-gray-600 text-sm">
+              {successStories.length} event blogs available
+            </p>
           </div>
         )}
       </div>
