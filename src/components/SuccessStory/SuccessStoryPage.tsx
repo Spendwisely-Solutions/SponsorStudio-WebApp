@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
-import { supabase } from '../lib/supabase';
+import { supabase } from '../../lib/supabase';
 import { Calendar, Clock, ArrowLeft, ArrowRight, ChevronUp, Share2, Facebook, Twitter, Linkedin, Link2, Copy } from 'lucide-react';
-import type { Database } from '../lib/database.types';
+import type { Database } from '../../lib/database.types';
 
 type SuccessStory = Database['public']['Tables']['success_stories']['Row'];
 

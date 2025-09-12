@@ -6,7 +6,7 @@ import Dashboard from './components/Dashboard';
 import AdminLogin from './components/Admin/AdminLogin';
 import AdminDashboard from './components/Admin/Dashboard/AdminDashboard';
 import ProtectedAdminRoute from './components/Admin/ProtectedAdminRoute';
-import SuccessStoryPage from './components/SuccessStoryPage';
+import SuccessStoryPage from './components/SuccessStory/SuccessStoryPage';
 import ProfilePage from './components/ProfilePage';
 import ResetPassword from './components/AuthComponents/ResetPassword';
 import Logout from './components/AuthComponents/Logout';
