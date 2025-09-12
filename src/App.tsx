@@ -18,6 +18,7 @@ import CareerPage from './components/Careers/CareerPage';
 import FAQ from './components/FAQ/FAQ';
 import NotFound from './components/NotFound';
 import Home from './components/HomePage/Home';
+import SuccessStories from './components/SuccessStory/SuccessStories';
 function App() {
   return (
     <AuthProvider>
@@ -44,6 +45,7 @@ function App() {
               }
             />
             <Route path="/story/:id" element={<SuccessStoryPage />} />
+            <Route path="/story" element={<SuccessStories />} />
             {/* <Route path="/Careers" element={<CareerPage />} /> */}
             <Route path="*" element={<NotFound />} />
           </Routes>
