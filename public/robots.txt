@@ -17,6 +17,13 @@ Disallow: /private/
 Disallow: *.json$
 Disallow: /temp/
 Disallow: /cache/
+Disallow: /reset-password
+Disallow: /purchase
+Disallow: /view-mou
+Disallow: /logout
+
+
+
 
 # Crawl-delay for polite crawling
 Crawl-delay: 1
