@@ -488,9 +488,9 @@ export default function EventForm({
                           <Sparkles className="h-5 w-5 text-amber-500" />
                           <h4 className="font-semibold text-blue-800">Pricing Plan</h4>
                         </div>
-                        <div className="flex items-center">
-                          <span className="text-sm text-gray-600 mr-3 font-medium">
-                            {formData.is_vip ? 'VIP' : 'Basic'}
+                        <div className="flex items-center space-x-3">
+                          <span className={`text-sm font-medium transition-colors ${!formData.is_vip ? 'text-gray-900' : 'text-gray-500'}`}>
+                            Basic
                           </span>
                           <label className="relative inline-flex items-center cursor-pointer">
                             <input 
@@ -502,6 +502,9 @@ export default function EventForm({
                             />
                             <div className="w-11 h-6 bg-gray-200 rounded-full peer peer-focus:ring-4 peer-focus:ring-blue-200 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-gradient-to-r from-amber-500 to-yellow-500"></div>
                           </label>
+                          <span className={`text-sm font-medium transition-colors ${formData.is_vip ? 'text-amber-600' : 'text-gray-500'}`}>
+                            VIP
+                          </span>
                         </div>
                       </div>
                     

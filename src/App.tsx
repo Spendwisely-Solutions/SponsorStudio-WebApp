@@ -6,7 +6,7 @@ import Dashboard from './components/Dashboard';
 import AdminLogin from './components/Admin/AdminLogin';
 import AdminDashboard from './components/Admin/Dashboard/AdminDashboard';
 import ProtectedAdminRoute from './components/Admin/ProtectedAdminRoute';
-import SuccessStoryPage from './components/SuccessStoryPage';
+import SuccessStoryPage from './components/SuccessStory/SuccessStoryPage';
 import ProfilePage from './components/ProfilePage';
 import ResetPassword from './components/AuthComponents/ResetPassword';
 import Logout from './components/AuthComponents/Logout';
@@ -27,11 +27,11 @@ function App() {
           <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/profile/:userId" element={<ProfilePage />} />
+            {/* <Route path="/profile/:userId" element={<ProfilePage />} /> */}
             <Route path="/admin" element={<AdminLogin />} />
             <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/logout" element={<Logout />} />
-            <Route path="/success" element={<SuccessPage onSubmit={() => {}} />} />
+            {/* <Route path="/success" element={<SuccessPage onSubmit={() => {}} />} /> */}
             <Route path="/faq" element={<FAQ />} />
             {/* <Route path="/pricing" element={<Pricing />} /> */}
             <Route path="/purchase" element={<PurchaseCredits />} />

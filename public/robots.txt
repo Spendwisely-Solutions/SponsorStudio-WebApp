@@ -1,6 +1,31 @@
 User-agent: *
 Allow: /
+Allow: /dashboard
+Allow: /story
+Allow: /story/*
+Allow: /privacy
+Allow: /terms
+Allow: /sitemap.xml
+Allow: /robots.txt
+Allow: /#*
 Disallow: /admin
 Disallow: /admin/
 Disallow: /admin/*
+Disallow: /success
+Disallow: /api/
+Disallow: /private/
+Disallow: *.json$
+Disallow: /temp/
+Disallow: /cache/
+Disallow: /reset-password
+Disallow: /purchase
+Disallow: /view-mou
+Disallow: /logout
+
+
+
+
+# Crawl-delay for polite crawling
+Crawl-delay: 1
+
 Sitemap: https://www.sponsorstudio.in/sitemap.xml
