@@ -27,11 +27,11 @@ function App() {
           <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/profile/:userId" element={<ProfilePage />} />
+            {/* <Route path="/profile/:userId" element={<ProfilePage />} /> */}
             <Route path="/admin" element={<AdminLogin />} />
             <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/logout" element={<Logout />} />
-            <Route path="/success" element={<SuccessPage onSubmit={() => {}} />} />
+            {/* <Route path="/success" element={<SuccessPage onSubmit={() => {}} />} /> */}
             <Route path="/faq" element={<FAQ />} />
             {/* <Route path="/pricing" element={<Pricing />} /> */}
             <Route path="/purchase" element={<PurchaseCredits />} />
