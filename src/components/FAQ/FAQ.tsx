@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { ChevronDown, LogIn } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { Helmet } from 'react-helmet-async';
 import NavBar from '../HomePage/NavBar';
 import Footer from '../HomePage/Footer';
 import { useAuth } from '../../contexts/AuthContext';
@@ -347,6 +348,38 @@ const FAQ: React.FC = () => {
 
   return (
     <div>
+      <Helmet>
+        <title>FAQ - Sponsor Studio | Frequently Asked Questions</title>
+        <meta name="description" content="Get answers to frequently asked questions about Sponsor Studio. Learn about our sponsorship platform, how it works, pricing, and support for brands and event organizers." />
+        <meta name="keywords" content="FAQ, frequently asked questions, sponsorship help, sponsor studio support, event sponsorship guide, brand partnership questions, platform help" />
+        
+        {/* Open Graph / Facebook */}
+        <meta property="og:type" content="website" />
+        <meta property="og:url" content="https://www.sponsorstudio.in/faq" />
+        <meta property="og:title" content="FAQ - Sponsor Studio | Frequently Asked Questions" />
+        <meta property="og:description" content="Get answers to frequently asked questions about Sponsor Studio. Learn about our sponsorship platform, how it works, pricing, and support for brands and event organizers." />
+        <meta property="og:image" content="https://www.sponsorstudio.in/sponsor_studio_logo.png" />
+        <meta property="og:site_name" content="Sponsor Studio" />
+
+        {/* Twitter */}
+        <meta property="twitter:card" content="summary_large_image" />
+        <meta property="twitter:url" content="https://www.sponsorstudio.in/faq" />
+        <meta property="twitter:title" content="FAQ - Sponsor Studio | Frequently Asked Questions" />
+        <meta property="twitter:description" content="Get answers to frequently asked questions about Sponsor Studio. Learn about our sponsorship platform, how it works, pricing, and support for brands and event organizers." />
+        <meta property="twitter:image" content="https://www.sponsorstudio.in/sponsor_studio_logo.png" />
+
+        {/* Additional SEO tags */}
+        <meta name="robots" content="index, follow" />
+        <meta name="author" content="Sponsor Studio" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <link rel="canonical" href="https://www.sponsorstudio.in/faq" />
+        
+        {/* Help/Support specific tags */}
+        <meta name="category" content="Support" />
+        <meta name="classification" content="Help, Support, FAQ, Customer Service" />
+        <meta name="audience" content="Brands, Event Organizers, Business Partners" />
+      </Helmet>
+
       {user && (
         <NavBar
           user={user}
