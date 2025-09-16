@@ -14,6 +14,16 @@ interface NavBarProps {
   setShowAuthForm: (value: boolean) => void;
   mobileMenuOpen: boolean;
   setMobileMenuOpen: (value: boolean) => void;
+  hideNavItems?: boolean;
+  hideAuthButton?: boolean;
+  hideMobileMenu?: boolean;
+  navLinks?: {
+    label: string;
+    href?: string;
+    to?: string;
+    icon?: React.ReactNode;
+    onClick?: () => void;
+  }[];
 }
 
 const NavBar: React.FC<NavBarProps> = ({
@@ -23,10 +33,25 @@ const NavBar: React.FC<NavBarProps> = ({
   setShowAuthForm,
   mobileMenuOpen,
   setMobileMenuOpen,
+  hideNavItems = false,
+  hideAuthButton = false,
+  hideMobileMenu = false,
+  navLinks,
 }) => {
   const navRef = useRef<HTMLDivElement>(null);
   const signInButtonRef = useRef<HTMLButtonElement>(null);
   const mobileMenuButtonRef = useRef<HTMLButtonElement>(null);
+
+  // Default nav links
+  const defaultNavLinks = [
+    { label: 'About', href: '#how-we-work' },
+    { label: 'Clients', href: '#clients' },
+    { label: 'Success Stories', href: '#success' },
+    { label: 'FAQ', to: '/faq' },
+    { label: 'Contact', href: '#contact' },
+  ];
+
+  const currentNavLinks = navLinks || defaultNavLinks;
 
   useEffect(() => {
     // Initial navbar animation
@@ -170,26 +195,28 @@ const NavBar: React.FC<NavBarProps> = ({
             />
           </Link>
           <div className="hidden md:flex items-center space-x-2 lg:space-x-8">
-            <a href="#how-we-work" className="nav-item px-3 py-2 rounded-full text-[#2B4B9B] hover:bg-blue-50 hover:text-[#1F3A7A] font-medium transition-all duration-300 text-sm lg:text-base">
-              About
-            </a>
-            <a href="#clients" className="nav-item px-3 py-2 rounded-full text-[#2B4B9B] hover:bg-blue-50 hover:text-[#1F3A7A] font-medium transition-all duration-300 text-sm lg:text-base">
-              Clients
-            </a>
-            {/* <a href="#pricing" className="nav-item px-3 py-2 rounded-full text-[#2B4B9B] hover:bg-blue-50 hover:text-[#1F3A7A] font-medium transition-all duration-300 text-sm lg:text-base">
-              Pricing
-            </a> */}
-           
-            <a href="#success" className="nav-item px-3 py-2 rounded-full text-[#2B4B9B] hover:bg-blue-50 hover:text-[#1F3A7A] font-medium transition-all duration-300 text-sm lg:text-base">
-              Success Stories
-            </a>
-            <Link to="/faq" className="nav-item px-3 py-2 rounded-full text-[#2B4B9B] hover:bg-blue-50 hover:text-[#1F3A7A] font-medium transition-all duration-300 text-sm lg:text-base">
-              FAQ
-            </Link>
-            <a href="#contact" className="nav-item px-3 py-2 rounded-full text-[#2B4B9B] hover:bg-blue-50 hover:text-[#1F3A7A] font-medium transition-all duration-300 text-sm lg:text-base">
-              Contact
-            </a>
-            {user ? (
+            {!hideNavItems && currentNavLinks.map((link, index) => (
+              link.to ? (
+                <Link
+                  key={index}
+                  to={link.to}
+                  className="nav-item px-3 py-2 rounded-full text-[#2B4B9B] hover:bg-blue-50 hover:text-[#1F3A7A] font-medium transition-all duration-300 text-sm lg:text-base"
+                  onClick={link.onClick}
+                >
+                  {link.label}
+                </Link>
+              ) : (
+                <a
+                  key={index}
+                  href={link.href}
+                  className="nav-item px-3 py-2 rounded-full text-[#2B4B9B] hover:bg-blue-50 hover:text-[#1F3A7A] font-medium transition-all duration-300 text-sm lg:text-base"
+                  onClick={link.onClick}
+                >
+                  {link.label}
+                </a>
+              )
+            ))}
+            {!hideAuthButton && (user ? (
               <Link to="/dashboard" className="nav-item flex items-center space-x-3 group bg-white/80 backdrop-blur-sm px-4 py-2 rounded-full shadow-sm border border-blue-100/50 hover:shadow-md hover:border-blue-300 transition-all duration-300">
                 <div className="relative">
                   {profile?.profile_picture_url ? (
@@ -231,71 +258,70 @@ const NavBar: React.FC<NavBarProps> = ({
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
                 </svg>
               </button>
-            )}
+            ))}
           </div>
-          <button
-            ref={mobileMenuButtonRef}
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="md:hidden p-2 rounded-full bg-white/80 backdrop-blur-sm shadow-md border border-blue-100 hover:border-blue-300 text-[#2B4B9B] hover:bg-blue-50 transition-all duration-300 will-change-transform"
-            aria-label={mobileMenuOpen ? 'Close menu' : 'Open menu'}
-          >
-            {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-          </button>
+          {!hideMobileMenu && (
+            <button
+              ref={mobileMenuButtonRef}
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              className="md:hidden p-2 rounded-full bg-white/80 backdrop-blur-sm shadow-md border border-blue-100 hover:border-blue-300 text-[#2B4B9B] hover:bg-blue-50 transition-all duration-300 will-change-transform"
+              aria-label={mobileMenuOpen ? 'Close menu' : 'Open menu'}
+            >
+              {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+            </button>
+          )}
         </div>
-        {mobileMenuOpen && (
+        {mobileMenuOpen && !hideMobileMenu && (
           <div className="md:hidden mt-4 py-4 border-t border-gray-100 bg-white/95 backdrop-blur-md rounded-b-2xl shadow-lg mobile-menu">
             <div className="flex flex-col space-y-3 px-2">
-              <a
-                href="#how-we-work"
-                className="px-4 py-3 rounded-xl text-gray-700 hover:bg-blue-50 hover:text-[#2B4B9B] font-medium transition-all duration-200 flex items-center"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-3 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                About
-              </a>
-              <a
-                href="#clients"
-                className="px-4 py-3 rounded-xl text-gray-700 hover:bg-blue-50 hover:text-[#2B4B9B] font-medium transition-all duration-200 flex items-center"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-3 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
-                </svg>
-                Clients
-              </a>
-              <a
-                href="#success"
-                className="px-4 py-3 rounded-xl text-gray-700 hover:bg-blue-50 hover:text-[#2B4B9B] font-medium transition-all duration-200 flex items-center"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-3 text-purple-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
-                </svg>
-                Success Stories
-              </a>
-              <Link
-                to="/faq"
-                className="px-4 py-3 rounded-xl text-gray-700 hover:bg-blue-50 hover:text-[#2B4B9B] font-medium transition-all duration-200 flex items-center"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-3 text-orange-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                FAQ
-              </Link>
-              <a
-                href="#contact"
-                className="px-4 py-3 rounded-xl text-gray-700 hover:bg-blue-50 hover:text-[#2B4B9B] font-medium transition-all duration-200 flex items-center"
-                onClick={() => setMobileMenuOpen(false)}
-              >
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-3 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                </svg>
-                Contact
-              </a>
-              {user ? (
+              {!hideNavItems && currentNavLinks.map((link, index) => {
+                const defaultIcons = [
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-3 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>,
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-3 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z" />
+                  </svg>,
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-3 text-purple-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
+                  </svg>,
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-3 text-orange-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>,
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-3 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                  </svg>
+                ];
+
+                return link.to ? (
+                  <Link
+                    key={index}
+                    to={link.to}
+                    className="px-4 py-3 rounded-xl text-gray-700 hover:bg-blue-50 hover:text-[#2B4B9B] font-medium transition-all duration-200 flex items-center"
+                    onClick={() => {
+                      setMobileMenuOpen(false);
+                      if (link.onClick) link.onClick();
+                    }}
+                  >
+                    {link.icon || defaultIcons[index % defaultIcons.length]}
+                    {link.label}
+                  </Link>
+                ) : (
+                  <a
+                    key={index}
+                    href={link.href}
+                    className="px-4 py-3 rounded-xl text-gray-700 hover:bg-blue-50 hover:text-[#2B4B9B] font-medium transition-all duration-200 flex items-center"
+                    onClick={() => {
+                      setMobileMenuOpen(false);
+                      if (link.onClick) link.onClick();
+                    }}
+                  >
+                    {link.icon || defaultIcons[index % defaultIcons.length]}
+                    {link.label}
+                  </a>
+                );
+              })}
+              {!hideAuthButton && (user ? (
                 <Link
                   to="/dashboard"
                   className="flex items-center mt-4 bg-gradient-to-r from-blue-50 to-indigo-50 rounded-xl p-4 shadow-md hover:shadow-lg transition-all duration-300"
@@ -348,7 +374,7 @@ const NavBar: React.FC<NavBarProps> = ({
                   </svg>
                   Sign In
                 </button>
-              )}
+              ))}
             </div>
           </div>
         )}

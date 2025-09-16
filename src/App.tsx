@@ -19,6 +19,9 @@ import FAQ from './components/FAQ/FAQ';
 import NotFound from './components/NotFound';
 import Home from './components/HomePage/Home';
 import SuccessStories from './components/SuccessStory/SuccessStories';
+import HowWeWork from './pages/HowWeWork';
+import Trending from './pages/TrendingEvents';
+
 function App() {
   return (
     <AuthProvider>
@@ -33,9 +36,13 @@ function App() {
             <Route path="/logout" element={<Logout />} />
             {/* <Route path="/success" element={<SuccessPage onSubmit={() => {}} />} /> */}
             <Route path="/faq" element={<FAQ />} />
-            {/* <Route path="/pricing" element={<Pricing />} /> */}
             <Route path="/purchase" element={<PurchaseCredits />} />
             <Route path="/view-mou" element={<ViewMou />} />
+
+            <Route path="/how-we-work" element={<HowWeWork />} />
+            <Route path="/trending-events" element={<Trending />} />
+
+
             <Route
               path="/admin/*"
               element={
@@ -49,6 +56,8 @@ function App() {
             {/* <Route path="/Careers" element={<CareerPage />} /> */}
             <Route path="*" element={<NotFound />} />
           </Routes>
+
+
         </Router>
         <Toaster
           position="bottom-center"
