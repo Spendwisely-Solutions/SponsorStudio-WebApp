@@ -170,7 +170,7 @@ export default function ManageUsers({ searchTerm: externalSearchTerm, setSearchT
         throw new Error('No user session found. Please log in.');
       }
 
-      const response = await fetch('https://urablfvmqregyvfyaovi.supabase.co/functions/v1/delete-users', {
+      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/delete-users`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${session.access_token}`,

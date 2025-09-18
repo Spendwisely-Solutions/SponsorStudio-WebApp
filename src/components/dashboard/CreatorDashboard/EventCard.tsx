@@ -87,7 +87,7 @@ export default function EventCard({
       try {
         if (opportunity.is_vip && opportunity.mou_url) {
           // For VIP opportunities, construct full URL with mou_url
-          const baseUrl = 'https://urablfvmqregyvfyaovi.supabase.co/storage/v1/object/public/mou-documents/';
+          const baseUrl = `${import.meta.env.VITE_SUPABASE_URL}/storage/v1/object/public/mou-documents/`;
           setMouId(`${baseUrl}${opportunity.mou_url}`);
         } else if (opportunity.mou_id) {
           // For non-VIP opportunities, use mou_id

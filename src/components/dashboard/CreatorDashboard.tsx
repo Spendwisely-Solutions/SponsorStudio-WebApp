@@ -256,7 +256,7 @@ export default function CreatorDashboard({ onUpdateProfile }: BrandDashboardProp
     try {
       // Ensure the Supabase edge function 'get-user-email' returns only the email field to avoid exposing sensitive data
       const response = await fetch(
-        'https://urablfvmqregyvfyaovi.supabase.co/functions/v1/get-user-email',
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/get-user-email`,
         {
           method: 'POST',
           headers: {

@@ -443,7 +443,7 @@ export default function BrandDashboard({ onUpdateProfile }: BrandDashboardProps)
         accessToken = await refreshToken();
       }
 
-      const response = await fetch('https://urablfvmqregyvfyaovi.supabase.co/functions/v1/update-credits', {
+      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/update-credits`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -461,7 +461,7 @@ export default function BrandDashboard({ onUpdateProfile }: BrandDashboardProps)
           console.error('deductCredits: Invalid JWT, attempting token refresh');
           try {
             accessToken = await refreshToken();
-            const retryResponse = await fetch('https://urablfvmqregyvfyaovi.supabase.co/functions/v1/update-credits', {
+            const retryResponse = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/update-credits`, {
               method: 'POST',
               headers: {
                 'Content-Type': 'application/json',
