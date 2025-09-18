@@ -25,7 +25,7 @@ function TrendingEvents({ showAuthForm }: TrendingEventsProps) {
   // Fetch trending events from API
   useEffect(() => {
     setLoading(true);
-    fetch('https://urablfvmqregyvfyaovi.supabase.co/functions/v1/fetch-trending-events')
+    fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/fetch-trending-events`)
       .then(res => res.json())
       .then(res => {
         if (res.success && Array.isArray(res.data)) {
