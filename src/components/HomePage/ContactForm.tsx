@@ -8,9 +8,10 @@ interface ContactFormProps {
   setFormData: (data: FormData) => void;
   showThankYou: boolean;
   setShowThankYou: (value: boolean) => void;
+  disableAnimations?: boolean;
 }
 
-const ContactForm: React.FC<ContactFormProps> = ({ formData, setFormData, showThankYou, setShowThankYou }) => {
+const ContactForm: React.FC<ContactFormProps> = ({ formData, setFormData, showThankYou, setShowThankYou, disableAnimations = false }) => {
   const formRef = useRef<HTMLDivElement>(null);
 
   // Provide default values if formData is undefined
@@ -144,9 +145,11 @@ const ContactForm: React.FC<ContactFormProps> = ({ formData, setFormData, showTh
       {showThankYou ? (
         <div
           className="bg-white/90 backdrop-blur-sm border border-green-200 rounded-2xl p-10 text-center shadow-xl relative overflow-hidden"
-          data-aos="zoom-in-up"
-           data-aos-duration="500"
-          data-aos-easing="ease-out-cubic"
+          {...(!disableAnimations && {
+            'data-aos': 'zoom-in-up',
+            'data-aos-duration': '500',
+            'data-aos-easing': 'ease-out-cubic'
+          })}
         >
           {/* Success confetti particles */}
           <div className="absolute inset-0 overflow-hidden pointer-events-none">
@@ -182,17 +185,21 @@ const ContactForm: React.FC<ContactFormProps> = ({ formData, setFormData, showTh
       ) : (
         <div
           className="bg-white/80 backdrop-blur-sm p-10 rounded-2xl shadow-xl border border-blue-100"
-          data-aos="zoom-in-up"
-           data-aos-duration="500"
-          data-aos-easing="ease-out-cubic"
-          data-aos-delay="30"
+          {...(!disableAnimations && {
+            'data-aos': 'zoom-in-up',
+            'data-aos-duration': '500',
+            'data-aos-easing': 'ease-out-cubic',
+            'data-aos-delay': '30'
+          })}
         >
           {/* Removed duplicate badge, heading, and subtitle to avoid repetition. */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <div
               className="relative"
-              data-aos="fade-up"
-              data-aos-delay="50"
+              {...(!disableAnimations && {
+                'data-aos': 'fade-up',
+                'data-aos-delay': '50'
+              })}
             >
               <label
                 htmlFor="name"
@@ -230,9 +237,11 @@ const ContactForm: React.FC<ContactFormProps> = ({ formData, setFormData, showTh
               </div>
             </div>
             <div
-              data-aos-duration="500"
-              data-aos="fade-up"
-              data-aos-delay="70"
+              {...(!disableAnimations && {
+                'data-aos-duration': '500',
+                'data-aos': 'fade-up',
+                'data-aos-delay': '70'
+              })}
             >
               <label
                 htmlFor="email"
@@ -272,8 +281,10 @@ const ContactForm: React.FC<ContactFormProps> = ({ formData, setFormData, showTh
             </div>
             <div
               className="relative"
-              data-aos="fade-up"
-              data-aos-delay="90"
+              {...(!disableAnimations && {
+                'data-aos': 'fade-up',
+                'data-aos-delay': '90'
+              })}
             >
               <label
                 htmlFor="phone"
@@ -301,8 +312,10 @@ const ContactForm: React.FC<ContactFormProps> = ({ formData, setFormData, showTh
             </div>
             <div
               className="relative"
-              data-aos="fade-up"
-              data-aos-delay="110"
+              {...(!disableAnimations && {
+                'data-aos': 'fade-up',
+                'data-aos-delay': '110'
+              })}
             >
               <label
                 htmlFor="organization_type"
@@ -351,8 +364,10 @@ const ContactForm: React.FC<ContactFormProps> = ({ formData, setFormData, showTh
             </div>
             <div 
               className="md:col-span-2"
-              data-aos="fade-up"
-              data-aos-delay="130"
+              {...(!disableAnimations && {
+                'data-aos': 'fade-up',
+                'data-aos-delay': '130'
+              })}
             >
               <label
                 htmlFor="message"
@@ -392,8 +407,10 @@ const ContactForm: React.FC<ContactFormProps> = ({ formData, setFormData, showTh
             </div>
             <div 
               className="md:col-span-2"
-              data-aos="fade-up"
-              data-aos-delay="150"
+              {...(!disableAnimations && {
+                'data-aos': 'fade-up',
+                'data-aos-delay': '150'
+              })}
             >
               <button
                 onClick={(e) => {

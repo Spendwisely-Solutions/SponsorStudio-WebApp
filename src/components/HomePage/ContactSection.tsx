@@ -7,6 +7,7 @@ interface ContactSectionProps {
   setFormData: (data: FormData) => void;
   showThankYou: boolean;
   setShowThankYou: (value: boolean) => void;
+  disableAnimations?: boolean;
 }
 
 const ContactSection: React.FC<ContactSectionProps> = ({
@@ -14,6 +15,7 @@ const ContactSection: React.FC<ContactSectionProps> = ({
   setFormData,
   showThankYou,
   setShowThankYou,
+  disableAnimations = false,
 }) => {
   return (
     <section className="py-20 bg-gray-50 relative z-10" id="contact">
@@ -26,11 +28,13 @@ const ContactSection: React.FC<ContactSectionProps> = ({
           
           <h2
             className="text-4xl sm:text-5xl md:text-6xl font-extrabold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600"
-            data-aos="zoom-in-up"
-            data-aos-duration="800"
-            data-aos-easing="ease-out-cubic"
-            data-aos-delay="10"
-            data-aos-once="true"
+            {...(!disableAnimations && {
+              'data-aos': 'zoom-in-up',
+              'data-aos-duration': '800',
+              'data-aos-easing': 'ease-out-cubic',
+              'data-aos-delay': '10',
+              'data-aos-once': 'true'
+            })}
           >
             Contact Us
           </h2>
@@ -50,11 +54,13 @@ const ContactSection: React.FC<ContactSectionProps> = ({
           
           <p
             className="mt-6 max-w-2xl mx-auto text-xl sm:text-2xl text-gray-600 leading-relaxed font-light"
-            data-aos="zoom-in-up"
-            data-aos-duration="800"
-            data-aos-easing="ease-out-cubic"
-            data-aos-delay="20"
-            data-aos-once="true"
+            {...(!disableAnimations && {
+              'data-aos': 'zoom-in-up',
+              'data-aos-duration': '800',
+              'data-aos-easing': 'ease-out-cubic',
+              'data-aos-delay': '20',
+              'data-aos-once': 'true'
+            })}
           >
             Have questions? We're here to help! Reach out to our team for personalized assistance.
           </p>
@@ -64,6 +70,7 @@ const ContactSection: React.FC<ContactSectionProps> = ({
           setFormData={setFormData}
           showThankYou={showThankYou}
           setShowThankYou={setShowThankYou}
+          disableAnimations={disableAnimations}
         />
       </div>
     </section>
