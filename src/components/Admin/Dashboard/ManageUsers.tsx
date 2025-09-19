@@ -4,7 +4,7 @@ import toast from 'react-hot-toast';
 import { formatDate } from '../../../utils/formatDate';
 import { 
   Trash2, 
-  Edit, 
+  Plus, 
   Search,
   Users,
   Building2,
@@ -17,7 +17,8 @@ import {
   Filter,
   ChevronUp,
   ChevronDown,
-  ArrowUpDown
+  ArrowUpDown,
+  CreditCard
 } from 'lucide-react';
 import Modal from '../../Modal';
 
@@ -45,6 +46,7 @@ interface Profile {
   phone_number: string | null;
   phone_number_verified: boolean | null;
   email?: string | null;
+  credits?: number | null;
 }
 
 interface ManageUsersProps {
@@ -69,6 +71,11 @@ export default function ManageUsers({ searchTerm: externalSearchTerm, setSearchT
   const [isDeleting, setIsDeleting] = useState(false);
   const [isSelectionMode, setIsSelectionMode] = useState(false);
   const [showFilters, setShowFilters] = useState(false);
+  // Credits modal state
+  const [isCreditsModalOpen, setIsCreditsModalOpen] = useState(false);
+  const [selectedUserForCredits, setSelectedUserForCredits] = useState<Profile | null>(null);
+  const [creditAmount, setCreditAmount] = useState<string>('');
+  const [isUpdatingCredits, setIsUpdatingCredits] = useState(false);
   const [filters, setFilters] = useState({
     userType: 'all',
     joinDate: 'all',
@@ -211,6 +218,62 @@ export default function ManageUsers({ searchTerm: externalSearchTerm, setSearchT
     if (usersToDelete.length > 0) {
       closeModal();
       handleDeleteUsers(usersToDelete);
+    }
+  };
+
+  // Credits modal functions
+  const openCreditsModal = (user: Profile) => {
+    setSelectedUserForCredits(user);
+    setCreditAmount('');
+    setIsCreditsModalOpen(true);
+  };
+
+  const closeCreditsModal = () => {
+    setIsCreditsModalOpen(false);
+    setSelectedUserForCredits(null);
+    setCreditAmount('');
+  };
+
+  const handleUpdateCredits = async () => {
+    if (!selectedUserForCredits || !creditAmount) {
+      toast.error('Please enter a valid credit amount');
+      return;
+    }
+
+    const credits = parseInt(creditAmount);
+    if (isNaN(credits) || credits < 0) {
+      toast.error('Please enter a valid positive number');
+      return;
+    }
+
+    try {
+      setIsUpdatingCredits(true);
+      
+      const { error } = await supabase
+        .from('profiles')
+        .update({ credits: credits })
+        .eq('id', selectedUserForCredits.id);
+
+      if (error) {
+        throw new Error(`Failed to update credits: ${error.message}`);
+      }
+
+      // Update the user in the local state
+      setUsers(prevUsers => 
+        prevUsers.map(user => 
+          user.id === selectedUserForCredits.id 
+            ? { ...user, credits: credits }
+            : user
+        )
+      );
+
+      toast.success(`Credits updated successfully! ${selectedUserForCredits.contact_person_name || 'User'} now has ${credits} credits.`);
+      closeCreditsModal();
+    } catch (error) {
+      console.error('Error updating credits:', error);
+      toast.error(error instanceof Error ? error.message : 'Failed to update credits');
+    } finally {
+      setIsUpdatingCredits(false);
     }
   };
 
@@ -855,12 +918,12 @@ export default function ManageUsers({ searchTerm: externalSearchTerm, setSearchT
                             <button
                               onClick={(e) => {
                                 e.stopPropagation();
-                                alert(`Edit user ${user.contact_person_name} (ID: ${user.id})`);
+                                openCreditsModal(user);
                               }}
-                              className="inline-flex items-center px-2 py-1 bg-blue-100 text-blue-800 rounded-lg hover:bg-blue-200 text-xs font-medium transition-colors duration-200"
-                              title="Edit User"
+                              className="inline-flex items-center px-2 py-1 bg-green-100 text-green-800 rounded-lg hover:bg-green-200 text-xs font-medium transition-colors duration-200"
+                              title="Add Credits"
                             >
-                              <Edit className="w-3 h-3" />
+                              <CreditCard className="w-3 h-3" />
                             </button>
                             <button
                               onClick={(e) => {
@@ -990,12 +1053,12 @@ export default function ManageUsers({ searchTerm: externalSearchTerm, setSearchT
                     <button
                       onClick={(e) => {
                         e.stopPropagation();
-                        alert(`Edit user ${user.contact_person_name} (ID: ${user.id})`);
+                        openCreditsModal(user);
                       }}
-                      className="inline-flex items-center px-3 py-1.5 bg-blue-100 text-blue-800 rounded-lg hover:bg-blue-200 text-xs font-medium transition-colors duration-200 flex-1 justify-center sm:flex-none"
+                      className="inline-flex items-center px-3 py-1.5 bg-green-100 text-green-800 rounded-lg hover:bg-green-200 text-xs font-medium transition-colors duration-200 flex-1 justify-center sm:flex-none"
                     >
-                      <Edit className="w-3 h-3 mr-1" />
-                      Edit
+                      <CreditCard className="w-3 h-3 mr-1" />
+                      Add Credits
                     </button>
                     <button
                       onClick={(e) => {
@@ -1036,6 +1099,70 @@ export default function ManageUsers({ searchTerm: externalSearchTerm, setSearchT
         confirmText="Delete"
         confirmButtonClass="bg-red-600 text-white hover:bg-red-700"
         cancelButtonClass="border-gray-300 text-gray-700 hover:bg-gray-50"
+      />
+
+      {/* Credits Modal */}
+      <Modal
+        isOpen={isCreditsModalOpen}
+        onClose={closeCreditsModal}
+        onConfirm={handleUpdateCredits}
+        title="Add Credits"
+        message={
+          <div className="space-y-4">
+            <div className="text-center">
+              <div className="w-16 h-16 bg-gradient-to-r from-green-500 to-emerald-500 rounded-full flex items-center justify-center mx-auto mb-4">
+                <CreditCard className="w-8 h-8 text-white" />
+              </div>
+              <p className="text-gray-600">
+                Update credits for{' '}
+                <span className="font-medium text-gray-900">
+                  {selectedUserForCredits?.contact_person_name || 'this user'}
+                </span>
+              </p>
+              {selectedUserForCredits?.credits !== undefined && (
+                <p className="text-sm text-gray-500 mt-1">
+                  Current credits: {selectedUserForCredits.credits || 0}
+                </p>
+              )}
+            </div>
+
+            <div>
+              <label htmlFor="creditAmount" className="block text-sm font-medium text-gray-700 mb-2">
+                Credit Amount
+              </label>
+              <input
+                id="creditAmount"
+                type="number"
+                min="0"
+                step="1"
+                placeholder="Enter credit amount"
+                value={creditAmount}
+                onChange={(e) => setCreditAmount(e.target.value)}
+                className="w-full px-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent bg-white/80 backdrop-blur-sm transition-all duration-200"
+                disabled={isUpdatingCredits}
+                autoFocus
+              />
+              <p className="text-xs text-gray-500 mt-1">
+                This will set the total credits for the user
+              </p>
+            </div>
+
+            {isUpdatingCredits && (
+              <div className="text-center py-4">
+                <div className="inline-flex items-center">
+                  <CreditCard className="w-5 h-5 text-green-600 animate-pulse mr-2" />
+                  <span className="text-gray-600 font-medium">Updating credits...</span>
+                </div>
+              </div>
+            )}
+          </div>
+        }
+        confirmText={isUpdatingCredits ? "Updating..." : "Update Credits"}
+        cancelText="Cancel"
+        confirmButtonClass="bg-gradient-to-r from-green-600 to-emerald-600 text-white hover:from-green-700 hover:to-emerald-700 disabled:opacity-50"
+        cancelButtonClass="border-gray-300 text-gray-700 hover:bg-gray-50"
+        isLoading={isUpdatingCredits}
+        disabled={isUpdatingCredits || !creditAmount}
       />
     </div>
   );
