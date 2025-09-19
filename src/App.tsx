@@ -21,6 +21,16 @@ import Home from './components/HomePage/Home';
 import SuccessStories from './components/SuccessStory/SuccessStories';
 import HowWeWork from './pages/HowWeWork';
 import Trending from './pages/TrendingEvents';
+import ContactUs from './pages/ContactUs';
+
+// Export FormData interface for use in components
+export interface FormData {
+  name: string;
+  email: string;
+  phone: string;
+  message: string;
+  organization_type: string;
+}
 
 function App() {
   return (
@@ -41,6 +51,7 @@ function App() {
 
             <Route path="/how-we-work" element={<HowWeWork />} />
             <Route path="/trending-events" element={<Trending />} />
+            <Route path='/Contact-us' element={<ContactUs />} />
 
 
             <Route
