@@ -122,7 +122,7 @@ function Blogs() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/50 overflow-x-hidden">
       <Helmet>
-        <title>Event Blogs | Sponsor Studio</title>
+        <title>Blogs | Sponsor Studio</title>
         <meta name="description" content="Explore event highlights, behind-the-scenes content, and industry insights from the Sponsor Studio blog." />
         <meta property="og:title" content="Event Blogs | Sponsor Studio" />
         <meta property="og:description" content="Explore event highlights, behind-the-scenes content, and industry insights from the Sponsor Studio blog." />
