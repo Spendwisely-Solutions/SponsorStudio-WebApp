@@ -22,6 +22,7 @@ import SuccessStories from './components/SuccessStory/SuccessStories';
 import HowWeWork from './pages/HowWeWork';
 import Trending from './pages/TrendingEvents';
 import ContactUs from './pages/ContactUs';
+import Blogs from './pages/Blogs';
 
 // Export FormData interface for use in components
 export interface FormData {
@@ -52,6 +53,9 @@ function App() {
             <Route path="/how-we-work" element={<HowWeWork />} />
             <Route path="/trending-events" element={<Trending />} />
             <Route path='/Contact-us' element={<ContactUs />} />
+            <Route path='/blogs' element={<Blogs />} />
+            <Route path='/blog/:id' element={<SuccessStoryPage />} />
+
 
 
             <Route
@@ -62,8 +66,8 @@ function App() {
                 </ProtectedAdminRoute>
               }
             />
-            <Route path="/story/:id" element={<SuccessStoryPage />} />
-            <Route path="/story" element={<SuccessStories />} />
+            <Route path="/stories/:id" element={<SuccessStoryPage />} />
+            <Route path="/stories" element={<SuccessStories />} />
             {/* <Route path="/Careers" element={<CareerPage />} /> */}
             <Route path="*" element={<NotFound />} />
           </Routes>

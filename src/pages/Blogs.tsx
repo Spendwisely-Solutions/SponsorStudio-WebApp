@@ -1,17 +1,17 @@
 import React, { useEffect, useState, useMemo } from 'react';
 import { Link } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
-import { supabase } from '../../lib/supabase';
+import { supabase } from '../lib/supabase';
 import { Calendar, Clock, ArrowLeft, Search, Filter, X, SortAsc, SortDesc, ChevronDown } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Skeleton from 'react-loading-skeleton';
 import 'react-loading-skeleton/dist/skeleton.css';
-import type { Database } from '../../lib/database.types';
+import type { Database } from '../lib/database.types';
 
-type SuccessStory = Database['public']['Tables']['success_stories']['Row'];
+type BlogPost = Database['public']['Tables']['success_stories']['Row'];
 
-function SuccessStories() {
-  const [stories, setStories] = useState<SuccessStory[]>([]);
+function Blogs() {
+  const [blogs, setBlogs] = useState<BlogPost[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [sortBy, setSortBy] = useState<'newest' | 'oldest' | 'title-asc' | 'title-desc' | 'reading-time'>('newest');
@@ -49,39 +49,39 @@ function SuccessStories() {
       : strippedText;
   };
 
-  // Fetch only success stories (not blogs)
+  // Fetch only blog posts
   useEffect(() => {
-    const fetchStories = async () => {
+    const fetchBlogs = async () => {
       try {
         const { data, error } = await supabase
           .from('success_stories')
           .select('*')
-          .or('is_blog.is.null,is_blog.eq.false')
+          .eq('is_blog', true)
           .order('created_at', { ascending: false });
 
         if (error) throw error;
-        setStories(data || []);
+        setBlogs(data || []);
       } catch (error) {
-        console.error('Error fetching stories:', error);
+        console.error('Error fetching blogs:', error);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchStories();
+    fetchBlogs();
   }, []);
 
   // Advanced filtering and sorting with useMemo for performance
-  const filteredAndSortedStories = useMemo(() => {
-    let filtered = [...stories];
+  const filteredAndSortedBlogs = useMemo(() => {
+    let filtered = [...blogs];
 
     // Search filter
     if (searchTerm.trim()) {
       const searchLower = searchTerm.toLowerCase();
-      filtered = filtered.filter(story => 
-        story.title.toLowerCase().includes(searchLower) ||
-        story.preview_text?.toLowerCase().includes(searchLower) ||
-        story.content.toLowerCase().includes(searchLower)
+      filtered = filtered.filter(blog => 
+        blog.title.toLowerCase().includes(searchLower) ||
+        blog.preview_text?.toLowerCase().includes(searchLower) ||
+        blog.content.toLowerCase().includes(searchLower)
       );
     }
 
@@ -89,11 +89,11 @@ function SuccessStories() {
     if (filterBy === 'recent') {
       const thirtyDaysAgo = new Date();
       thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-      filtered = filtered.filter(story => new Date(story.created_at) > thirtyDaysAgo);
+      filtered = filtered.filter(blog => new Date(blog.created_at) > thirtyDaysAgo);
     } else if (filterBy === 'popular') {
       // For now, we'll simulate popularity by content length
       // In a real app, you'd have view counts or likes
-      filtered = filtered.filter(story => story.content.length > 1000);
+      filtered = filtered.filter(blog => blog.content.length > 1000);
     }
 
     // Sorting
@@ -117,16 +117,16 @@ function SuccessStories() {
     });
 
     return filtered;
-  }, [stories, searchTerm, sortBy, filterBy]);
+  }, [blogs, searchTerm, sortBy, filterBy]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/50 overflow-x-hidden">
       <Helmet>
-        <title>Success Stories | Sponsor Studio</title>
-        <meta name="description" content="Explore inspiring success stories and sponsorship case studies from the Sponsor Studio community." />
-        <meta property="og:title" content="Success Stories | Sponsor Studio" />
-        <meta property="og:description" content="Explore inspiring success stories and sponsorship case studies from the Sponsor Studio community." />
-        <meta property="og:url" content="https://www.sponsorstudio.in/story" />
+        <title>Event Blogs | Sponsor Studio</title>
+        <meta name="description" content="Explore event highlights, behind-the-scenes content, and industry insights from the Sponsor Studio blog." />
+        <meta property="og:title" content="Event Blogs | Sponsor Studio" />
+        <meta property="og:description" content="Explore event highlights, behind-the-scenes content, and industry insights from the Sponsor Studio blog." />
+        <meta property="og:url" content="https://www.sponsorstudio.in/blogs" />
         <meta property="og:type" content="website" />
       </Helmet>
 
@@ -161,17 +161,17 @@ function SuccessStories() {
 
           {/* Centered Content */}
           <div className="text-center">
-            <div className="inline-flex items-center px-3 py-1.5 sm:px-4 mb-6 sm:mb-8 rounded-full bg-blue-100 text-blue-800 border border-blue-200">
-              <span className="flex h-2 w-2 rounded-full bg-blue-500 mr-2 animate-pulse"></span>
-              <span className="text-xs sm:text-sm font-medium">Success Stories</span>
+            <div className="inline-flex items-center px-3 py-1.5 sm:px-4 mb-6 sm:mb-8 rounded-full bg-purple-100 text-purple-800 border border-purple-200">
+              <span className="flex h-2 w-2 rounded-full bg-purple-500 mr-2 animate-pulse"></span>
+              <span className="text-xs sm:text-sm font-medium">Blogs</span>
             </div>
 
-            <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 mb-4 sm:mb-6 px-4">
-              Success Stories
+            <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-extrabold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-purple-600 via-blue-600 to-indigo-600 mb-4 sm:mb-6 px-4 pb-3">
+              Blogs
             </h1>
             
             <p className="max-w-2xl mx-auto text-lg sm:text-xl text-gray-600 leading-relaxed px-4">
-              Discover inspiring success stories and successful partnerships from our community.
+              Discover inspiring stories, expert tips, and the latest updates from the Sponsor Studio blog.
             </p>
           </div>
         </motion.div>
@@ -190,10 +190,10 @@ function SuccessStories() {
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
               <input
                 type="text"
-                placeholder="Search stories..."
+                placeholder="Search blogs..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-9 pr-8 py-2.5 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white/80 backdrop-blur-sm"
+                className="w-full pl-9 pr-8 py-2.5 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-white/80 backdrop-blur-sm"
               />
               {searchTerm && (
                 <button
@@ -208,12 +208,12 @@ function SuccessStories() {
             {/* Filter Icon with indicator */}
             <button
               onClick={() => setShowMobileFilters(!showMobileFilters)}
-              className={`relative p-2.5 rounded-lg border ${showMobileFilters ? 'bg-blue-100 border-blue-300 text-blue-600' : 'bg-white border-gray-200 text-gray-600'} hover:bg-blue-50 transition-colors`}
+              className={`relative p-2.5 rounded-lg border ${showMobileFilters ? 'bg-purple-100 border-purple-300 text-purple-600' : 'bg-white border-gray-200 text-gray-600'} hover:bg-purple-50 transition-colors`}
               title="Filters & Sort"
             >
               <Filter className="h-4 w-4" />
               {hasActiveFilters && (
-                <span className="absolute -top-1 -right-1 w-3 h-3 bg-blue-500 rounded-full"></span>
+                <span className="absolute -top-1 -right-1 w-3 h-3 bg-purple-500 rounded-full"></span>
               )}
             </button>
 
@@ -248,7 +248,7 @@ function SuccessStories() {
                       onChange={(e) => setFilterBy(e.target.value as 'all' | 'recent' | 'popular')}
                       className="w-full pl-9 pr-8 py-2.5 text-sm border border-gray-200 rounded-lg bg-white/80 appearance-none cursor-pointer"
                     >
-                      <option value="all">All Stories</option>
+                      <option value="all">All Blogs</option>
                       <option value="recent">Recent</option>
                       <option value="popular">Popular</option>
                     </select>
@@ -280,10 +280,10 @@ function SuccessStories() {
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
               <input
                 type="text"
-                placeholder="Search stories..."
+                placeholder="Search blogs..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="w-full pl-9 pr-10 py-2.5 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white/80 backdrop-blur-sm transition-all duration-200"
+                className="w-full pl-9 pr-10 py-2.5 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-white/80 backdrop-blur-sm transition-all duration-200"
               />
               {searchTerm && (
                 <button
@@ -301,9 +301,9 @@ function SuccessStories() {
               <select
                 value={filterBy}
                 onChange={(e) => setFilterBy(e.target.value as 'all' | 'recent' | 'popular')}
-                className="w-full pl-9 pr-8 py-2.5 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white/80 backdrop-blur-sm appearance-none cursor-pointer transition-all duration-200"
+                className="w-full pl-9 pr-8 py-2.5 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-white/80 backdrop-blur-sm appearance-none cursor-pointer transition-all duration-200"
               >
-                <option value="all">All Stories</option>
+                <option value="all">All Blogs</option>
                 <option value="recent">Recent</option>
                 <option value="popular">Popular</option>
               </select>
@@ -321,7 +321,7 @@ function SuccessStories() {
               <select
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value as typeof sortBy)}
-                className="w-full pl-9 pr-8 py-2.5 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white/80 backdrop-blur-sm appearance-none cursor-pointer transition-all duration-200"
+                className="w-full pl-9 pr-8 py-2.5 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-white/80 backdrop-blur-sm appearance-none cursor-pointer transition-all duration-200"
               >
                 <option value="newest">Newest</option>
                 <option value="oldest">Oldest</option>
@@ -347,9 +347,9 @@ function SuccessStories() {
           {hasActiveFilters && (
             <div className="mt-3 flex flex-wrap gap-1.5">
               {searchTerm && (
-                <span className="inline-flex items-center gap-1 px-2 py-1 bg-blue-100 text-blue-800 rounded-md text-xs">
+                <span className="inline-flex items-center gap-1 px-2 py-1 bg-purple-100 text-purple-800 rounded-md text-xs">
                   "{searchTerm.length > 15 ? searchTerm.substring(0, 15) + '...' : searchTerm}"
-                  <button onClick={clearSearch} className="hover:text-blue-900">
+                  <button onClick={clearSearch} className="hover:text-purple-900">
                     <X className="h-3 w-3" />
                   </button>
                 </span>
@@ -360,7 +360,7 @@ function SuccessStories() {
                 </span>
               )}
               {sortBy !== 'newest' && (
-                <span className="inline-flex items-center px-2 py-1 bg-purple-100 text-purple-800 rounded-md text-xs">
+                <span className="inline-flex items-center px-2 py-1 bg-blue-100 text-blue-800 rounded-md text-xs">
                   {sortBy === 'oldest' ? 'Oldest' : sortBy === 'title-asc' ? 'A-Z' : sortBy === 'title-desc' ? 'Z-A' : 'Quick'}
                 </span>
               )}
@@ -368,7 +368,7 @@ function SuccessStories() {
           )}
         </motion.div>
 
-        {/* Stories Count */}
+        {/* Blogs Count */}
         {!loading && (
           <motion.div
             className="mb-6 sm:mb-8"
@@ -377,13 +377,13 @@ function SuccessStories() {
             transition={{ duration: 0.6, delay: 0.3 }}
           >
             <p className="text-gray-600 text-sm sm:text-base">
-              {filteredAndSortedStories.length} {filteredAndSortedStories.length === 1 ? 'story' : 'stories'} found
+              {filteredAndSortedBlogs.length} {filteredAndSortedBlogs.length === 1 ? 'blog' : 'blogs'} found
               {searchTerm && ` for "${searchTerm}"`}
             </p>
           </motion.div>
         )}
 
-        {/* Stories Grid */}
+        {/* Blogs Grid */}
         <div className="grid gap-6 sm:gap-8 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3">
           {loading ? (
             // Loading Skeletons
@@ -400,40 +400,40 @@ function SuccessStories() {
                 </div>
               </div>
             ))
-          ) : filteredAndSortedStories.length === 0 ? (
+          ) : filteredAndSortedBlogs.length === 0 ? (
             // No Results
             <div className="col-span-full text-center py-12 sm:py-16 px-4">
               <div className="text-gray-400 mb-4">
                 <Search className="h-12 w-12 sm:h-16 sm:w-16 mx-auto" />
               </div>
-              <h3 className="text-lg sm:text-xl font-semibold text-gray-600 mb-2">No stories found</h3>
+              <h3 className="text-lg sm:text-xl font-semibold text-gray-600 mb-2">No blogs found</h3>
               <p className="text-gray-500 text-sm sm:text-base mb-4">
-                {searchTerm ? `No stories match "${searchTerm}"` : 'No stories match your current filters'}
+                {searchTerm ? `No blogs match "${searchTerm}"` : 'No blogs match your current filters'}
               </p>
               <button
                 onClick={resetFilters}
-                className="inline-flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm"
+                className="inline-flex items-center gap-2 px-4 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors text-sm"
               >
                 <X className="h-4 w-4" />
                 Clear All Filters
               </button>
             </div>
           ) : (
-            // Story Cards
-            filteredAndSortedStories.map((story, index) => (
+            // Blog Cards
+            filteredAndSortedBlogs.map((blog, index) => (
               <motion.div
-                key={story.id}
+                key={blog.id}
                 className="group bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-xl transition-all duration-300 hover:-translate-y-1"
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6, delay: index * 0.1 }}
               >
-                <Link to={`/stories/${story.id}`} className="block h-full">
+                <Link to={`/blog/${blog.id}`} className="block h-full">
                   {/* Image */}
                   <div className="relative overflow-hidden">
                     <img
-                      src={story.preview_image}
-                      alt={story.title}
+                      src={blog.preview_image}
+                      alt={blog.title}
                       className="w-full h-40 sm:h-48 object-cover transition-transform duration-300 group-hover:scale-105"
                       onError={(e) => {
                         (e.target as HTMLImageElement).src = 'https://via.placeholder.com/400x240?text=No+Image';
@@ -448,7 +448,7 @@ function SuccessStories() {
                     <div className="flex items-center gap-3 sm:gap-4 text-xs sm:text-sm text-gray-500 mb-2 sm:mb-3">
                       <div className="flex items-center gap-1">
                         <Calendar className="h-3 w-3 sm:h-4 sm:w-4" />
-                        <span>{new Date(story.created_at).toLocaleDateString('en-US', {
+                        <span>{new Date(blog.created_at).toLocaleDateString('en-US', {
                           month: 'short',
                           day: 'numeric',
                           year: 'numeric'
@@ -456,23 +456,23 @@ function SuccessStories() {
                       </div>
                       <div className="flex items-center gap-1">
                         <Clock className="h-3 w-3 sm:h-4 sm:w-4" />
-                        <span>{calculateReadingTime(story.content)} min read</span>
+                        <span>{calculateReadingTime(blog.content)} min read</span>
                       </div>
                     </div>
 
                     {/* Title */}
-                    <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-2 sm:mb-3 group-hover:text-blue-600 transition-colors line-clamp-2 leading-tight">
-                      {story.title}
+                    <h3 className="text-lg sm:text-xl font-bold text-gray-900 mb-2 sm:mb-3 group-hover:text-purple-600 transition-colors line-clamp-2 leading-tight">
+                      {blog.title}
                     </h3>
 
                     {/* Description */}
                     <p className="text-gray-600 line-clamp-3 leading-relaxed text-sm sm:text-base">
-                      {story.preview_text || truncateText(story.content, 120)}
+                      {blog.preview_text || truncateText(blog.content, 120)}
                     </p>
 
                     {/* Read More */}
                     <div className="mt-3 sm:mt-4 pt-3 sm:pt-4 border-t border-gray-100">
-                      <span className="text-blue-600 font-medium group-hover:text-blue-700 transition-colors text-sm sm:text-base">
+                      <span className="text-purple-600 font-medium group-hover:text-purple-700 transition-colors text-sm sm:text-base">
                         Read More →
                       </span>
                     </div>
@@ -489,4 +489,4 @@ function SuccessStories() {
   );
 }
 
-export default SuccessStories;
+export default Blogs;

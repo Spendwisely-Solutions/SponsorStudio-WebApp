@@ -1,8 +1,8 @@
 import React, { useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import Skeleton from 'react-loading-skeleton';
-import SuccessStoryCard from './SuccessStoryCard';
-import { SuccessStory as SuccessStoryType } from '../../App';
+import DesktopHoverCards from './DesktopHoverCards';
+import MobileCardStack from './MobileCardStack';
+import { SuccessStory as SuccessStoryType } from './Home';
 import AOS from 'aos';
 import 'aos/dist/aos.css'; // Import AOS styles
 import { ArrowRight } from 'lucide-react';
@@ -16,6 +16,9 @@ const SuccessStoriesSection: React.FC<SuccessStoriesSectionProps> = ({
   loading,
   successStories,
 }) => {
+  // Filter out blog stories - only show success stories
+  const filteredStories = successStories.filter(story => !story.is_blog);
+  
   // Initialize AOS with enhanced settings
   useEffect(() => {
     AOS.init({
@@ -55,7 +58,7 @@ const SuccessStoriesSection: React.FC<SuccessStoriesSectionProps> = ({
         <div className="text-center mb-20">
           <div className="inline-flex items-center px-4 py-1.5 mb-8 rounded-full bg-blue-100 text-blue-800 border border-blue-200">
             <span className="flex h-2 w-2 rounded-full bg-blue-500 mr-2 animate-pulse"></span>
-            <span className="text-sm font-medium">Event Blogs & Stories</span>
+            <span className="text-sm font-medium">Success Stories</span>
           </div>
           
           <h2
@@ -66,19 +69,6 @@ const SuccessStoriesSection: React.FC<SuccessStoriesSectionProps> = ({
             Success Stories
           </h2>
           
-          {/* Blog categories strip */}
-          <div className="flex flex-wrap gap-3 justify-center mt-8 mb-10">
-            <div className="feature-badge flex items-center gap-2 bg-gradient-to-r from-blue-50 to-indigo-50 px-4 py-2 rounded-full border border-blue-200/50 shadow-sm">
-              <span className="text-sm font-medium text-blue-800">Event Highlights</span>
-            </div>
-            <div className="feature-badge flex items-center gap-2 bg-gradient-to-r from-green-50 to-emerald-50 px-4 py-2 rounded-full border border-green-200/50 shadow-sm">
-              <span className="text-sm font-medium text-green-800">Sponsorship Stories</span>
-            </div>
-            <div className="feature-badge flex items-center gap-2 bg-gradient-to-r from-purple-50 to-pink-50 px-4 py-2 rounded-full border border-purple-200/50 shadow-sm">
-              <span className="text-sm font-medium text-purple-800">Behind The Scenes</span>
-            </div>
-          </div>
-          
           <p
             className="mt-6 max-w-2xl mx-auto text-xl sm:text-2xl text-gray-600 leading-relaxed font-light"
             data-aos="fade-up"
@@ -87,67 +77,36 @@ const SuccessStoriesSection: React.FC<SuccessStoriesSectionProps> = ({
             Engaging stories showcasing exciting events, successful partnerships, and memorable moments.
           </p>
         </div>
-        <div className="grid gap-8 lg:gap-10 sm:grid-cols-2 lg:grid-cols-3">
-          {loading ? (
-            Array(3).fill(0).map((_, i) => (
-              <div key={i} className="flex flex-col rounded-xl shadow-lg overflow-hidden bg-white/80 backdrop-blur-sm">
-                <div className="relative">
-                  <Skeleton height={240} />
-                  <div className="absolute top-4 left-4 z-10">
-                    <Skeleton width={100} height={24} className="rounded-full" />
-                  </div>
-                </div>
-                <div className="p-8">
-                  <div className="flex items-center mb-4">
-                    <Skeleton width={12} height={12} className="rounded-full" />
-                    <Skeleton width={60} height={16} className="ml-2" />
-                  </div>
-                  <Skeleton width="90%" height={32} className="mb-4" />
-                  <Skeleton count={2} height={20} className="mb-3" />
-                  <div className="mt-6 pt-4 border-t border-gray-100">
-                    <Skeleton width={140} height={36} className="rounded-full" />
-                  </div>
-                </div>
-              </div>
-            ))
-          ) : (
-            successStories.slice(0, 3).map((story, index) => {
-              const delay = index * 150; // Increased delay between cards for better staggering effect
-              const animationType = ['fade-up', 'zoom-in-up', 'fade-right'][index % 3]; // Different animation types
-              const storyNumber = index + 1; // Start numbering from 1
-              
-              return (
-                <SuccessStoryCard
-                  key={story.id}
-                  story={story}
-                  storyNumber={storyNumber}
-                  data-aos={animationType}
-                  data-aos-delay={delay.toString()}
-                  hoverClassName="hover:scale-105 hover:shadow-xl hover:-translate-y-1 will-change-transform backface-hidden"
-                />
-              );
-            })
-          )}
-        </div>
-        {successStories.length > 3 && (
-          <div
-            className="mt-20 text-center"
-            data-aos="fade-up"
-            data-aos-delay="300"
-          >
-            <Link
-              to="/story"
-              className="group inline-flex items-center justify-center gap-3 px-10 py-4 bg-gradient-to-r from-blue-600 to-indigo-600 text-white text-lg font-semibold rounded-2xl hover:from-blue-700 hover:to-indigo-700 shadow-xl hover:shadow-2xl transition-all duration-300 transform hover:-translate-y-1"
-            >
-              View All Stories
-              <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform duration-200" />
-            </Link>
-            
-            <p className="mt-4 text-gray-600 text-sm">
-              {successStories.length} event blogs available
-            </p>
+        
+        {/* Responsive Cards */}
+        {loading ? (
+          <div className="text-center py-20">
+            <div className="inline-flex items-center gap-3 px-6 py-3 bg-gray-100 text-gray-500 rounded-2xl border border-gray-200">
+              <div className="w-5 h-5 bg-gray-300 rounded animate-pulse"></div>
+              <span className="font-medium">Loading stories...</span>
+            </div>
           </div>
+        ) : (
+          <>
+            {/* Desktop View (lg and above) */}
+            <div className="hidden lg:block">
+              <DesktopHoverCards 
+                stories={filteredStories} 
+                className="w-full"
+              />
+            </div>
+            
+            {/* Mobile/Tablet View (below lg) */}
+            <div className="block lg:hidden">
+              <MobileCardStack 
+                stories={filteredStories} 
+                className="w-full"
+              />
+            </div>
+          </>
         )}
+        
+        
       </div>
     </section>
   );

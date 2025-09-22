@@ -128,11 +128,12 @@ export default function SuccessStoryPage() {
           return;
         }
 
-        // Fetch related stories (excluding current story)
+        // Fetch related content based on current content type (excluding current story)
         const { data: relatedData } = await supabase
           .from('success_stories')
           .select('*')
           .neq('id', id)
+          .eq('is_blog', storyData.is_blog || false) // Match the same content type
           .order('created_at', { ascending: false })
           .limit(6);
 
@@ -171,7 +172,7 @@ export default function SuccessStoryPage() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
     // Small delay to ensure smooth scrolling starts before navigation
     setTimeout(() => {
-      navigate(`/story/${storyId}`);
+      navigate(`${individualLinkPrefix}/${storyId}`);
     }, 100);
   };
 
@@ -187,12 +188,18 @@ export default function SuccessStoryPage() {
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="text-center">
-          <h1 className="text-2xl font-bold text-gray-900 mb-2">Story not found</h1>
-          <p className="text-gray-600">The blog post you're looking for doesn't exist.</p>
+          <h1 className="text-2xl font-bold text-gray-900 mb-2">Content not found</h1>
+          <p className="text-gray-600">The content you're looking for doesn't exist.</p>
         </div>
       </div>
     );
   }
+
+  // Determine content type for dynamic UI
+  const isCurrentBlog = (story as any).is_blog;
+  const contentTypePluralCapital = isCurrentBlog ? 'Blogs' : 'Stories';
+  const viewAllLink = isCurrentBlog ? '/blogs' : '/stories';
+  const individualLinkPrefix = isCurrentBlog ? '/blog' : '/stories';
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -202,7 +209,7 @@ export default function SuccessStoryPage() {
         
         {/* Open Graph / Facebook */}
         <meta property="og:type" content="article" />
-        <meta property="og:url" content={`https://www.sponsorstudio.in/story/${story.id}`} />
+        <meta property="og:url" content={`https://www.sponsorstudio.in${individualLinkPrefix}/${story.id}`} />
         <meta property="og:title" content={story.title} />
         <meta property="og:description" content={createMetaDescription(story.content)} />
         <meta property="og:image" content={story.preview_image} />
@@ -210,7 +217,7 @@ export default function SuccessStoryPage() {
         
         {/* Twitter */}
         <meta name="twitter:card" content="summary_large_image" />
-        <meta name="twitter:url" content={`https://www.sponsorstudio.in/story/${story.id}`} />
+        <meta name="twitter:url" content={`https://www.sponsorstudio.in${individualLinkPrefix}/${story.id}`} />
         <meta name="twitter:title" content={story.title} />
         <meta name="twitter:description" content={createMetaDescription(story.content)} />
         <meta name="twitter:image" content={story.preview_image} />
@@ -218,12 +225,12 @@ export default function SuccessStoryPage() {
         {/* Article specific */}
         <meta property="article:published_time" content={story.created_at} />
         <meta property="article:author" content="Sponsor Studio" />
-        <meta property="article:section" content="Success Stories" />
+        <meta property="article:section" content={isCurrentBlog ? "Event Blogs" : "Success Stories"} />
         
         {/* Additional SEO */}
-        <meta name="keywords" content="sponsor studio, success stories, brand partnerships, event sponsorship" />
+        <meta name="keywords" content={`sponsor studio, ${isCurrentBlog ? 'event blogs, behind the scenes' : 'success stories, brand partnerships'}, event sponsorship`} />
         <meta name="author" content="Sponsor Studio" />
-        <link rel="canonical" href={`https://www.sponsorstudio.in/story/${story.id}`} />
+        <link rel="canonical" href={`https://www.sponsorstudio.in${individualLinkPrefix}/${story.id}`} />
       </Helmet>
 
       <div className="container mx-auto px-4 py-8 max-w-7xl">
@@ -425,9 +432,9 @@ export default function SuccessStoryPage() {
             {relatedStories.length > 0 && (
               <div className="xl:hidden mt-12 pt-8 border-t border-gray-200">
                 <div className="flex items-center justify-between mb-6">
-                  <h3 className="text-xl font-semibold text-gray-900">More Stories</h3>
+                  <h3 className="text-xl font-semibold text-gray-900">More {contentTypePluralCapital}</h3>
                   <Link 
-                    to="/story" 
+                    to={viewAllLink} 
                     className="text-sm text-[#2B4B9B] hover:text-[#1a2f61] font-medium inline-flex items-center gap-1 group"
                   >
                     View All
@@ -486,9 +493,9 @@ export default function SuccessStoryPage() {
           <aside className="hidden xl:block xl:w-80 xl:sticky xl:top-8 xl:self-start">
             <div className="bg-white rounded-xl shadow-lg p-6">
               <div className="flex items-center justify-between mb-6">
-                <h3 className="text-lg font-semibold text-gray-900">More Stories</h3>
+                <h3 className="text-lg font-semibold text-gray-900">More {contentTypePluralCapital}</h3>
                 <Link 
-                  to="/story" 
+                  to={viewAllLink} 
                   className="text-sm text-[#2B4B9B] hover:text-[#1a2f61] font-medium inline-flex items-center gap-1 group"
                 >
                   View All
@@ -534,7 +541,7 @@ export default function SuccessStoryPage() {
 
               {relatedStories.length === 0 && (
                 <div className="text-center py-8 text-gray-500">
-                  <p className="text-sm">No other stories available</p>
+                  <p className="text-sm">No other {contentTypePluralCapital.toLowerCase()} available</p>
                 </div>
               )}
             </div>

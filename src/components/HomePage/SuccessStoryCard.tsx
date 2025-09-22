@@ -62,7 +62,7 @@ const SuccessStoryCard: React.FC<SuccessStoryCardProps> = ({ story, storyNumber,
           {/* Read blog link with enhanced styling */}
           <div className="mt-auto pt-4 border-t border-gray-100">
             <Link
-              to={`/story/${story.id}`}
+              to={`/stories/${story.id}`}
               className="inline-flex items-center justify-center bg-gradient-to-r from-blue-50 to-indigo-50 text-blue-700 hover:text-indigo-800 font-medium transition-all duration-200 ease-in-out group rounded-full px-5 py-2"
               data-aos="fade-up"
               data-aos-delay="100"
