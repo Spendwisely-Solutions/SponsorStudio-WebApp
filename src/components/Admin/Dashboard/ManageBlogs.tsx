@@ -64,6 +64,7 @@ interface FormData {
   preview_text: string;
   content: string;
   preview_image: File | string | null;
+  is_blog: boolean;
 }
 
 function ManageBlogs() {
@@ -74,7 +75,8 @@ function ManageBlogs() {
     title: '',
     preview_text: '',
     content: '',
-    preview_image: null
+    preview_image: null,
+    is_blog: false
   });
   const [isEditing, setIsEditing] = useState(false);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
@@ -234,6 +236,7 @@ function ManageBlogs() {
             preview_text: formData.preview_text,
             content: formData.content,
             preview_image: imageUrl,
+            is_blog: formData.is_blog,
             updated_at: new Date().toISOString()
           })
           .eq('id', formData.id);
@@ -250,7 +253,8 @@ function ManageBlogs() {
             title: formData.title,
             preview_text: formData.preview_text,
             content: formData.content,
-            preview_image: imageUrl
+            preview_image: imageUrl,
+            is_blog: formData.is_blog
           });
 
         if (error) {
@@ -305,7 +309,8 @@ function ManageBlogs() {
       title: blog.title,
       preview_text: blog.preview_text,
       content: blog.content,
-      preview_image: blog.preview_image
+      preview_image: blog.preview_image,
+      is_blog: (blog as any).is_blog || false
     });
     setImagePreview(blog.preview_image);
     setIsEditing(true);
@@ -324,7 +329,8 @@ function ManageBlogs() {
       title: '',
       preview_text: '',
       content: '',
-      preview_image: null
+      preview_image: null,
+      is_blog: false
     });
     setImagePreview(null);
     setIsEditing(false);
@@ -346,7 +352,7 @@ function ManageBlogs() {
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between">
               <div className="mb-4 sm:mb-0">
                 <h1 className="text-2xl sm:text-3xl font-bold text-blue-600">
-                  Blog Manager
+                  Content Manager
                 </h1>
                 <p className="text-gray-600 mt-1 text-sm sm:text-base">
                   Create and manage success stories and blog posts
@@ -354,7 +360,7 @@ function ManageBlogs() {
               </div>
               <div className="flex items-center space-x-3">
                 <div className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-medium">
-                  {blogs.length} blogs
+                  {blogs.length} items
                 </div>
                 <button
                   onClick={fetchBlogs}
@@ -367,10 +373,10 @@ function ManageBlogs() {
                 <button
                   onClick={openCreateForm}
                   className="flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all duration-200 shadow-md"
-                  aria-label="Create new blog"
+                  aria-label="Create new content"
                 >
                   <Plus className="h-4 w-4" />
-                  <span>Create Blog</span>
+                  <span>Create Content</span>
                 </button>
                 <div className="hidden sm:block">
                   <div className="w-12 h-12 sm:w-16 sm:h-16 bg-blue-600 rounded-2xl flex items-center justify-center">
@@ -396,16 +402,16 @@ function ManageBlogs() {
           {blogs.length === 0 ? (
             <div className="bg-white/70 backdrop-blur-md rounded-xl sm:rounded-2xl shadow-lg border border-gray-200/50 p-8 sm:p-12 text-center">
               <FileText className="h-12 w-12 sm:h-16 sm:w-16 text-gray-400 mx-auto mb-4" />
-              <h3 className="text-lg sm:text-xl font-semibold text-gray-700 mb-2">No blogs found</h3>
+              <h3 className="text-lg sm:text-xl font-semibold text-gray-700 mb-2">No content found</h3>
               <p className="text-gray-500 text-sm sm:text-base mb-4">
-                Get started by creating your first blog post.
+                Get started by creating your first story or blog post.
               </p>
               <button
                 onClick={openCreateForm}
                 className="inline-flex items-center space-x-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-all duration-200"
               >
                 <Plus className="h-4 w-4" />
-                <span>Create First Blog</span>
+                <span>Create First Content</span>
               </button>
             </div>
           ) : (
@@ -434,6 +440,17 @@ function ManageBlogs() {
 
                   {/* Blog Content */}
                   <div className="p-4 sm:p-6">
+                    {/* Content Type Badge */}
+                    <div className="mb-3">
+                      <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
+                        (blog as any).is_blog 
+                          ? 'bg-purple-100 text-purple-700' 
+                          : 'bg-blue-100 text-blue-700'
+                      }`}>
+                        {(blog as any).is_blog ? 'Blog Post' : 'Success Story'}
+                      </span>
+                    </div>
+                    
                     <h2 className="text-lg sm:text-xl font-bold text-gray-800 mb-2 line-clamp-2">
                       {blog.title}
                     </h2>
@@ -504,10 +521,12 @@ function ManageBlogs() {
               </button>
               <div>
                 <h2 className="text-xl sm:text-2xl font-bold text-blue-600">
-                  {isEditing ? 'Edit Blog' : 'Create Blog'}
+                  {isEditing ? `Edit ${formData.is_blog ? 'Blog' : 'Story'}` : `Create ${formData.is_blog ? 'Blog' : 'Story'}`}
                 </h2>
                 <p className="text-gray-600 text-sm">
-                  {isEditing ? 'Update your blog post' : 'Create a new blog post'}
+                  {isEditing 
+                    ? `Update your ${formData.is_blog ? 'blog post' : 'success story'}` 
+                    : `Create a new ${formData.is_blog ? 'blog post' : 'success story'}`}
                 </p>
               </div>
             </div>
@@ -539,7 +558,7 @@ function ManageBlogs() {
                 {/* Title Field */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2" htmlFor="title">
-                    Blog Title *
+                    Title *
                   </label>
                   <input
                     type="text"
@@ -548,9 +567,75 @@ function ManageBlogs() {
                     value={formData.title}
                     onChange={handleInputChange}
                     className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
-                    placeholder="Enter a compelling blog title..."
+                    placeholder={formData.is_blog ? "Enter a compelling blog title..." : "Enter a compelling story title..."}
                     required
                   />
+                </div>
+
+                {/* Content Type Selection */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-3">
+                    Content Type *
+                  </label>
+                  <div className="flex gap-4">
+                    <label className="flex items-center cursor-pointer">
+                      <input
+                        type="radio"
+                        name="content_type"
+                        checked={!formData.is_blog}
+                        onChange={() => setFormData(prev => ({ ...prev, is_blog: false }))}
+                        className="sr-only"
+                      />
+                      <div className={`flex items-center px-4 py-3 rounded-lg border-2 transition-all duration-200 ${
+                        !formData.is_blog 
+                          ? 'border-blue-500 bg-blue-50 text-blue-700' 
+                          : 'border-gray-200 bg-white text-gray-700 hover:border-gray-300'
+                      }`}>
+                        <div className={`w-4 h-4 rounded-full border-2 mr-3 ${
+                          !formData.is_blog 
+                            ? 'border-blue-500 bg-blue-500' 
+                            : 'border-gray-300'
+                        } flex items-center justify-center`}>
+                          {!formData.is_blog && (
+                            <div className="w-2 h-2 rounded-full bg-white"></div>
+                          )}
+                        </div>
+                        <div>
+                          <div className="font-medium">Success Story</div>
+                          
+                        </div>
+                      </div>
+                    </label>
+                    
+                    <label className="flex items-center cursor-pointer">
+                      <input
+                        type="radio"
+                        name="content_type"
+                        checked={formData.is_blog}
+                        onChange={() => setFormData(prev => ({ ...prev, is_blog: true }))}
+                        className="sr-only"
+                      />
+                      <div className={`flex items-center px-4 py-3 rounded-lg border-2 transition-all duration-200 ${
+                        formData.is_blog 
+                          ? 'border-purple-500 bg-purple-50 text-purple-700' 
+                          : 'border-gray-200 bg-white text-gray-700 hover:border-gray-300'
+                      }`}>
+                        <div className={`w-4 h-4 rounded-full border-2 mr-3 ${
+                          formData.is_blog 
+                            ? 'border-purple-500 bg-purple-500' 
+                            : 'border-gray-300'
+                        } flex items-center justify-center`}>
+                          {formData.is_blog && (
+                            <div className="w-2 h-2 rounded-full bg-white"></div>
+                          )}
+                        </div>
+                        <div>
+                          <div className="font-medium">Blog Post</div>
+                          
+                        </div>
+                      </div>
+                    </label>
+                  </div>
                 </div>
 
                 {/* Preview Text Field */}
@@ -565,7 +650,7 @@ function ManageBlogs() {
                     onChange={handleInputChange}
                     className="w-full px-4 py-3 border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-200"
                     rows={isFullscreen ? 4 : 3}
-                    placeholder="Write a brief preview of your blog post..."
+                    placeholder={formData.is_blog ? "Write a brief preview of your blog post..." : "Write a brief preview of your success story..."}
                     required
                   />
                 </div>
@@ -632,7 +717,7 @@ function ManageBlogs() {
                 {/* Content Field */}
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2" htmlFor="content">
-                    Blog Content *
+                    {formData.is_blog ? 'Blog Content' : 'Story Content'} *
                   </label>
                   <div className="border border-gray-200 rounded-lg overflow-hidden">
                     <Editor
@@ -823,7 +908,7 @@ function ManageBlogs() {
                 {isLoading && (
                   <div className="animate-spin rounded-full h-4 w-4 border-2 border-white/30 border-t-white"></div>
                 )}
-                <span>{isLoading ? 'Saving...' : (isEditing ? 'Update Blog' : 'Create Blog')}</span>
+                <span>{isLoading ? 'Saving...' : (isEditing ? `Update ${formData.is_blog ? 'Blog' : 'Story'}` : `Create ${formData.is_blog ? 'Blog' : 'Story'}`)}</span>
               </button>
               {!isFullscreen && (
                 <button
@@ -909,14 +994,14 @@ function ManageBlogs() {
       <CustomModal
         isOpen={isPreviewOpen}
         onClose={() => setIsPreviewOpen(false)}
-        title="Blog Preview"
+        title={`${formData.is_blog ? 'Blog' : 'Story'} Preview`}
         customStyles={{ maxWidth: '60rem', height: '80vh' }}
       >
         <div className="space-y-6 max-h-full overflow-y-auto">
           {/* Preview Header */}
           <div className="border-b border-gray-200 pb-4">
             <h2 className="text-2xl font-bold text-[#2B4B9B] mb-2">
-              {formData.title || 'Untitled Blog Post'}
+              {formData.title || `Untitled ${formData.is_blog ? 'Blog Post' : 'Success Story'}`}
             </h2>
             {formData.preview_text && (
               <p className="text-gray-600 text-lg leading-relaxed">
