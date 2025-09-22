@@ -1,8 +1,10 @@
 User-agent: *
 Allow: /
 Allow: /dashboard
-Allow: /story
-Allow: /story/*
+Allow: /stories
+Allow: /stories/*
+Allow: /blogs
+Allow: /blog/*
 Allow: /privacy
 Allow: /terms
 Allow: /sitemap.xml
