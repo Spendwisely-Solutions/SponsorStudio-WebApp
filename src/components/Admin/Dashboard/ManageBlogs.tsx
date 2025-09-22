@@ -279,7 +279,7 @@ function ManageBlogs() {
   };
 
   const handleView = (id: string) => {
-    window.open(`/story/${id}`, '_blank');
+    window.open(`/blog/${id}`, '_blank');
   };
 
   const confirmDelete = async () => {

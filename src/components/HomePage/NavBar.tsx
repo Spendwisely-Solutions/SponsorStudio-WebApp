@@ -45,8 +45,9 @@ const NavBar: React.FC<NavBarProps> = ({
   // Default nav links
   const defaultNavLinks = [
     { label: 'About', href: '#how-we-work' },
-    { label: 'Clients', href: '#clients' },
+    // { label: 'Clients', href: '#clients' },
     { label: 'Success Stories', href: '#success' },
+    { label: 'Blogs', href: '/blogs' },
     { label: 'FAQ', to: '/faq' },
     { label: 'Contact', href: '#contact' },
   ];
