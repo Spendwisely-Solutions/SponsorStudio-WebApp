@@ -19,6 +19,7 @@ import 'aos/dist/aos.css'; // Import AOS styles
 import TrendingEvents from './TrendingEvents';
 import { FAQSection } from '../FAQ/FAQ';
 import HowItWorks from './HowItWorks';
+import TrustedBySection from './TrustedBySection';
 
 // Shared types
 interface Database {
@@ -39,6 +40,7 @@ interface ClientLogo {
   name: string;
   logo_url: string;
   row: string;
+  trusted_by_order?: number;
 }
 
 interface SuccessStory {
@@ -46,6 +48,7 @@ interface SuccessStory {
   title: string;
   preview_image: string;
   preview_text: string;
+  is_blog?: boolean;
 }
 
 interface FormData {
@@ -202,6 +205,7 @@ const Home: React.FC = () => {
       />
       {/* <HeroSection user={user} setShowAuthForm={setShowAuthForm} /> */}
       <HeroSectionNew user={user} setShowAuthForm={setShowAuthForm} />
+      <TrustedBySection loading={loading} clientLogos={clientLogos} />
   <TrendingEvents showAuthForm={() => setShowAuthForm(true)} />
       {/* <HowWeWorkSection /> */}
       <HowItWorks />
