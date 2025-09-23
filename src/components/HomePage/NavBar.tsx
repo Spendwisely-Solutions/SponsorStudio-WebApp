@@ -49,7 +49,7 @@ const NavBar: React.FC<NavBarProps> = ({
     { label: 'Success Stories', href: '#success' },
     { label: 'Blogs', href: '/blogs' },
     { label: 'FAQ', to: '/faq' },
-    { label: 'Contact', href: '#contact' },
+    { label: 'Contact', href: '/contact-us' },
   ];
 
   const currentNavLinks = navLinks || defaultNavLinks;

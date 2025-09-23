@@ -75,6 +75,8 @@ function ContactUs() {
           { label: 'Home', to: '/' },
           { label: 'About', to: '/how-we-work' },
           { label: 'Faq', to: '/faq' },
+          { label: 'Blogs', to: '/blogs' },
+          { label: 'Success Stories', to: '/stories' },
         ]}
       />
     <div className="h-10"></div>
@@ -142,7 +144,23 @@ function ContactUs() {
 
               {/* Contact Details Grid */}
               <div className="grid grid-cols-1 gap-4 sm:gap-6">
-                
+                {/* Phone Card */}
+                <div className="group bg-gradient-to-br from-green-50 to-emerald-50 p-4 sm:p-6 rounded-xl border border-green-100 hover:shadow-xl hover:shadow-green-100/50 transform hover:-translate-y-1 transition-all duration-300">
+                  <div className="flex items-center mb-3 sm:mb-4">
+                    <div className="p-2 bg-green-600 rounded-lg mr-3 group-hover:scale-110 transition-transform duration-300 flex-shrink-0">
+                      <svg className="w-4 h-4 sm:w-5 sm:h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+                      </svg>
+                    </div>
+                    <h4 className="font-semibold text-gray-900 text-sm sm:text-base">Phone</h4>
+                  </div>
+                  <div className="ml-10 sm:ml-11">
+                    <a href="tel:+917736037993" className="text-gray-700 font-medium hover:text-green-600 transition-colors text-sm sm:text-base">
+                      +91 7736037993
+                    </a>
+                    <p className="text-xs sm:text-sm text-gray-500 mt-1">Call us during business hours</p>
+                  </div>
+                </div>
 
                 {/* Email Card */}
                 <div className="group bg-gradient-to-br from-purple-50 to-pink-50 p-4 sm:p-6 rounded-xl border border-purple-100 hover:shadow-xl hover:shadow-purple-100/50 transform hover:-translate-y-1 transition-all duration-300">
@@ -221,21 +239,7 @@ function ContactUs() {
                 ></iframe>
                 
                 {/* Enhanced Map Overlay */}
-                <div className="absolute top-6 left-6 bg-white/95 backdrop-blur-md p-4 rounded-xl shadow-lg border border-gray-200/50 max-w-xs">
-                  <div className="flex items-center mb-2">
-                    <div className="w-3 h-3 bg-red-500 rounded-full mr-3 animate-pulse shadow-lg"></div>
-                    <span className="text-sm font-semibold text-gray-900">Sponsor Studio</span>
-                  </div>
-                  <p className="text-xs text-gray-600 leading-relaxed">
-                    Heavenly Plaza, Kakkanad
-                    <br />
-                    <span className="font-medium">Ernakulem, Kerala</span>
-                  </p>
-                  <div className="mt-2 flex items-center text-xs text-green-600">
-                    <div className="w-2 h-2 bg-green-500 rounded-full mr-2"></div>
-                    <span className="font-medium">Open Now</span>
-                  </div>
-                </div>
+                
 
                 {/* Map Controls */}
                
