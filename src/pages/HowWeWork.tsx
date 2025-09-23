@@ -11,6 +11,9 @@ function HowWeWork() {
     { label: 'Home', to: '/' },
     { label: 'About', to: '/how-we-work' },
     { label: 'Faq', to: '/faq' },
+    { label: 'Blogs', to: '/blogs' },
+    { label: 'Success Stories', to: '/stories' },
+    { label: 'Contact Us', to: '/contact-us' }
   ];
 
   return (

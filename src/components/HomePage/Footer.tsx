@@ -35,8 +35,8 @@ const Footer = () => {
             <h4 className="font-semibold mb-4">Company</h4>
             <div className="space-y-2 text-gray-400">
               <a href="#how-we-work" className="block hover:text-white transition-colors" >About Us</a>
-              <a href="#success" className="block hover:text-white transition-colors" >Success Stories</a>
-              <a href="#contact" className="block hover:text-white transition-colors" >Contact</a>
+              <a href="/stories" className="block hover:text-white transition-colors" >Success Stories</a>
+              <a href="/contact-us" className="block hover:text-white transition-colors" >Contact Us</a>
               <a href="/faq" className="block hover:text-white transition-colors" >FAQ</a>
               <a href="mailto:connect@sponsorstudio.in" className="block hover:text-white transition-colors" >Support</a>
             </div>
@@ -53,6 +53,7 @@ const Footer = () => {
               <div>connect@sponsorstudio.in</div>
 
               <div>Heavenly Plaza, Vazhakkala, Ernakulam</div>
+              <div>+91 773 603 7993</div>
             </div>
           </motion.div>
 
