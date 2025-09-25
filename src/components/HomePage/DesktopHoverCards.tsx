@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import React, { useState, useMemo, useCallback } from 'react';
+import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { ChevronRight, Play, ArrowUpRight } from 'lucide-react';
 import { SuccessStory as SuccessStoryType } from './Home';
+import './DesktopHoverCards.css';
 
 interface DesktopHoverCardsProps {
   stories: SuccessStoryType[];
@@ -14,9 +15,36 @@ const DesktopHoverCards: React.FC<DesktopHoverCardsProps> = ({
   className = '' 
 }) => {
   const [activeCard, setActiveCard] = useState<number>(1); // Second card is active by default (index 1)
+  const shouldReduceMotion = useReducedMotion();
 
-  // Take first 4 stories for desktop layout
-  const displayStories = stories.slice(0, 4);
+  // Memoize display stories for performance
+  const displayStories = useMemo(() => stories.slice(0, 4), [stories]);
+
+  // Optimized hover handlers with useCallback
+  const handleCardHover = useCallback((index: number) => {
+    setActiveCard(index);
+  }, []);
+
+  // Ultra-high FPS spring configurations with reduced speed
+  const springConfig = useMemo(() => ({
+    type: "spring" as const,
+    stiffness: shouldReduceMotion ? 120 : 240,
+    damping: shouldReduceMotion ? 60 : 35,
+    mass: 0.8,
+    velocity: 0,
+    restDelta: 0.0001,
+    restSpeed: 0.0001
+  }), [shouldReduceMotion]);
+
+  const layoutSpringConfig = useMemo(() => ({
+    type: "spring" as const,
+    stiffness: shouldReduceMotion ? 100 : 200,
+    damping: shouldReduceMotion ? 55 : 30,
+    mass: 0.7,
+    velocity: 0,
+    restDelta: 0.0001,
+    restSpeed: 0.0001
+  }), [shouldReduceMotion]);
 
   if (stories.length === 0) {
     return (
@@ -27,19 +55,21 @@ const DesktopHoverCards: React.FC<DesktopHoverCardsProps> = ({
   }
 
   return (
-    <div className={`relative w-full ${className}`}>
+    <div className={`relative w-full desktop-hover-cards ${className}`}>
       <motion.div 
         className="flex gap-2 h-[500px] max-w-7xl mx-auto"
         layout
         transition={{
           layout: {
-            type: "spring",
-            stiffness: 400,
-            damping: 40,
-            mass: 0.8,
-            duration: 0.5,
-            ease: [0.23, 1, 0.320, 1] // easeOutQuart for buttery smoothness
+            ...layoutSpringConfig,
+            ease: [0.08, 0.82, 0.17, 1], // Ultra-smooth easing for higher FPS
+            duration: shouldReduceMotion ? 0.2 : 0.8
           }
+        }}
+        style={{
+          willChange: 'transform',
+          transform: 'translateZ(0)', // Force hardware acceleration
+          backfaceVisibility: 'hidden'
         }}
       >
         {displayStories.map((story, index) => {
@@ -49,32 +79,32 @@ const DesktopHoverCards: React.FC<DesktopHoverCardsProps> = ({
           return (
             <motion.div
               key={story.id}
-              className="relative overflow-hidden cursor-pointer group rounded-2xl shadow-lg will-change-transform" // Added performance optimization
-              onHoverStart={() => setActiveCard(index)}
-              // Removed onHoverEnd - card stays active until another card is hovered
+              className="relative overflow-hidden cursor-pointer group rounded-2xl shadow-lg"
+              onHoverStart={() => handleCardHover(index)}
               layout
+              layoutId={`card-${story.id}`}
               transition={{
                 layout: {
-                  type: "spring",
-                  stiffness: 350,
-                  damping: 35,
-                  mass: 0.9,
-                  duration: 0.7,
-                  delay: index * 0.06, // Reduced delay for smoother cascade
-                  ease: [0.23, 1, 0.320, 1] // easeOutQuart
+                  ...layoutSpringConfig,
+                  delay: shouldReduceMotion ? 0 : index * 0.015,
+                  ease: [0.08, 0.82, 0.17, 1],
+                  duration: 0.6
                 }
               }}
               animate={{
                 flex: isActive ? '2' : '1',
                 transition: {
-                  type: "spring",
-                  stiffness: 350,
-                  damping: 35,
-                  mass: 0.9,
-                  duration: 0.7,
-                  delay: index * 0.05, // Slightly faster flex changes
-                  ease: [0.23, 1, 0.320, 1]
+                  ...springConfig,
+                  delay: shouldReduceMotion ? 0 : index * 0.01,
+                  ease: [0.08, 0.82, 0.17, 1],
+                  duration: 0.7
                 }
+              }}
+              style={{
+                willChange: 'transform, flex',
+                transform: 'translateZ(0)',
+                backfaceVisibility: 'hidden',
+                contain: 'layout style paint'
               }}
             >
               {/* Background Image */}
@@ -82,16 +112,21 @@ const DesktopHoverCards: React.FC<DesktopHoverCardsProps> = ({
                 <motion.img
                   src={story.preview_image}
                   alt={story.title}
-                  className="w-full h-full object-cover will-change-transform"
+                  className="w-full h-full object-cover"
+                  loading="lazy"
+                  decoding="async"
                   animate={{
                     scale: isActive ? 1.05 : 1.1,
                     transition: {
-                      type: "spring",
-                      stiffness: 300,
-                      damping: 40,
-                      mass: 1,
-                      ease: [0.23, 1, 0.320, 1]
+                      ...springConfig,
+                      ease: [0.08, 0.82, 0.17, 1],
+                      duration: 0.8
                     }
+                  }}
+                  style={{
+                    willChange: 'transform',
+                    transform: 'translateZ(0)',
+                    backfaceVisibility: 'hidden'
                   }}
                 />
                 
@@ -105,9 +140,13 @@ const DesktopHoverCards: React.FC<DesktopHoverCardsProps> = ({
                       ? 'rgba(0,0,0,0.7)'
                       : 'linear-gradient(to top, rgba(0,0,0,0.6), rgba(0,0,0,0.2), transparent)',
                     transition: {
-                      duration: 0.6,
-                      ease: [0.23, 1, 0.320, 1]
+                      duration: shouldReduceMotion ? 0.15 : 0.6,
+                      ease: [0.08, 0.82, 0.17, 1]
                     }
+                  }}
+                  style={{
+                    willChange: 'background',
+                    transform: 'translateZ(0)'
                   }}
                 />
               </div>
@@ -120,10 +159,15 @@ const DesktopHoverCards: React.FC<DesktopHoverCardsProps> = ({
                   animate={{
                     marginBottom: isActive ? '1.5rem' : '1rem',
                     transition: {
-                      duration: 0.5,
-                      delay: index * 0.03,
-                      ease: [0.23, 1, 0.320, 1]
+                      ...springConfig,
+                      delay: shouldReduceMotion ? 0 : index * 0.01,
+                      ease: [0.08, 0.82, 0.17, 1],
+                      duration: 0.6
                     }
+                  }}
+                  style={{
+                    willChange: 'margin',
+                    transform: 'translateZ(0)'
                   }}
                 >
                   {/* Company/Brand logo area */}
@@ -135,10 +179,14 @@ const DesktopHoverCards: React.FC<DesktopHoverCardsProps> = ({
                         color: isActive ? '#111827' : '#ffffff',
                         backdropFilter: isActive ? 'none' : 'blur(4px)',
                         transition: {
-                          duration: 0.4,
-                          delay: index * 0.04,
-                          ease: [0.23, 1, 0.320, 1]
+                          duration: shouldReduceMotion ? 0.1 : 0.5,
+                          delay: shouldReduceMotion ? 0 : index * 0.01,
+                          ease: [0.08, 0.82, 0.17, 1]
                         }
+                      }}
+                      style={{
+                        willChange: 'background-color, color, backdrop-filter',
+                        transform: 'translateZ(0)'
                       }}
                     >
                       Story #{index + 1}
@@ -153,28 +201,36 @@ const DesktopHoverCards: React.FC<DesktopHoverCardsProps> = ({
                       marginBottom: isActive ? '1rem' : isAnyHovered ? '0.5rem' : '0.75rem',
                       opacity: isAnyHovered && !isActive ? 0.7 : 1,
                       transition: {
-                        duration: 0.5,
-                        delay: index * 0.04,
-                        ease: [0.23, 1, 0.320, 1]
+                        duration: shouldReduceMotion ? 0.15 : 0.6,
+                        delay: shouldReduceMotion ? 0 : index * 0.01,
+                        ease: [0.08, 0.82, 0.17, 1]
                       }
+                    }}
+                    style={{
+                      willChange: 'font-size, margin-bottom, opacity',
+                      transform: 'translateZ(0)'
                     }}
                   >
                     {isActive ? story.title : story.title.slice(0, 40) + '...'}
                   </motion.h3>
 
                   {/* Description - only show when active */}
-                  <AnimatePresence>
+                  <AnimatePresence mode="wait">
                     {isActive && (
                       <motion.div
-                        initial={{ opacity: 0, height: 0, y: 20 }}
+                        initial={{ opacity: 0, height: 0, y: 10 }}
                         animate={{ opacity: 1, height: 'auto', y: 0 }}
-                        exit={{ opacity: 0, height: 0, y: -20 }}
+                        exit={{ opacity: 0, height: 0, y: -10 }}
                         transition={{ 
-                          duration: 0.5, 
-                          delay: 0.15 + (index * 0.06), // Optimized staggered delay
-                          ease: [0.23, 1, 0.320, 1] // Butter smooth easing
+                          duration: shouldReduceMotion ? 0.15 : 0.7,
+                          delay: shouldReduceMotion ? 0 : 0.08 + (index * 0.015),
+                          ease: [0.08, 0.82, 0.17, 1]
                         }}
                         className="overflow-hidden"
+                        style={{
+                          willChange: 'opacity, height, transform',
+                          transform: 'translateZ(0)'
+                        }}
                       >
                         <p className="text-gray-200 text-base leading-relaxed mb-6 line-clamp-3">
                           {story.preview_text}
@@ -184,13 +240,15 @@ const DesktopHoverCards: React.FC<DesktopHoverCardsProps> = ({
                         <div className="flex items-center gap-4">
                           <Link
                             to={`/stories/${story.id}`}
-                            className="inline-flex items-center bg-white text-gray-900 font-semibold px-6 py-3 rounded-xl hover:bg-gray-100 transition-all duration-200 ease-[cubic-bezier(0.23,1,0.320,1)] group/btn"
+                            className="inline-flex items-center bg-white text-gray-900 font-semibold px-6 py-3 rounded-xl hover:bg-gray-100 transition-all duration-300 ease-[cubic-bezier(0.08,0.82,0.17,1)] group/btn transform hover:scale-105"
+                            style={{
+                              willChange: 'transform, background-color',
+                              transform: 'translateZ(0)'
+                            }}
                           >
                             Read Story
-                            <ArrowUpRight className="ml-2 w-4 h-4 transition-transform duration-200 ease-[cubic-bezier(0.23,1,0.320,1)] group-hover/btn:translate-x-0.5 group-hover/btn:-translate-y-0.5" />
+                            <ArrowUpRight className="ml-2 w-4 h-4 transition-transform duration-300 ease-[cubic-bezier(0.08,0.82,0.17,1)] group-hover/btn:translate-x-0.5 group-hover/btn:-translate-y-0.5" />
                           </Link>
-                          
-                          
                         </div>
                       </motion.div>
                     )}
@@ -218,8 +276,8 @@ const DesktopHoverCards: React.FC<DesktopHoverCardsProps> = ({
                     opacity: isAnyHovered ? 0.3 : 1,
                     scale: isAnyHovered ? 0.75 : 1,
                     transition: {
-                      duration: 0.3,
-                      ease: [0.23, 1, 0.320, 1]
+                      duration: 0.5,
+                      ease: [0.08, 0.82, 0.17, 1]
                     }
                   }}
                 >
@@ -227,11 +285,11 @@ const DesktopHoverCards: React.FC<DesktopHoverCardsProps> = ({
                     <motion.div 
                       className="w-2 h-2 bg-white rounded-full"
                       animate={{
-                        scale: [1, 1.2, 1],
+                        scale: [1, 1.1, 1],
                         transition: {
-                          duration: 2,
+                          duration: 3,
                           repeat: Infinity,
-                          ease: [0.23, 1, 0.320, 1]
+                          ease: [0.08, 0.82, 0.17, 1]
                         }
                       }}
                     />
@@ -242,55 +300,65 @@ const DesktopHoverCards: React.FC<DesktopHoverCardsProps> = ({
               {/* Active card indicator */}
               {isActive && (
                 <motion.div
-                  initial={{ opacity: 0, scale: 0, rotate: -180 }}
+                  initial={{ opacity: 0, scale: 0, rotate: -90 }}
                   animate={{ 
                     opacity: 1, 
                     scale: 1, 
                     rotate: 0,
                     transition: {
-                      type: "spring",
-                      stiffness: 400,
-                      damping: 30,
-                      delay: 0.2 + (index * 0.03),
-                      ease: [0.23, 1, 0.320, 1]
+                      ...springConfig,
+                      delay: shouldReduceMotion ? 0 : 0.15 + (index * 0.02),
+                      ease: [0.16, 1, 0.3, 1]
                     }
                   }}
                   exit={{ 
                     opacity: 0, 
-                    scale: 0.8, 
-                    rotate: 180,
+                    scale: 0.9, 
+                    rotate: 90,
                     transition: {
-                      duration: 0.2,
-                      ease: [0.23, 1, 0.320, 1]
+                      duration: shouldReduceMotion ? 0.1 : 0.15,
+                      ease: [0.16, 1, 0.3, 1]
                     }
                   }}
                   className="absolute top-6 right-6 z-10"
+                  style={{
+                    willChange: 'transform, opacity',
+                    transform: 'translateZ(0)'
+                  }}
                 >
                   <motion.div 
                     className="w-10 h-10 bg-white rounded-full flex items-center justify-center shadow-lg"
-                    animate={{
+                    animate={shouldReduceMotion ? {} : {
                       boxShadow: [
                         "0 10px 25px rgba(0,0,0,0.1)",
-                        "0 20px 40px rgba(0,0,0,0.15)",
+                        "0 15px 35px rgba(0,0,0,0.15)",
                         "0 10px 25px rgba(0,0,0,0.1)"
                       ],
                       transition: {
-                        duration: 2,
+                        duration: 3,
                         repeat: Infinity,
-                        ease: [0.23, 1, 0.320, 1]
+                        ease: [0.16, 1, 0.3, 1]
                       }
+                    }}
+                    style={{
+                      willChange: shouldReduceMotion ? 'auto' : 'box-shadow',
+                      transform: 'translateZ(0)'
                     }}
                   >
                     <motion.div 
                       className="w-3 h-3 bg-blue-600 rounded-full"
-                      animate={{
-                        scale: [1, 1.1, 1],
-                        opacity: [1, 0.8, 1],
+                      animate={shouldReduceMotion ? {} : {
+                        scale: [1, 1.05, 1],
+                        opacity: [1, 0.9, 1],
                         transition: {
-                          duration: 1.5,
+                          duration: 2,
                           repeat: Infinity,
-                          ease: [0.23, 1, 0.320, 1]
+                          ease: [0.16, 1, 0.3, 1]
                         }
+                      }}
+                      style={{
+                        willChange: shouldReduceMotion ? 'auto' : 'transform, opacity',
+                        transform: 'translateZ(0)'
                       }}
                     />
                   </motion.div>
