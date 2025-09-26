@@ -42,7 +42,7 @@ function App() {
             <Route path="/" element={<Home />} />
             <Route path="/dashboard" element={<Dashboard />} />
             {/* <Route path="/profile/:userId" element={<ProfilePage />} /> */}
-            <Route path="/admin" element={<AdminLogin />} />
+            {/* <Route path="/admin" element={<AdminLogin />} /> */}
             <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/logout" element={<Logout />} />
             {/* <Route path="/success" element={<SuccessPage onSubmit={() => {}} />} /> */}
@@ -58,14 +58,14 @@ function App() {
 
 
 
-            <Route
+            {/* <Route
               path="/admin/*"
               element={
                 <ProtectedAdminRoute>
                   <AdminDashboard />
                 </ProtectedAdminRoute>
               }
-            />
+            /> */}
             <Route path="/stories/:id" element={<SuccessStoryPage />} />
             <Route path="/stories" element={<SuccessStories />} />
             {/* <Route path="/Careers" element={<CareerPage />} /> */}
