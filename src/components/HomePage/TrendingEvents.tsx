@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { useAuth } from '../../contexts/AuthContext';
 import Slider from 'react-slick'; // Import react-slick
 import 'slick-carousel/slick/slick.css';
@@ -49,29 +49,74 @@ function TrendingEvents({ showAuthForm }: TrendingEventsProps) {
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
-  // Slick Slider settings for Center Mode
-  const sliderSettings = {
-    centerMode: true,
-    centerPadding: isMobile ? '10px' : '60px', // Adjust padding for partial slides
-    slidesToShow: isMobile ? 1 : 3, // Show 1 slide on mobile, 3 on desktop
-    slidesToScroll: 1,
-    autoplay: true,
-    autoplaySpeed: 2000,
-    infinite: true,
-    arrows: false, // Hide arrows for a cleaner look
-    dots: true, // Show custom dots
-    speed: 500,
-    cssEase: 'cubic-bezier(.4,0,.2,1)',
-    responsive: [
-      {
-        breakpoint: 768,
-        settings: {
-          slidesToShow: 1,
-          centerPadding: '10px',
+  // Filter out events with 'test event' in the title, events without any media, and expired events
+  const filteredEvents = useMemo(() => events.filter(e => {
+    // exclude explicit test events
+    if (e.title?.toLowerCase().includes('test event')) return false;
+
+    // require at least one media URL
+    if (!Array.isArray(e.media_urls) || e.media_urls.length === 0) return false;
+
+    // if end_date exists and parses to a valid date, exclude if it's in the past
+    if (e.start_date) {
+      const start = new Date(e.start_date);
+      if (!isNaN(start.getTime())) {
+        const now = new Date();
+        if (start < now) return false; // expired
+      }
+    }
+
+    return true;
+  }), [events]);
+
+  // Slick Slider settings for Center Mode - dynamic based on event count
+  const sliderSettings = useMemo(() => {
+    const numEvents = filteredEvents.length;
+    const baseSettings = {
+      centerMode: numEvents > 1,
+      centerPadding: isMobile ? '10px' : '60px',
+      slidesToShow: Math.min(isMobile ? 1 : 3, numEvents),
+      slidesToScroll: 1,
+      autoplay: numEvents > 1,
+      autoplaySpeed: 2000,
+      infinite: numEvents > 1,
+      arrows: false,
+      dots: numEvents > 1,
+      speed: 500,
+      cssEase: 'cubic-bezier(.4,0,.2,1)' as const,
+      responsive: [
+        {
+          breakpoint: 1024,
+          settings: {
+            slidesToShow: Math.min(2, numEvents),
+            centerPadding: '40px',
+            centerMode: numEvents > 1,
+          },
         },
-      },
-    ],
-  };
+        {
+          breakpoint: 768,
+          settings: {
+            slidesToShow: Math.min(1, numEvents),
+            centerPadding: '10px',
+          },
+        },
+      ],
+    };
+
+    // For single event, override to non-slider mode
+    if (numEvents === 1) {
+      return {
+        ...baseSettings,
+        centerMode: false,
+        slidesToShow: 1,
+        infinite: false,
+        autoplay: false,
+        dots: false,
+      };
+    }
+
+    return baseSettings;
+  }, [filteredEvents.length, isMobile]);
 
   // Format date as 'day Month'
   const formatDate = (start: string) => {
@@ -81,27 +126,118 @@ function TrendingEvents({ showAuthForm }: TrendingEventsProps) {
     return startObj.toLocaleDateString('en-US', options);
   };
 
-  // Filter out events with 'test event' in the title, events without any media, and expired events
-  const filteredEvents = events.filter(e => {
-    // exclude explicit test events
-    if (e.title?.toLowerCase().includes('test event')) return false;
+  const { user, profile } = useAuth();
 
-    // require at least one media URL
-    if (!Array.isArray(e.media_urls) || e.media_urls.length === 0) return false;
+  // Render single event card (non-slider)
+  const renderSingleEvent = (event: TrendingEvent) => {
+    let mediaUrl = '';
+    let mediaType: 'image' | 'video' | null = null;
 
-    // if end_date exists and parses to a valid date, exclude if it's in the past
-    if (e.end_date) {
-      const end = new Date(e.end_date);
-      if (!isNaN(end.getTime())) {
-        const now = new Date();
-        if (end < now) return false; // expired
+    // Prioritize the first image, then any image, then any video, then first available media
+    if (event.media_urls && event.media_urls.length > 0) {
+      const firstMedia = event.media_urls[0];
+      if (firstMedia.match(/\.(jpg|jpeg|png|webp|avif)$/i)) {
+        mediaUrl = firstMedia;
+        mediaType = 'image';
+      } else {
+        const image = event.media_urls.find(url => url.match(/\.(jpg|jpeg|png|webp|avif)$/i));
+        if (image) {
+          mediaUrl = image;
+          mediaType = 'image';
+        } else {
+          const video = event.media_urls.find(url => url.match(/\.(mp4|webm|ogg)$/i));
+          if (video) {
+            mediaUrl = video;
+            mediaType = 'video';
+          } else {
+            mediaUrl = firstMedia;
+            mediaType = null;
+          }
+        }
       }
     }
 
-    return true;
-  });
+    // Track mouse/touch movement to distinguish click vs drag
+    let startX = 0, startY = 0, moved = false;
+    const threshold = 10; // px
+    const handlePointerDown = (e: React.PointerEvent<HTMLDivElement>) => {
+      moved = false;
+      if (e.pointerType === 'touch' || e.pointerType === 'mouse') {
+        startX = e.clientX;
+        startY = e.clientY;
+      }
+    };
+    const handlePointerMove = (e: React.PointerEvent<HTMLDivElement>) => {
+      if (e.pointerType === 'touch' || e.pointerType === 'mouse') {
+        if (Math.abs(e.clientX - startX) > threshold || Math.abs(e.clientY - startY) > threshold) {
+          moved = true;
+        }
+      }
+    };
+    const handlePointerUp = (e: React.PointerEvent<HTMLDivElement>) => {
+      if (!moved) {
+        // If not logged in, show auth form
+        if (!user) {
+          if (typeof showAuthForm === 'function') showAuthForm();
+          return;
+        }
+        // Only allow dashboard navigation for brand users
+        if (profile?.user_type === 'brand') {
+          const searchParam = encodeURIComponent(event.title);
+          window.location.href = `/dashboard?search=${searchParam}`;
+        }
+        // Do nothing for other user types
+      }
+    };
 
-  const { user, profile } = useAuth();
+    return (
+      <div
+        className="px-2 outline-none cursor-pointer mx-auto"
+        style={{ maxWidth: isMobile ? '100%' : '18rem' }}
+        onPointerDown={handlePointerDown}
+        onPointerMove={handlePointerMove}
+        onPointerUp={handlePointerUp}
+      >
+        <div className="bg-white/90 rounded-3xl shadow-xl border border-blue-100/40 backdrop-blur-md px-4 py-6 flex flex-col items-center transition-transform duration-500 ease-[cubic-bezier(.4,0,.2,1)] animate-cardin">
+          <div
+            className="w-full rounded-2xl overflow-hidden mb-4 bg-gradient-to-br from-blue-100 to-indigo-100 flex items-center justify-center"
+            style={{ height: '192px', minHeight: '192px', maxHeight: '192px' }}
+          >
+            {mediaType === 'image' && mediaUrl ? (
+              <img
+                src={mediaUrl}
+                alt={event.title}
+                className="w-full h-full object-cover object-center transition-transform duration-300 group-hover:scale-105"
+              />
+            ) : mediaType === 'video' && mediaUrl ? (
+              <video
+                src={mediaUrl}
+                className="w-full h-full object-cover object-center"
+                autoPlay
+                loop
+                muted
+                playsInline
+                preload="metadata"
+                poster={event.media_urls.find(url => url.match(/\.(jpg|jpeg|png|webp|avif)$/i)) || undefined}
+              />
+            ) : (
+              <div className="w-full h-full flex items-center justify-center text-gray-400 text-2xl">No Media</div>
+            )}
+          </div>
+          <div className="text-center flex-1 flex flex-col justify-start w-full">
+            <h3 className="text-lg sm:text-xl font-bold text-blue-800 mb-1 truncate w-full" title={event.title}>
+              {event.title}
+            </h3>
+            <div className="text-xs sm:text-sm text-gray-500 mb-1">{formatDate(event.start_date)}</div>
+            <div className="text-xs sm:text-sm text-gray-400 mb-1">{event.location}</div>
+            <p className="text-gray-600 text-sm mb-2 line-clamp-2 w-full" title={event.description}>
+              {event.description}
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  };
 
   return (
     <div className="relative w-full py-16 px-2 sm:px-8 bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/50 overflow-hidden">
@@ -125,12 +261,14 @@ function TrendingEvents({ showAuthForm }: TrendingEventsProps) {
           </p>
         </div>
 
-        {/* Slick Slider */}
+        {/* Content based on event count */}
         <div className="relative pb-14">
           {loading ? (
             <div className="text-center text-gray-500">Loading...</div>
           ) : filteredEvents.length === 0 ? (
             <div className="text-center text-gray-500">No events available</div>
+          ) : filteredEvents.length === 1 ? (
+            renderSingleEvent(filteredEvents[0])
           ) : (
             <Slider {...sliderSettings}>
               {filteredEvents.map((event, idx) => {
@@ -288,15 +426,30 @@ function TrendingEvents({ showAuthForm }: TrendingEventsProps) {
         }
         .slick-slide {
           transition: transform 0.5s cubic-bezier(.4,0,.2,1), opacity 0.5s cubic-bezier(.4,0,.2,1);
+          padding: 0 8px;
         }
         .slick-slide:not(.slick-center) {
-          transform: scale(0.9);
+          transform: scale(0.85);
           opacity: 0.6;
         }
         .slick-center {
-          transform: scale(1.1);
+          transform: scale(1);
           opacity: 1;
           z-index: 20;
+        }
+        @media (max-width: 1024px) {
+          .slick-slide:not(.slick-center) {
+            transform: scale(0.9);
+          }
+        }
+        @media (max-width: 768px) {
+          .slick-slide {
+            padding: 0 4px;
+          }
+          .slick-slide:not(.slick-center) {
+            transform: scale(0.95);
+            opacity: 0.8;
+          }
         }
         .slick-dots li button:before {
           font-size: 12px;
