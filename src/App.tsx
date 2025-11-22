@@ -23,6 +23,7 @@ import HowWeWork from './pages/HowWeWork';
 import Trending from './pages/TrendingEvents';
 import ContactUs from './pages/ContactUs';
 import Blogs from './pages/Blogs';
+import EventDetails from './pages/EventDetails';
 
 // Export FormData interface for use in components
 export interface FormData {
@@ -55,6 +56,7 @@ function App() {
             <Route path='/Contact-us' element={<ContactUs />} />
             <Route path='/blogs' element={<Blogs />} />
             <Route path='/blog/:id' element={<SuccessStoryPage />} />
+            <Route path='/events' element={<EventDetails />} />
 
 
 
