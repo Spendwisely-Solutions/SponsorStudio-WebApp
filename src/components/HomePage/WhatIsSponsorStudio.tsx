@@ -4,76 +4,42 @@ import { Zap, Users, BarChart3, DollarSign, FileText } from "lucide-react";
 const WhatIsSponsorStudio = () => {
   return (
     <motion.section
-      className="py-12 lg:py-20 bg-gradient-to-br from-slate-50 via-white to-blue-50/30 relative overflow-hidden"
+      className="relative w-full pb-16 px-2 sm:px-8 bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/50 overflow-hidden"
       initial={{ opacity: 0 }}
       whileInView={{ opacity: 1 }}
       viewport={{ once: true }}
       transition={{ duration: 0.5, ease: "easeOut" }}
       id="what-is-sponsor-studio"
     >
-      {/* Background decorative elements */}
-      <div className="absolute inset-0 opacity-40">
-        <motion.div
-          className="absolute top-20 left-10 w-64 h-64 bg-blue-100 rounded-full mix-blend-multiply filter blur-xl"
-          animate={{
-            scale: [1, 1.2, 1],
-            opacity: [0.4, 0.6, 0.4],
-          }}
-          transition={{
-            duration: 8,
-            repeat: Infinity,
-            ease: "easeInOut"
-          }}
-        ></motion.div>
-        <motion.div
-          className="absolute bottom-20 right-10 w-64 h-64 bg-purple-100 rounded-full mix-blend-multiply filter blur-xl"
-          animate={{
-            scale: [1.2, 1, 1.2],
-            opacity: [0.4, 0.6, 0.4],
-          }}
-          transition={{
-            duration: 10,
-            repeat: Infinity,
-            ease: "easeInOut"
-          }}
-        ></motion.div>
-      </div>
+      {/* Animated background orbs and pattern */}
+      <div className="absolute inset-0 -z-10 animate-gradient bg-gradient-to-br from-blue-200/40 via-indigo-100/40 to-purple-100/40 opacity-80"></div>
+      <div className="absolute top-0 left-0 w-72 h-72 bg-gradient-to-br from-blue-200/40 to-indigo-300/30 rounded-full blur-3xl animate-pulse opacity-50" style={{ animationDuration: '4s' }}></div>
+      <div className="absolute bottom-0 right-0 w-60 h-60 bg-gradient-to-br from-purple-200/40 to-pink-300/30 rounded-full blur-3xl animate-pulse opacity-50" style={{ animationDuration: '6s', animationDelay: '2s' }}></div>
+      <div className="absolute inset-0 opacity-[0.03] pointer-events-none" style={{ backgroundImage: `radial-gradient(circle at 2px 2px, rgba(59, 130, 246, 0.8) 1px, transparent 0)`, backgroundSize: '50px 50px' }}></div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+      <div className="max-w-5xl mx-auto relative z-10">
         <motion.div
-          className="text-center mb-12 lg:mb-16"
+          className="text-center mb-14"
           initial={{ opacity: 0, y: 30 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.5, delay: 0.1, ease: "easeOut" }}
         >
-          <motion.div
-            className="inline-flex items-center justify-center w-14 h-14 lg:w-16 lg:h-16 bg-blue-600 rounded-xl lg:rounded-2xl mb-4 lg:mb-6"
-            initial={{ scale: 0, rotate: -180 }}
-            whileInView={{ scale: 1, rotate: 0 }}
-            viewport={{ once: true }}
-            transition={{
-              duration: 0.4,
-              delay: 0.2,
-              type: "spring",
-              stiffness: 200,
-              ease: "easeOut"
-            }}
-            whileHover={{ scale: 1.1, rotate: 10 }}
-          >
-            <Zap className="w-7 h-7 lg:w-8 lg:h-8 text-white" />
-          </motion.div>
+          <div className="inline-flex items-center px-4 py-1.5 mb-8 rounded-full bg-blue-100 text-blue-800 border border-blue-200">
+            <span className="flex h-2 w-2 rounded-full bg-blue-500 mr-2 animate-pulse"></span>
+            <span className="text-sm font-medium">About Us</span>
+          </div>
           <motion.h2
-            className="text-3xl sm:text-4xl lg:text-5xl font-bold text-gray-900 mb-4 lg:mb-6 leading-tight px-4"
+            className="text-4xl sm:text-5xl md:text-6xl font-extrabold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 pb-3"
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.4, delay: 0.3, ease: "easeOut" }}
           >
-            What is <span className="text-blue-600 whitespace-nowrap">Sponsor Studio</span>?
+            What is <span className="whitespace-nowrap">Sponsor Studio</span>?
           </motion.h2>
           <motion.p
-            className="text-lg lg:text-xl text-gray-600 max-w-2xl mx-auto leading-relaxed px-4"
+            className="mt-6 max-w-2xl mx-auto text-xl sm:text-2xl text-gray-600 leading-relaxed font-light"
             initial={{ opacity: 0, y: 15 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
@@ -83,11 +49,11 @@ const WhatIsSponsorStudio = () => {
           </motion.p>
         </motion.div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-16 items-start">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 lg:gap-8 items-start">
           {/* Left side - Platform Overview */}
-          <div className="space-y-6 lg:space-y-8">
+          <div className="space-y-6">
             <motion.div
-              className="hidden lg:block bg-white rounded-2xl lg:rounded-3xl p-6 lg:p-8 shadow-xl border border-gray-100 backdrop-blur-sm"
+              className="hidden lg:block bg-white/90 rounded-3xl shadow-xl border border-blue-100/40 backdrop-blur-md px-6 py-6"
               initial={{ opacity: 0, x: -30 }}
               whileInView={{ opacity: 1, x: 0 }}
               viewport={{ once: true }}
@@ -100,15 +66,15 @@ const WhatIsSponsorStudio = () => {
               }}
               whileHover={{ y: -5, scale: 1.02 }}
             >
-              <div className="flex items-start sm:items-center mb-4 lg:mb-6">
+              <div className="flex items-start sm:items-center mb-4">
                 <motion.div
-                  className="w-10 h-10 sm:w-12 sm:h-12 bg-blue-100 rounded-lg sm:rounded-xl flex items-center justify-center mr-3 sm:mr-4 flex-shrink-0"
+                  className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center mr-4 flex-shrink-0"
                   whileHover={{ rotate: 10, scale: 1.1 }}
                   transition={{ duration: 0.2, ease: "easeOut" }}
                 >
-                  <Users className="w-5 h-5 sm:w-6 sm:h-6 text-blue-600" />
+                  <Users className="w-6 h-6 text-blue-600" />
                 </motion.div>
-                <h3 className="text-xl sm:text-2xl font-bold text-gray-900 leading-tight">
+                <h3 className="text-xl sm:text-2xl font-bold text-blue-800 leading-tight">
                   Marketing Marketplace
                 </h3>
               </div>
@@ -118,7 +84,7 @@ const WhatIsSponsorStudio = () => {
             </motion.div>
 
             <motion.div
-              className="bg-white rounded-2xl lg:rounded-3xl p-6 lg:p-8 shadow-xl border border-gray-100 backdrop-blur-sm"
+              className="bg-white/90 rounded-3xl shadow-xl border border-blue-100/40 backdrop-blur-md px-6 py-6"
               initial={{ opacity: 0, x: -30 }}
               whileInView={{ opacity: 1, x: 0 }}
               viewport={{ once: true }}
@@ -131,19 +97,19 @@ const WhatIsSponsorStudio = () => {
               }}
               whileHover={{ y: -5, scale: 1.02 }}
             >
-              <div className="flex items-start sm:items-center mb-4 lg:mb-6">
+              <div className="flex items-start sm:items-center mb-4">
                 <motion.div
-                  className="w-10 h-10 sm:w-12 sm:h-12 bg-blue-100 rounded-lg sm:rounded-xl flex items-center justify-center mr-3 sm:mr-4 flex-shrink-0"
+                  className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center mr-4 flex-shrink-0"
                   whileHover={{ rotate: 10, scale: 1.1 }}
                   transition={{ duration: 0.2, ease: "easeOut" }}
                 >
-                  <BarChart3 className="w-5 h-5 sm:w-6 sm:h-6 text-blue-600" />
+                  <BarChart3 className="w-6 h-6 text-blue-600" />
                 </motion.div>
-                <h3 className="text-xl sm:text-2xl font-bold text-gray-900 leading-tight">
+                <h3 className="text-xl sm:text-2xl font-bold text-blue-800 leading-tight">
                   Brand Benefits
                 </h3>
               </div>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 lg:gap-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {[
                   'Quality Events',
                   'Verified Organizers',
@@ -178,9 +144,9 @@ const WhatIsSponsorStudio = () => {
           </div>
 
           {/* Right side - Value Proposition */}
-          <div className="space-y-6 lg:space-y-8">
+          <div className="space-y-6">
             <motion.div
-              className="bg-white rounded-2xl lg:rounded-3xl p-6 lg:p-8 shadow-xl border border-gray-100 backdrop-blur-sm"
+              className="bg-white/90 rounded-3xl shadow-xl border border-blue-100/40 backdrop-blur-md px-6 py-6"
               initial={{ opacity: 0, x: 30 }}
               whileInView={{ opacity: 1, x: 0 }}
               viewport={{ once: true }}
@@ -193,15 +159,15 @@ const WhatIsSponsorStudio = () => {
               }}
               whileHover={{ y: -5, scale: 1.02 }}
             >
-              <div className="flex items-start sm:items-center mb-4 lg:mb-6">
+              <div className="flex items-start sm:items-center mb-4">
                 <motion.div
-                  className="w-10 h-10 sm:w-12 sm:h-12 bg-blue-100 rounded-lg sm:rounded-xl flex items-center justify-center mr-3 sm:mr-4 flex-shrink-0"
+                  className="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center mr-4 flex-shrink-0"
                   whileHover={{ rotate: 10, scale: 1.1 }}
                   transition={{ duration: 0.2, ease: "easeOut" }}
                 >
-                  <DollarSign className="w-5 h-5 sm:w-6 sm:h-6 text-blue-600" />
+                  <DollarSign className="w-6 h-6 text-blue-600" />
                 </motion.div>
-                <h3 className="text-xl sm:text-2xl font-bold text-gray-900 leading-tight">
+                <h3 className="text-xl sm:text-2xl font-bold text-blue-800 leading-tight">
                   Streamlined Process
                 </h3>
               </div>
@@ -222,7 +188,7 @@ const WhatIsSponsorStudio = () => {
               ].map((item, index) => (
                 <motion.div
                   key={index}
-                  className="bg-white rounded-2xl p-6 shadow-lg border border-gray-100 text-center"
+                  className="bg-white/90 rounded-2xl p-4 shadow-lg border border-blue-100/40 text-center"
                   initial={{ opacity: 0, y: 20 }}
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }}
@@ -253,6 +219,25 @@ const WhatIsSponsorStudio = () => {
           </div>
         </div>
       </div>
+
+      {/* Custom Animations */}
+      <style>{`
+        @keyframes gradient {
+          0%, 100% { background-position: 0% 50%; }
+          50% { background-position: 100% 50%; }
+        }
+        .animate-gradient {
+          background-size: 200% 200%;
+          animation: gradient 8s ease-in-out infinite;
+        }
+        @keyframes pulse {
+          0%, 100% { opacity: 0.5; }
+          50% { opacity: 1; }
+        }
+        .animate-pulse {
+          animation: pulse 4s cubic-bezier(.4,0,.2,1) infinite;
+        }
+      `}</style>
     </motion.section>
   );
 };

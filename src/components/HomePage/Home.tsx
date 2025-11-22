@@ -20,6 +20,7 @@ import TrendingEvents from './TrendingEvents';
 import { FAQSection } from '../FAQ/FAQ';
 import HowItWorks from './HowItWorks';
 import TrustedBySection from './TrustedBySection';
+import WhatIsSponsorStudio from './WhatIsSponsorStudio';
 
 // Shared types
 interface Database {
@@ -208,6 +209,7 @@ const Home: React.FC = () => {
       <TrustedBySection loading={loading} clientLogos={clientLogos} />
   <TrendingEvents showAuthForm={() => setShowAuthForm(true)} />
       {/* <HowWeWorkSection /> */}
+      <WhatIsSponsorStudio />
       <HowItWorks />
       <ClientsSection loading={loading} clientLogos={clientLogos} />
       {/* <PricingSectionStatic /> */}
