@@ -186,7 +186,7 @@ const OpportunityCard: ComponentType<OpportunityCardProps> = memo(
     );
 
     const [isMuted, setIsMuted] = useState(true);
-    const [showMuteIndicator, setShowMuteIndicator] = useState(false);
+    const [showMuteIndicator, setShowMuteIndicator] = useState(true);
     const [selectedMedia, setSelectedMedia] = useState(opportunity.media_urls?.[0] || '');
     const [isBrochureUnlocked, setIsBrochureUnlocked] = useState(false);
     const [isUnlocking, setIsUnlocking] = useState(false);
@@ -229,7 +229,7 @@ const OpportunityCard: ComponentType<OpportunityCardProps> = memo(
       if (showMuteIndicator) {
         timeout = setTimeout(() => {
           setShowMuteIndicator(false);
-        }, 2000);
+        }, 3000);
       }
       return () => clearTimeout(timeout);
     }, [showMuteIndicator]);
@@ -274,11 +274,28 @@ const OpportunityCard: ComponentType<OpportunityCardProps> = memo(
         if ('preventDefault' in e) e.preventDefault();
         if ('stopPropagation' in e) e.stopPropagation();
       }
+      
       if (videoRef.current) {
         const newMuteState = !isMuted;
         setIsMuted(newMuteState);
         videoRef.current.muted = newMuteState;
         setShowMuteIndicator(true);
+        
+        // Show toast feedback
+        if (newMuteState) {
+          toast('Video muted', {
+            icon: '🔇',
+            duration: 2000,
+            position: 'top-center',
+          });
+        } else {
+          toast('Playing with sound', {
+            icon: '🔊',
+            duration: 2000,
+            position: 'top-center',
+          });
+        }
+        
         if (videoRef.current.paused) {
           videoRef.current.play().catch(() => {});
         }
@@ -415,7 +432,6 @@ const OpportunityCard: ComponentType<OpportunityCardProps> = memo(
       }
 
       const isVideo = /\.(mp4|webm|ogg)$/i.test(selectedMedia);
-      const isMobile = typeof window !== 'undefined' && window.matchMedia('(pointer: coarse)').matches;
       return (
         <motion.div
           key={selectedMedia}
@@ -432,26 +448,29 @@ const OpportunityCard: ComponentType<OpportunityCardProps> = memo(
                 muted={isMuted}
                 playsInline
                 className="w-full h-full object-cover"
-                {...(isMobile ? { onPointerDown: handleToggleMute } : { onClick: handleToggleMute })}
               >
                 <source src={selectedMedia} type="video/mp4" />
                 Your browser does not support the video tag.
               </video>
               <motion.div
-                className="absolute top-4 right-4"
-                initial={{ opacity: showMuteIndicator ? 1 : 0 }}
-                animate={{ opacity: showMuteIndicator ? 1 : 0 }}
+                className="absolute top-4 right-4 z-10"
+                initial={{ opacity: 1 }}
+                animate={{ opacity: showMuteIndicator ? 1 : 0.7 }}
+                whileHover={{ opacity: 1 }}
                 transition={{ duration: 0.3 }}
               >
                 <button
-                  onClick={handleToggleMute}
-                  className="p-2 bg-gray-200/70 rounded-full hover:bg-gray-300/90 transition-colors duration-200"
-                  aria-label={isMuted ? 'Unmute' : 'Mute'}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleToggleMute(e);
+                  }}
+                  className="p-2 sm:p-3 bg-black/50 rounded-full hover:bg-black/70 transition-colors duration-200 backdrop-blur-sm"
+                  aria-label={isMuted ? 'Unmute video - Tap to play with sound' : 'Mute video'}
                 >
                   {isMuted ? (
-                    <VolumeX className="w-5 h-5 text-gray-900" />
+                    <VolumeX className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
                   ) : (
-                    <Volume2 className="w-5 h-5 text-gray-900" />
+                    <Volume2 className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
                   )}
                 </button>
               </motion.div>
