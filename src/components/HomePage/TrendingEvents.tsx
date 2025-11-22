@@ -50,24 +50,33 @@ function TrendingEvents({ showAuthForm }: TrendingEventsProps) {
   }, []);
 
   // Filter out events with 'test event' in the title, events without any media, and expired events
-  const filteredEvents = useMemo(() => events.filter(e => {
-    // exclude explicit test events
-    if (e.title?.toLowerCase().includes('test event')) return false;
+  const filteredEvents = useMemo(() => {
+    const filtered = events.filter(e => {
+      // exclude explicit test events
+      if (e.title?.toLowerCase().includes('test event')) return false;
 
-    // require at least one media URL
-    if (!Array.isArray(e.media_urls) || e.media_urls.length === 0) return false;
+      // require at least one media URL
+      if (!Array.isArray(e.media_urls) || e.media_urls.length === 0) return false;
 
-    // if end_date exists and parses to a valid date, exclude if it's in the past
-    if (e.start_date) {
-      const start = new Date(e.start_date);
-      if (!isNaN(start.getTime())) {
-        const now = new Date();
-        if (start < now) return false; // expired
+      // if end_date exists and parses to a valid date, exclude if it's in the past
+      if (e.start_date) {
+        const start = new Date(e.start_date);
+        if (!isNaN(start.getTime())) {
+          const now = new Date();
+          if (start < now) return false; // expired
+        }
       }
+
+      return true;
+    });
+
+    // If we have 2, 3, or 4 events, duplicate the array to improve carousel experience
+    if (filtered.length >= 2 && filtered.length <= 4) {
+      return [...filtered, ...filtered];
     }
 
-    return true;
-  }), [events]);
+    return filtered;
+  }, [events]);
 
   // Slick Slider settings for Center Mode - dynamic based on event count
   const sliderSettings = useMemo(() => {
