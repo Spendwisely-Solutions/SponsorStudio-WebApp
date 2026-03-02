@@ -81,7 +81,7 @@ const Footer = () => {
               </motion.a>
              
               <motion.a
-                href="https://www.instagram.com/sponsorstudio"
+                href="https://www.instagram.com/sponsorstudio.official"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="w-10 h-10 bg-gray-800 rounded-lg flex items-center justify-center hover:bg-pink-600 transition-colors"
