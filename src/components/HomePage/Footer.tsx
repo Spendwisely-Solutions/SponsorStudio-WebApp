@@ -109,7 +109,7 @@ const Footer = () => {
                 <Linkedin className="w-5 h-5" />
               </motion.a>
               <motion.a
-                href="https://www.facebook.com/sponsorstudio"
+                href="https://www.facebook.com/profile.php?id=61559157077711"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="w-10 h-10 bg-gray-800 rounded-lg flex items-center justify-center hover:bg-blue-700 transition-colors"
