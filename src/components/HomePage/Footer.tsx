@@ -51,9 +51,6 @@ const Footer = () => {
             <div className="space-y-2 text-gray-400">
               <a href="/contact-us" className="block hover:text-white transition-colors">Contact Us</a>
               <a href="mailto:connect@sponsorstudio.in" className="block hover:text-white transition-colors">connect@sponsorstudio.in</a>
-
-              <div>Heavenly Plaza, Vazhakkala, Ernakulam</div>
-              <div>+91 773 603 7993</div>
             </div>
           </motion.div>
 

@@ -21,7 +21,6 @@ const TrustedBySection: React.FC<TrustedBySectionProps> = ({ clientLogos, loadin
   if (loading) {
     return (
       <section className="relative py-12 bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/50 overflow-hidden">
-        {/* Background elements */}
         <div className="absolute inset-0">
           <div className="absolute top-0 left-0 w-72 h-72 bg-gradient-to-br from-blue-200/20 to-indigo-300/15 rounded-full blur-3xl animate-pulse opacity-50" style={{ animationDuration: '4s' }}></div>
           <div className="absolute bottom-0 right-0 w-60 h-60 bg-gradient-to-br from-purple-200/20 to-pink-300/15 rounded-full blur-3xl animate-pulse opacity-50" style={{ animationDuration: '6s', animationDelay: '2s' }}></div>
@@ -30,10 +29,10 @@ const TrustedBySection: React.FC<TrustedBySectionProps> = ({ clientLogos, loadin
             backgroundSize: '50px 50px'
           }}></div>
         </div>
-
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
           <div className="text-center">
-            <p className="text-sm font-medium text-gray-500 mb-8">Trusted by leading brands and event organizers worldwide</p>
+            <p className="text-sm font-medium text-gray-500 mb-2">Trusted by leading brands</p>
+            <p className="text-sm text-gray-500 mb-8">Selected partners</p>
             <div className="flex flex-wrap items-center justify-center gap-8 md:gap-12">
               {Array(6).fill(0).map((_, i) => (
                 <div key={i} className="animate-pulse">
@@ -54,7 +53,6 @@ const TrustedBySection: React.FC<TrustedBySectionProps> = ({ clientLogos, loadin
 
   return (
     <section className="relative py-12 bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/50 overflow-hidden">
-      {/* Background elements */}
       <div className="absolute inset-0">
         <div className="absolute top-0 left-0 w-72 h-72 bg-gradient-to-br from-blue-200/20 to-indigo-300/15 rounded-full blur-3xl animate-pulse opacity-50" style={{ animationDuration: '4s' }}></div>
         <div className="absolute bottom-0 right-0 w-60 h-60 bg-gradient-to-br from-purple-200/20 to-pink-300/15 rounded-full blur-3xl animate-pulse opacity-50" style={{ animationDuration: '6s', animationDelay: '2s' }}></div>
@@ -63,15 +61,15 @@ const TrustedBySection: React.FC<TrustedBySectionProps> = ({ clientLogos, loadin
           backgroundSize: '50px 50px'
         }}></div>
       </div>
-
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         <div className="text-center">
-          <p className="text-sm font-medium text-gray-500 mb-8">Trusted by leading brands and event organizers worldwide</p>
+          <p className="text-sm font-medium text-gray-500 mb-2">Trusted by leading brands</p>
+          <p className="text-sm text-gray-500 mb-8">Selected partners</p>
           <div className="flex flex-wrap items-center justify-center gap-8 md:gap-12">
             {trustedLogos.map((logo) => (
               <div 
                 key={logo.id} 
-                className="transition-all duration-300 hover:scale-105 filter grayscale hover:grayscale-0 opacity-70 hover:opacity-100"
+                className="transition-all duration-300 opacity-85 hover:opacity-100 hover:scale-105"
               >
                 <img 
                   src={logo.logo_url} 
