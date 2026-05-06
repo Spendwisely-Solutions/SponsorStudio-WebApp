@@ -176,18 +176,14 @@ const HeroSection: React.FC<HeroSectionProps> = ({ user, setShowAuthForm }) => {
                   ref={titleRef}
                   className="flex flex-col justify-center bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 bg-clip-text text-transparent min-h-[120px] sm:min-h-[160px] md:min-h-[180px] lg:min-h-[220px]"
                 >
-                  All in one Platform for<br className="md:block" />
+                  The Marketplace for<br className="md:block" />
                   <span className="block mt-2 md:mt-0 pb-3">Event Sponsorships</span>
                 </span>
               </h1>
 
               {/* Subtitle */}
               <p className="text-xl sm:text-2xl text-gray-600 leading-relaxed max-w-2xl mx-auto lg:mx-0 font-light mt-2">
-<<<<<<< Updated upstream
-                Connect with the right partners for your next event. Our platform delivers precise matches and guaranteed results.
-=======
                 Discover, pitch, and secure sponsorships - all in one place.
->>>>>>> Stashed changes
               </p>
             </div>
 

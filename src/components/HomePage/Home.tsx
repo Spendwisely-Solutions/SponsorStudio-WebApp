@@ -21,6 +21,7 @@ import { FAQSection } from '../FAQ/FAQ';
 import HowItWorks from './HowItWorks';
 import TrustedBySection from './TrustedBySection';
 import WhatIsSponsorStudio from './WhatIsSponsorStudio';
+import InteractiveDemo from './InteractiveDemo';
 
 // Shared types
 interface Database {
@@ -206,6 +207,7 @@ const Home: React.FC = () => {
       />
       {/* <HeroSection user={user} setShowAuthForm={setShowAuthForm} /> */}
       <HeroSectionNew user={user} setShowAuthForm={setShowAuthForm} />
+      <InteractiveDemo user={user} setShowAuthForm={setShowAuthForm} />
       <TrustedBySection loading={loading} clientLogos={clientLogos} />
   <TrendingEvents showAuthForm={() => setShowAuthForm(true)} />
       {/* <HowWeWorkSection /> */}
