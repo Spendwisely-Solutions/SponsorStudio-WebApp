@@ -80,9 +80,9 @@ const ClientsSection: React.FC<ClientsSectionProps> = ({ loading, clientLogos })
   const row2Logos = clientLogos.filter(logo => logo.row === "2");
 
   return (
-    <section 
+    <section
       ref={sectionRef}
-      className="py-16 relative z-10 bg-gradient-to-br from-white via-blue-50 to-indigo-50" 
+      className="py-16 relative z-10 bg-gradient-to-br from-white via-blue-50 to-indigo-50"
       id="clients"
     >
       <div className="absolute inset-0 z-0 opacity-10">
@@ -92,39 +92,22 @@ const ClientsSection: React.FC<ClientsSectionProps> = ({ loading, clientLogos })
       
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         <div className="text-center mb-20">
-          <div className="inline-flex items-center px-4 py-1.5 mb-8 rounded-full bg-blue-100 text-blue-800 border border-blue-200">
-            <span className="flex h-2 w-2 rounded-full bg-blue-500 mr-2 animate-pulse"></span>
-            <span className="text-sm font-medium">Trusted Partners</span>
-          </div>
-          
           <h2
             ref={titleRef}
             className="text-4xl sm:text-5xl md:text-6xl font-extrabold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600"
           >
-            People Who Trust Us
+            Our Partner Network
           </h2>
-          
-          <div className="flex flex-wrap gap-3 justify-center mt-8 mb-10">
-            <div className="feature-badge flex items-center gap-2 bg-gradient-to-r from-blue-50 to-indigo-50 px-4 py-2 rounded-full border border-blue-200/50 shadow-sm">
-              <span className="text-sm font-medium text-blue-800">Global Brands</span>
-            </div>
-            <div className="feature-badge flex items-center gap-2 bg-gradient-to-r from-green-50 to-emerald-50 px-4 py-2 rounded-full border border-green-200/50 shadow-sm">
-              <span className="text-sm font-medium text-green-800">Event Organizers</span>
-            </div>
-            <div className="feature-badge flex items-center gap-2 bg-gradient-to-r from-purple-50 to-pink-50 px-4 py-2 rounded-full border border-purple-200/50 shadow-sm">
-              <span className="text-sm font-medium text-purple-800">Trusted Partners</span>
-            </div>
-          </div>
-          
+
           <p
             ref={subtitleRef}
             className="mt-6 max-w-2xl mx-auto text-xl sm:text-2xl text-gray-600 leading-relaxed font-light"
           >
-            Join these amazing brands and event organizers who are already transforming their sponsorship experiences
+            Explore brands and event organizers already collaborating through Sponsor Studio.
           </p>
         </div>
         
-        <div ref={contentRef} className="mt-12">
+        <div ref={contentRef} className="mt-8">
           {loading ? (
             <div className="flex justify-center space-x-6">
               {Array(5).fill(0).map((_, i) => (
@@ -187,34 +170,6 @@ const ClientsSection: React.FC<ClientsSectionProps> = ({ loading, clientLogos })
             </div>
           )}
           
-          {!loading && (
-            <div className="mt-10 flex flex-wrap items-center justify-center gap-6 md:gap-8 text-gray-500">
-              <div className="flex items-center">
-                <div className="w-10 h-10 rounded-full bg-gradient-to-r from-blue-50 to-indigo-50 flex items-center justify-center border border-blue-100 shadow-sm mr-3">
-                  <svg className="w-5 h-5 text-[#2B4B9B]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z" />
-                  </svg>
-                </div>
-                <span className="text-sm font-medium">Verified Partners</span>
-              </div>
-              <div className="flex items-center">
-                <div className="w-10 h-10 rounded-full bg-gradient-to-r from-blue-50 to-indigo-50 flex items-center justify-center border border-blue-100 shadow-sm mr-3">
-                  <svg className="w-5 h-5 text-[#2B4B9B]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
-                  </svg>
-                </div>
-                <span className="text-sm font-medium">Secure Platform</span>
-              </div>
-              <div className="flex items-center">
-                <div className="w-10 h-10 rounded-full bg-gradient-to-r from-blue-50 to-indigo-50 flex items-center justify-center border border-blue-100 shadow-sm mr-3">
-                  <svg className="w-5 h-5 text-[#2B4B9B]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                  </svg>
-                </div>
-                <span className="text-sm font-medium">24/7 Support</span>
-              </div>
-            </div>
-          )}
         </div>
       </div>
     </section>

@@ -192,7 +192,7 @@ const NavBar: React.FC<NavBarProps> = ({
             <img
               src="https://i.ibb.co/ZzPfwrxP/logo-final-png.png"
               alt="Sponsor Studio"
-              className="h-12 md:h-14"
+              className="h-12 md:h-14 w-auto object-contain drop-shadow-md transform-gpu scale-[1.35] md:scale-[1.45] origin-left"
             />
           </Link>
           <div className="hidden md:flex items-center space-x-2 lg:space-x-8">
