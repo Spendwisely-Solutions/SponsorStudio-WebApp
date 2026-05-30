@@ -176,14 +176,14 @@ const HeroSection: React.FC<HeroSectionProps> = ({ user, setShowAuthForm }) => {
                   ref={titleRef}
                   className="flex flex-col justify-center bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 bg-clip-text text-transparent min-h-[120px] sm:min-h-[160px] md:min-h-[180px] lg:min-h-[220px]"
                 >
-                  The Marketplace for<br className="md:block" />
+                  All in one Platform for<br className="md:block" />
                   <span className="block mt-2 md:mt-0 pb-3">Event Sponsorships</span>
                 </span>
               </h1>
 
               {/* Subtitle */}
               <p className="text-xl sm:text-2xl text-gray-600 leading-relaxed max-w-2xl mx-auto lg:mx-0 font-light mt-2">
-                Discover, pitch, and secure sponsorships-all in one place.
+                Connect with the right partners for your next event. Our platform delivers precise matches and guaranteed results.
               </p>
             </div>
 
@@ -241,6 +241,13 @@ const HeroSection: React.FC<HeroSectionProps> = ({ user, setShowAuthForm }) => {
         </div>
       </div>
 
+      {/* Scroll indicator */}
+      <div className="absolute bottom-8 left-1/2 transform -translate-x-1/2 flex flex-col items-center space-y-2 text-gray-400">
+        <span className="text-sm font-medium">Scroll to explore</span>
+        <div className="w-6 h-10 border-2 border-gray-300 rounded-full flex justify-center">
+          <div className="w-1 h-3 bg-gradient-to-b from-blue-500 to-transparent rounded-full animate-bounce mt-2"></div>
+        </div>
+      </div>
     </div>
   );
 };

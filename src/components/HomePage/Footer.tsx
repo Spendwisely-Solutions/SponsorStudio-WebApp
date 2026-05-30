@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { Linkedin, Instagram, Facebook } from "lucide-react";
+import { Linkedin, Instagram, Globe, Facebook } from "lucide-react";
 
 const Footer = () => {
   return (
@@ -36,8 +36,9 @@ const Footer = () => {
             <div className="space-y-2 text-gray-400">
               <a href="#how-we-work" className="block hover:text-white transition-colors" >About Us</a>
               <a href="/stories" className="block hover:text-white transition-colors" >Success Stories</a>
-              <a href="/blogs" className="block hover:text-white transition-colors" >Blogs</a>
+              <a href="/contact-us" className="block hover:text-white transition-colors" >Contact Us</a>
               <a href="/faq" className="block hover:text-white transition-colors" >FAQ</a>
+              <a href="mailto:connect@sponsorstudio.in" className="block hover:text-white transition-colors" >Support</a>
             </div>
           </motion.div>
           
@@ -47,10 +48,12 @@ const Footer = () => {
             viewport={{ once: true }}
             transition={{ duration: 0.4, delay: 0.3, ease: "easeOut" }}
           >
-            <h4 className="font-semibold mb-4">Get in Touch</h4>
+            <h4 className="font-semibold mb-4">Contact</h4>
             <div className="space-y-2 text-gray-400">
-              <a href="/contact-us" className="block hover:text-white transition-colors">Contact Us</a>
-              <a href="mailto:connect@sponsorstudio.in" className="block hover:text-white transition-colors">connect@sponsorstudio.in</a>
+              <div>connect@sponsorstudio.in</div>
+
+              <div>Heavenly Plaza, Vazhakkala, Ernakulam</div>
+              <div>+91 773 603 7993</div>
             </div>
           </motion.div>
 
@@ -63,6 +66,21 @@ const Footer = () => {
             <h4 className="font-semibold mb-4">Follow Us</h4>
             <div className="flex space-x-4">
               <motion.a
+                href="https://sponsorstudio.in"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-10 h-10 bg-gray-800 rounded-lg flex items-center justify-center hover:bg-green-600 transition-colors"
+                whileHover={{ scale: 1.1, rotate: 5 }}
+                whileTap={{ scale: 0.95 }}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.3, delay: 0.5, ease: "easeOut" }}
+              >
+                <Globe className="w-5 h-5" />
+              </motion.a>
+             
+              <motion.a
                 href="https://www.instagram.com/sponsorstudio.official"
                 target="_blank"
                 rel="noopener noreferrer"
@@ -72,7 +90,7 @@ const Footer = () => {
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
-                transition={{ duration: 0.3, delay: 0.5, ease: "easeOut" }}
+                transition={{ duration: 0.3, delay: 0.6, ease: "easeOut" }}
               >
                 <Instagram className="w-5 h-5" />
               </motion.a>
@@ -86,7 +104,7 @@ const Footer = () => {
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
-                transition={{ duration: 0.3, delay: 0.6, ease: "easeOut" }}
+                transition={{ duration: 0.3, delay: 0.7, ease: "easeOut" }}
               >
                 <Linkedin className="w-5 h-5" />
               </motion.a>
@@ -100,7 +118,7 @@ const Footer = () => {
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
-                transition={{ duration: 0.3, delay: 0.7, ease: "easeOut" }}
+                transition={{ duration: 0.3, delay: 0.8, ease: "easeOut" }}
               >
                 <Facebook className="w-5 h-5" />
               </motion.a>
