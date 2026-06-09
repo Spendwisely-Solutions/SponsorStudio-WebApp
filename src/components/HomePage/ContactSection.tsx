@@ -18,16 +18,22 @@ const ContactSection: React.FC<ContactSectionProps> = ({
   disableAnimations = false,
 }) => {
   return (
-    <section className="py-20 bg-gray-50 relative z-10" id="contact">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="text-center mb-20">
-          <div className="inline-flex items-center px-4 py-1.5 mb-8 rounded-full bg-blue-100 text-blue-800 border border-blue-200">
-            <span className="flex h-2 w-2 rounded-full bg-blue-500 mr-2 animate-pulse"></span>
-            <span className="text-sm font-medium">Get In Touch</span>
+    <section
+      className="py-20 relative z-10"
+      id="contact"
+      style={{ background: 'linear-gradient(180deg, #060D1F 0%, #0A1628 100%)' }}
+    >
+      {/* Background grid */}
+      <div className="absolute inset-0 opacity-[0.04]" style={{ backgroundImage: 'radial-gradient(rgba(0,212,255,0.8) 1px, transparent 1px)', backgroundSize: '40px 40px' }} />
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+        <div className="text-center mb-16">
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 mb-6 rounded-full text-sm font-medium" style={{ background: 'rgba(0,212,255,0.1)', border: '1px solid rgba(0,212,255,0.3)', color: '#00D4FF' }}>
+            <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse" />
+            Get In Touch
           </div>
           
           <h2
-            className="text-4xl sm:text-5xl md:text-6xl font-extrabold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600"
+            className="text-4xl sm:text-5xl md:text-6xl font-black text-white mb-4 leading-tight"
             {...(!disableAnimations && {
               'data-aos': 'zoom-in-up',
               'data-aos-duration': '800',
@@ -36,24 +42,12 @@ const ContactSection: React.FC<ContactSectionProps> = ({
               'data-aos-once': 'true'
             })}
           >
-            Contact Us
+            Contact{' '}
+            <span style={{ background: 'linear-gradient(90deg, #00D4FF, #6366F1)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Us</span>
           </h2>
           
-          {/* Feature badges */}
-          <div className="flex flex-wrap gap-3 justify-center mt-8 mb-10">
-            <div className="feature-badge flex items-center gap-2 bg-gradient-to-r from-blue-50 to-indigo-50 px-4 py-2 rounded-full border border-blue-200/50 shadow-sm">
-              <span className="text-sm font-medium text-blue-800">Quick Response</span>
-            </div>
-            <div className="feature-badge flex items-center gap-2 bg-gradient-to-r from-green-50 to-emerald-50 px-4 py-2 rounded-full border border-green-200/50 shadow-sm">
-              <span className="text-sm font-medium text-green-800">24/7 Support</span>
-            </div>
-            <div className="feature-badge flex items-center gap-2 bg-gradient-to-r from-purple-50 to-pink-50 px-4 py-2 rounded-full border border-purple-200/50 shadow-sm">
-              <span className="text-sm font-medium text-purple-800">Expert Assistance</span>
-            </div>
-          </div>
-          
           <p
-            className="mt-6 max-w-2xl mx-auto text-xl sm:text-2xl text-gray-600 leading-relaxed font-light"
+            className="mt-4 max-w-2xl mx-auto text-lg text-gray-400 leading-relaxed"
             {...(!disableAnimations && {
               'data-aos': 'zoom-in-up',
               'data-aos-duration': '800',

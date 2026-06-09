@@ -4,285 +4,228 @@ import { useState } from "react";
 
 const HowItWorks = () => {
   const [activeTab, setActiveTab] = useState<'brands' | 'events'>('brands');
+
   const brandSteps = [
     {
-      step: "1",
+      step: "01",
       title: "Discover Events",
-      description: "Explore a curated list of verified events relevant to your brand",
-      icon: Search
+      description: "Explore a curated list of verified events relevant to your brand goals",
+      icon: Search,
+      color: "#00D4FF",
     },
     {
-      step: "2",
+      step: "02",
       title: "Show Interest",
-      description: "Right swipe and shortlist events that fit your marketing goals",
-      icon: Heart
+      description: "Right swipe and shortlist events that fit your marketing strategy",
+      icon: Heart,
+      color: "#F472B6",
     },
     {
-      step: "3",
+      step: "03",
       title: "Get Matched",
-      description: "Connect with organizers when both sides show interest",
-      icon: Link2
+      description: "Connect with organizers when both sides show mutual interest",
+      icon: Link2,
+      color: "#34D399",
     },
     {
-      step: "4",
+      step: "04",
       title: "Get Insights",
-      description: "Close the deal and receive detailed post-event reports for insights",
-      icon: BarChart3
-    }
+      description: "Close the deal and receive detailed post-event analytics reports",
+      icon: BarChart3,
+      color: "#A78BFA",
+    },
   ];
 
   const eventSteps = [
     {
-      step: "1",
+      step: "01",
       title: "List Your Event",
-      description: "Submit your event; we verify and approve it",
-      icon: Calendar
+      description: "Submit your event details; our team verifies and approves it",
+      icon: Calendar,
+      color: "#00D4FF",
     },
     {
-      step: "2",
+      step: "02",
       title: "Connect with Brands",
-      description: "Discover interested brands and unlock matches.",
-      icon: Users
+      description: "Discover interested brands and unlock mutual match opportunities",
+      icon: Users,
+      color: "#F472B6",
     },
     {
-      step: "3",
+      step: "03",
       title: "Secure Partnerships",
-      description: "Meet brands and finalize sponsorship agreements",
-      icon: Handshake
+      description: "Meet brands virtually and finalize sponsorship agreements",
+      icon: Handshake,
+      color: "#34D399",
     },
     {
-      step: "4",
+      step: "04",
       title: "Track Performance",
       description: "Manage sponsors, track engagement, and measure event success",
-      icon: TrendingUp
-    }
+      icon: TrendingUp,
+      color: "#A78BFA",
+    },
   ];
 
   const currentSteps = activeTab === 'brands' ? brandSteps : eventSteps;
 
   return (
-    <motion.section
-      className="relative w-full py-16 px-2 sm:px-8 bg-gradient-to-br from-slate-50 via-blue-50/30 to-indigo-50/50 overflow-hidden"
-      initial={{ opacity: 0 }}
-      whileInView={{ opacity: 1 }}
-      viewport={{ once: true }}
-      transition={{ duration: 0.5, ease: "easeOut" }}
+    <section
+      className="relative w-full py-20 px-4 sm:px-8 overflow-hidden"
+      style={{ background: 'linear-gradient(180deg, #0D1F3C 0%, #0A1628 50%, #060D1F 100%)' }}
       id="how-we-work"
     >
-      {/* Animated background orbs and pattern */}
-      <div className="absolute inset-0 -z-10 animate-gradient bg-gradient-to-br from-blue-200/40 via-indigo-100/40 to-purple-100/40 opacity-80"></div>
-      <div className="absolute top-0 left-0 w-72 h-72 bg-gradient-to-br from-blue-200/40 to-indigo-300/30 rounded-full blur-3xl animate-pulse opacity-50" style={{ animationDuration: '4s' }}></div>
-      <div className="absolute bottom-0 right-0 w-60 h-60 bg-gradient-to-br from-purple-200/40 to-pink-300/30 rounded-full blur-3xl animate-pulse opacity-50" style={{ animationDuration: '6s', animationDelay: '2s' }}></div>
-      <div className="absolute inset-0 opacity-[0.03] pointer-events-none" style={{ backgroundImage: `radial-gradient(circle at 2px 2px, rgba(59, 130, 246, 0.8) 1px, transparent 0)`, backgroundSize: '50px 50px' }}></div>
+      {/* Background pattern */}
+      <div
+        className="absolute inset-0 opacity-[0.04]"
+        style={{
+          backgroundImage: `radial-gradient(rgba(0,212,255,0.8) 1px, transparent 1px)`,
+          backgroundSize: '40px 40px',
+        }}
+      />
 
-      <div className="max-w-5xl mx-auto relative z-10">
+      {/* Glow effects */}
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full opacity-5"
+        style={{ background: 'radial-gradient(circle, #00D4FF 0%, transparent 70%)', filter: 'blur(80px)' }} />
+
+      <div className="relative z-10 max-w-6xl mx-auto">
+        {/* Section label */}
         <motion.div
-          className="text-center mb-14"
+          className="text-center mb-12"
           initial={{ opacity: 0, y: 30 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          transition={{ duration: 0.5, delay: 0.1, ease: "easeOut" }}
+          transition={{ duration: 0.6 }}
         >
-          <div className="inline-flex items-center px-4 py-1.5 mb-8 rounded-full bg-blue-100 text-blue-800 border border-blue-200">
-            <span className="flex h-2 w-2 rounded-full bg-blue-500 mr-2 animate-pulse"></span>
-            <span className="text-sm font-medium">Our Process</span>
+          <div
+            className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-sm font-medium mb-6"
+            style={{ background: 'rgba(0,212,255,0.1)', border: '1px solid rgba(0,212,255,0.3)', color: '#00D4FF' }}
+          >
+            <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse" />
+            Our Process
           </div>
 
-          {/* Toggle Buttons */}
-          <div className="flex justify-center mb-8">
-            <div className="relative bg-white/80 backdrop-blur-md rounded-2xl p-1 border border-blue-200/50 shadow-lg">
-              {/* Animated background indicator */}
-              <motion.div
-                className="absolute top-1 bottom-1 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-xl shadow-lg"
-                initial={false}
-                animate={{
-                  left: activeTab === 'brands' ? '4px' : '50%',
-                  width: activeTab === 'brands' ? 'calc(50% - 4px)' : 'calc(50% - 4px)',
-                }}
-                transition={{
-                  type: "spring",
-                  stiffness: 300,
-                  damping: 30,
-                  duration: 0.3
-                }}
-              />
-              
-              <motion.button
-                onClick={() => setActiveTab('brands')}
-                className={`relative z-10 px-6 py-3 rounded-xl font-medium transition-colors duration-300 ${
-                  activeTab === 'brands'
-                    ? 'text-white'
-                    : 'text-blue-700 hover:text-blue-800'
-                }`}
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                transition={{ type: "spring", stiffness: 400, damping: 17 }}
-              >
-                For Brands
-              </motion.button>
-              <motion.button
-                onClick={() => setActiveTab('events')}
-                className={`relative z-10 px-6 py-3 rounded-xl font-medium transition-colors duration-300 ${
-                  activeTab === 'events'
-                    ? 'text-white'
-                    : 'text-blue-700 hover:text-blue-800'
-                }`}
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                transition={{ type: "spring", stiffness: 400, damping: 17 }}
-              >
-                For Events
-              </motion.button>
+          <h2 className="text-4xl sm:text-5xl md:text-6xl font-black text-white mb-6 leading-tight">
+            How{' '}
+            <span
+              style={{
+                background: 'linear-gradient(90deg, #00D4FF, #6366F1)',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+              }}
+            >
+              We Work
+            </span>
+          </h2>
+
+          {/* Tab Toggle */}
+          <div className="flex justify-center mb-4">
+            <div
+              className="relative flex p-1 rounded-2xl"
+              style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.1)' }}
+            >
+              {(['brands', 'events'] as const).map((tab) => (
+                <button
+                  key={tab}
+                  onClick={() => setActiveTab(tab)}
+                  className="relative z-10 px-8 py-3 rounded-xl font-semibold text-sm transition-all duration-300"
+                  style={{
+                    color: activeTab === tab ? '#0A1628' : '#9CA3AF',
+                    background: activeTab === tab
+                      ? 'linear-gradient(135deg, #00D4FF, #3B82F6)'
+                      : 'transparent',
+                    boxShadow: activeTab === tab ? '0 0 20px rgba(0,212,255,0.4)' : 'none',
+                  }}
+                >
+                  {tab === 'brands' ? 'For Brands' : 'For Organizers'}
+                </button>
+              ))}
             </div>
           </div>
-          <motion.h2
-            className="text-4xl sm:text-5xl md:text-6xl font-extrabold tracking-tight text-transparent bg-clip-text bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 animate-fadein pb-3"
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.4, delay: 0.3, ease: "easeOut" }}
-            key={activeTab} // Re-animate when tab changes
-          >
-            How We Work
-          </motion.h2>
-          <motion.p
-            className="mt-6 max-w-2xl mx-auto text-xl sm:text-2xl text-gray-600 leading-relaxed font-light animate-fadein2"
-            initial={{ opacity: 0, y: 15 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.4, delay: 0.4, ease: "easeOut" }}
-            key={`${activeTab}-desc`} // Re-animate when tab changes
-          >
-            {activeTab === 'brands' 
-              ? "We make it easy for brands to find the right events, connect with organizers, and secure valuable partnerships.":
-              "We help events get discovered by the right brands and secure sponsorships with ease."
-            }
-          </motion.p>
+
+          <p className="text-gray-400 text-lg max-w-2xl mx-auto">
+            {activeTab === 'brands'
+              ? "We make it easy for brands to find the right events, connect with organizers, and secure valuable partnerships."
+              : "We help events get discovered by the right brands and secure sponsorships with ease."}
+          </p>
         </motion.div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8" key={activeTab}>
+        {/* Steps Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6" key={activeTab}>
           {currentSteps.map((step, index) => {
-            const IconComponent = step.icon;
+            const Icon = step.icon;
             return (
               <motion.div
                 key={`${activeTab}-${index}`}
-                className="relative group h-full"
-                initial={{ opacity: 0, y: 30 }}
+                className="relative group"
+                initial={{ opacity: 0, y: 40 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
-                transition={{
-                  duration: 0.4,
-                  delay: 0.5 + index * 0.1,
-                  type: "spring",
-                  stiffness: 200,
-                  ease: "easeOut"
-                }}
-                whileHover={{ y: -5 }}
+                transition={{ duration: 0.5, delay: index * 0.1 }}
               >
-                {/* Connection line for desktop */}
+                {/* Connector line */}
                 {index < currentSteps.length - 1 && (
-                  <div className="hidden lg:block absolute top-16 left-full w-8 h-0.5 bg-gradient-to-r from-blue-300 to-blue-400 z-0 transform translate-x-4"></div>
+                  <div
+                    className="hidden lg:block absolute top-10 left-full w-6 h-px z-0"
+                    style={{ background: `linear-gradient(90deg, ${step.color}40, transparent)` }}
+                  />
                 )}
 
                 <motion.div
-                  className="bg-white/90 rounded-3xl shadow-xl border border-blue-100/40 backdrop-blur-md p-8 text-center relative z-10 transition-all duration-300 group-hover:shadow-2xl animate-cardin h-full flex flex-col"
-                  style={{ animationDelay: `${0.2 + index * 0.1}s` }}
-                  whileHover={{ scale: 1.02, y: -5 }}
-                  transition={{ duration: 0.2, ease: "easeOut" }}
+                  className="relative rounded-3xl p-6 h-full transition-all duration-300"
+                  style={{
+                    background: 'rgba(255,255,255,0.03)',
+                    border: '1px solid rgba(255,255,255,0.08)',
+                    backdropFilter: 'blur(10px)',
+                  }}
+                  whileHover={{
+                    y: -8,
+                    background: `rgba(${step.color === '#00D4FF' ? '0,212,255' : step.color === '#F472B6' ? '244,114,182' : step.color === '#34D399' ? '52,211,153' : '167,139,250'},0.05)`,
+                    borderColor: `${step.color}30`,
+                  }}
                 >
-                  {/* Step number badge */}
-                  <motion.div
-                    className="absolute -top-4 left-1/2 transform -translate-x-1/2"
-                    initial={{ scale: 0 }}
-                    whileInView={{ scale: 1 }}
-                    viewport={{ once: true }}
-                    transition={{
-                      duration: 0.3,
-                      delay: 0.6 + index * 0.1,
-                      type: "spring",
-                      stiffness: 250
+                  {/* Step number */}
+                  <div
+                    className="text-5xl font-black mb-4 leading-none"
+                    style={{
+                      background: `linear-gradient(135deg, ${step.color}20, ${step.color}05)`,
+                      WebkitBackgroundClip: 'text',
+                      WebkitTextFillColor: 'transparent',
+                      textShadow: 'none',
+                      color: `${step.color}30`,
                     }}
                   >
-                    <div className="w-8 h-8 bg-gradient-to-r from-blue-600 to-blue-700 rounded-full flex items-center justify-center shadow-lg">
-                      <span className="text-white font-bold text-sm">{step.step}</span>
-                    </div>
-                  </motion.div>
+                    {step.step}
+                  </div>
 
                   {/* Icon */}
-                  <motion.div
-                    className="bg-gradient-to-br from-blue-50 to-blue-100 p-6 rounded-2xl w-fit mx-auto mb-6 group-hover:from-blue-100 group-hover:to-blue-200 transition-colors duration-300"
-                    whileHover={{ rotate: 5, scale: 1.1 }}
-                    transition={{ duration: 0.2, ease: "easeOut" }}
-                  >
-                    <IconComponent className="h-10 w-10 text-blue-600" />
-                  </motion.div>
-
-                  {/* Content */}
-                  <motion.div
-                    className="space-y-4 flex-grow flex flex-col justify-center"
-                    initial={{ opacity: 0 }}
-                    whileInView={{ opacity: 1 }}
-                    viewport={{ once: true }}
-                    transition={{
-                      duration: 0.3,
-                      delay: 0.7 + index * 0.1,
-                      ease: "easeOut"
+                  <div
+                    className="w-14 h-14 rounded-2xl flex items-center justify-center mb-5 transition-all duration-300 group-hover:scale-110"
+                    style={{
+                      background: `${step.color}15`,
+                      border: `1px solid ${step.color}30`,
+                      boxShadow: `0 0 20px ${step.color}20`,
                     }}
                   >
-                    <h3 className="text-xl font-bold text-gray-900 group-hover:text-blue-700 transition-colors duration-300">
-                      {step.title}
-                    </h3>
-                    <p className="text-gray-600 leading-relaxed">
-                      {step.description}
-                    </p>
-                  </motion.div>
+                    <Icon className="w-7 h-7" style={{ color: step.color }} />
+                  </div>
 
-                  {/* Decorative bottom border */}
-                  <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-16 h-1 bg-gradient-to-r from-blue-400 to-blue-600 rounded-full"></div>
+                  {/* Content */}
+                  <h3 className="text-white font-bold text-lg mb-3">{step.title}</h3>
+                  <p className="text-gray-500 text-sm leading-relaxed">{step.description}</p>
+
+                  {/* Bottom accent line */}
+                  <div
+                    className="absolute bottom-0 left-6 right-6 h-0.5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300"
+                    style={{ background: `linear-gradient(90deg, transparent, ${step.color}, transparent)` }}
+                  />
                 </motion.div>
               </motion.div>
             );
           })}
         </div>
-        
       </div>
-
-      {/* Custom Animations */}
-      <style>{`
-        @keyframes gradient {
-          0%, 100% { background-position: 0% 50%; }
-          50% { background-position: 100% 50%; }
-        }
-        .animate-gradient {
-          background-size: 200% 200%;
-          animation: gradient 8s ease-in-out infinite;
-        }
-        @keyframes pulse {
-          0%, 100% { opacity: 0.5; }
-          50% { opacity: 1; }
-        }
-        .animate-pulse {
-          animation: pulse 4s cubic-bezier(.4,0,.2,1) infinite;
-        }
-        @keyframes fadein {
-          from { opacity: 0; transform: translateY(20px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
-        .animate-fadein {
-          animation: fadein 0.8s cubic-bezier(.4,0,.2,1) both;
-        }
-        .animate-fadein2 {
-          animation: fadein 1s cubic-bezier(.4,0,.2,1) both 0.2s;
-        }
-        @keyframes cardin {
-          from { opacity: 0; transform: scale(0.95) translateY(30px); }
-          to { opacity: 1; transform: scale(1) translateY(0); }
-        }
-        .animate-cardin {
-          animation: cardin 1s cubic-bezier(.4,0,.2,1) both;
-        }
-      `}</style>
-    </motion.section>
+    </section>
   );
 };
 

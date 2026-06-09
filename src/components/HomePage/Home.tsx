@@ -171,7 +171,7 @@ const Home: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-white" style={{ overflowX: 'hidden' }}>
+    <div className="min-h-screen" style={{ background: '#0A1628', overflowX: 'hidden' }}>
       {showAuthForm && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
           <div className="relative w-full max-w-md">
