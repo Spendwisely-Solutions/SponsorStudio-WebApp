@@ -2,6 +2,7 @@ import { BrowserRouter as Router, Routes, Route, } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
 import { AuthProvider } from './contexts/AuthContext';
 import { ModalProvider } from './contexts/ModalContext';
+import { ThemeProvider } from './contexts/ThemeContext';
 import Dashboard from './components/Dashboard';
 import AdminLogin from './components/Admin/AdminLogin';
 import AdminDashboard from './components/Admin/Dashboard/AdminDashboard';
@@ -24,6 +25,7 @@ import Trending from './pages/TrendingEvents';
 import ContactUs from './pages/ContactUs';
 import Blogs from './pages/Blogs';
 import EventDetails from './pages/EventDetails';
+import DesignSystem from './pages/DesignSystem';
 
 // Export FormData interface for use in components
 export interface FormData {
@@ -36,9 +38,10 @@ export interface FormData {
 
 function App() {
   return (
-    <AuthProvider>
-      <ModalProvider>
-        <Router>
+    <ThemeProvider>
+      <AuthProvider>
+        <ModalProvider>
+          <Router>
           <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/dashboard" element={<Dashboard />} />
@@ -57,6 +60,7 @@ function App() {
             <Route path='/blogs' element={<Blogs />} />
             <Route path='/blog/:id' element={<SuccessStoryPage />} />
             <Route path='/events' element={<EventDetails />} />
+            <Route path="/design-system" element={<DesignSystem />} />
 
 
 
@@ -103,8 +107,9 @@ function App() {
           //   },
           // }}
         />
-      </ModalProvider>
-    </AuthProvider>
+        </ModalProvider>
+      </AuthProvider>
+    </ThemeProvider>
   );
 }
 

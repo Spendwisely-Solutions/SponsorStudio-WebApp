@@ -1,7 +1,8 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Menu, X, ChevronDown } from 'lucide-react';
+import { Menu, X, ChevronDown, Sun, Moon } from 'lucide-react';
 import { User, Profile } from '../HomePage/Home';
+import { useTheme } from '../../contexts/ThemeContext';
 
 interface NavBarProps {
   user: User | null;
@@ -34,6 +35,7 @@ const NavBar: React.FC<NavBarProps> = ({
   hideMobileMenu = false,
   navLinks,
 }) => {
+  const { theme, toggleTheme } = useTheme();
   const [scrolled, setScrolled] = useState(false);
   const [resourcesOpen, setResourcesOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -72,28 +74,29 @@ const NavBar: React.FC<NavBarProps> = ({
 
   return (
     <nav className="fixed top-0 left-0 right-0 w-full z-50 p-3 sm:p-4 transition-all duration-300 pointer-events-none">
+      <div className="absolute top-0 left-0 right-0 w-full z-0" />
       <div
         className={`max-w-7xl mx-auto px-4 sm:px-6 transition-all duration-300 pointer-events-auto rounded-2xl ${
           scrolled || mobileMenuOpen
-            ? 'bg-white/[0.08] backdrop-blur-2xl'
-            : 'bg-white/[0.03] backdrop-blur-xl'
+            ? 'bg-white/[0.03] backdrop-blur-lg'
+            : 'bg-white/[0.01] backdrop-blur-md'
         }`}
         style={{
           boxShadow: scrolled || mobileMenuOpen
-            ? '0 12px 40px 0 rgba(0, 0, 0, 0.3), inset 0 1px 0 0 rgba(255, 255, 255, 0.15)'
-            : '0 4px 20px 0 rgba(0, 0, 0, 0.05), inset 0 1px 0 0 rgba(255, 255, 255, 0.08)',
+            ? '0 12px 40px 0 rgba(0, 0, 0, 0.25), inset 0 1px 0 0 rgba(255, 255, 255, 0.22)'
+            : '0 4px 20px 0 rgba(0, 0, 0, 0.05), inset 0 1px 0 0 rgba(255, 255, 255, 0.12)',
           border: scrolled || mobileMenuOpen
-            ? '1px solid rgba(255, 255, 255, 0.15)'
+            ? '1px solid rgba(255, 255, 255, 0.16)'
             : '1px solid rgba(255, 255, 255, 0.08)',
         }}
       >
-        <div className="flex items-center justify-between h-16 md:h-18">
+        <div className="flex items-center justify-between h-18 md:h-20">
           {/* Logo */}
           <Link to="/" className="flex-shrink-0 transition-transform duration-300 hover:scale-105">
             <img
               src="https://i.ibb.co/ZzPfwrxP/logo-final-png.png"
               alt="Sponsor Studio"
-              className="h-10 md:h-12"
+              className="h-14 md:h-16 w-auto"
             />
           </Link>
 
@@ -162,6 +165,13 @@ const NavBar: React.FC<NavBarProps> = ({
 
           {/* Right: Auth Buttons */}
           <div className="hidden md:flex items-center gap-3">
+            <button
+              onClick={toggleTheme}
+              className="p-2 md:p-2.5 rounded-xl bg-white/5 border border-white/10 text-gray-300 hover:text-white hover:bg-white/10 hover:border-white/20 transition-all duration-300"
+              aria-label="Toggle theme"
+            >
+              {theme === 'dark' ? <Sun className="w-4 h-4 md:w-5 md:h-5" /> : <Moon className="w-4 h-4 md:w-5 md:h-5" />}
+            </button>
             {!hideAuthButton && (user ? (
               <Link
                 to="/dashboard"
@@ -207,13 +217,22 @@ const NavBar: React.FC<NavBarProps> = ({
 
           {/* Mobile menu button */}
           {!hideMobileMenu && (
-            <button
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="md:hidden p-2 rounded-lg bg-white/10 border border-white/20 text-white hover:bg-white/20 transition-all duration-200"
-              aria-label={mobileMenuOpen ? 'Close menu' : 'Open menu'}
-            >
-              {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
-            </button>
+            <div className="flex items-center gap-2 md:hidden">
+              <button
+                onClick={toggleTheme}
+                className="p-2 rounded-lg bg-white/10 border border-white/20 text-white hover:bg-white/20 transition-all duration-200"
+                aria-label="Toggle theme"
+              >
+                {theme === 'dark' ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
+              </button>
+              <button
+                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                className="md:hidden p-2 rounded-lg bg-white/10 border border-white/20 text-white hover:bg-white/20 transition-all duration-200"
+                aria-label={mobileMenuOpen ? 'Close menu' : 'Open menu'}
+              >
+                {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+              </button>
+            </div>
           )}
         </div>
 

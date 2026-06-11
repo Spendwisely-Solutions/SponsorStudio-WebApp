@@ -2,6 +2,120 @@
 @tailwind components;
 @tailwind utilities;
 
+@layer base {
+  :root {
+    /* Fonts */
+    --font-sans: Inter, system-ui, -apple-system, sans-serif;
+    --font-mono: JetBrains Mono, Courier New, monospace;
+
+    /* Typographic scale */
+    --font-size-xs: 0.75rem;
+    --font-size-sm: 0.875rem;
+    --font-size-md: 1rem;
+    --font-size-lg: 1.125rem;
+    --font-size-xl: 1.25rem;
+    --font-size-2xl: 1.5rem;
+    --font-size-3xl: 1.875rem;
+    --font-size-4xl: 2.25rem;
+
+    --font-weight-light: 300;
+    --font-weight-normal: 400;
+    --font-weight-medium: 500;
+    --font-weight-semibold: 600;
+    --font-weight-bold: 700;
+    --font-weight-black: 900;
+
+    --line-height-none: 1;
+    --line-height-tight: 1.25;
+    --line-height-snug: 1.375;
+    --line-height-normal: 1.5;
+    --line-height-relaxed: 1.625;
+    --line-height-loose: 2;
+
+    /* Spacing */
+    --spacing-xs: 0.25rem;
+    --spacing-sm: 0.5rem;
+    --spacing-md: 1rem;
+    --spacing-lg: 1.5rem;
+    --spacing-xl: 2rem;
+    --spacing-2xl: 3rem;
+
+    /* Radius */
+    --radius-sm: 0.25rem;
+    --radius-md: 0.375rem;
+    --radius-lg: 0.5rem;
+    --radius-xl: 0.75rem;
+    --radius-full: 9999px;
+
+    /* Z-Indices */
+    --z-dropdown: 1000;
+    --z-sticky: 1020;
+    --z-modal: 1050;
+    --z-toast: 1090;
+    --z-tooltip: 1100;
+  }
+
+  /* Light Theme Specific Colors & Shadows */
+  [data-theme="light"], :root:not([data-theme="dark"]) {
+    --color-primary: #1a73e8;
+    --color-primary-hover: #155ec2;
+    --color-secondary: #cbd5e1;
+    --color-secondary-hover: #94a3b8;
+    --color-success: #16a34a;
+    --color-warning: #d97706;
+    --color-danger: #dc2626;
+    --color-info: #0ea5e9;
+
+    --color-background: #ffffff;
+    --color-background-secondary: #f8fafc;
+    --color-surface: #ffffff;
+    --color-surface-hover: #f1f5f9;
+
+    --color-text-primary: #1e293b;
+    --color-text-secondary: #64748b;
+    --color-text-muted: #94a3b8;
+    --color-text-inverse: #ffffff;
+
+    --color-border: #e2e8f0;
+    --color-border-hover: #cbd5e1;
+
+    --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  }
+
+  /* Dark Theme Specific Colors & Shadows */
+  [data-theme="dark"], .dark {
+    --color-primary: #38bdf8;
+    --color-primary-hover: #0ea5e9;
+    --color-secondary: #1e293b;
+    --color-secondary-hover: #334155;
+    --color-success: #166534;
+    --color-warning: #ca8a04;
+    --color-danger: #b91c1c;
+    --color-info: #0369a1;
+
+    --color-background: #23304f;
+    --color-background-secondary: #111827;
+    --color-surface: #1f2937;
+    --color-surface-hover: #374151;
+
+    --color-text-primary: #f9fafb;
+    --color-text-secondary: #d1d5db;
+    --color-text-muted: #9ca3af;
+    --color-text-inverse: #0b0f19;
+
+    --color-border: #1f2937;
+    --color-border-hover: #374151;
+
+    --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.5);
+    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -1px rgba(0, 0, 0, 0.2);
+    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.4), 0 4px 6px -2px rgba(0, 0, 0, 0.3);
+    --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 10px 10px -5px rgba(0, 0, 0, 0.4);
+  }
+}
+
 @keyframes blink {
 
   0%,
@@ -56,7 +170,7 @@
 
 .marquee-blur::after {
   right: 0;
-  background: linear-gradient(to left, rgb(249, 250, 251), rgba(249, 250, 251, 0));
+  background: linear-gradient(to left, rgb(249, 250, 251), rgba(156, 180, 203, 0));
 }
 
 html {

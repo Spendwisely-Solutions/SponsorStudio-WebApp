@@ -29,7 +29,7 @@ const HeroSection: React.FC<HeroSectionProps> = ({ user, setShowAuthForm }) => {
     <div
       ref={heroRef}
       className="relative min-h-screen flex flex-col overflow-hidden"
-      style={{ background: 'linear-gradient(135deg, #060D1F 0%, #0A1628 40%, #0D1F3C 70%, #0A1628 100%)' }}
+      style={{ background: 'linear-gradient(135deg, #000000ff 0%, #0A1628 40%, #0D1F3C 70%, #0A1628 100%)' }}
     >
       {/* Animated grid pattern */}
       <div

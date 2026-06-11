@@ -30,7 +30,7 @@ const TrustedBySection: React.FC<TrustedBySectionProps> = ({ clientLogos, loadin
       />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <p className="text-center text-xs font-semibold uppercase tracking-widest text-gray-600 mb-8">
+        <p className="text-center text-xs font-semibold uppercase tracking-widest text-gray-500 mb-8">
           Trusted by leading brands & event organizers
         </p>
 
@@ -45,7 +45,7 @@ const TrustedBySection: React.FC<TrustedBySectionProps> = ({ clientLogos, loadin
             {trustedLogos.map((logo) => (
               <div
                 key={logo.id}
-                className="transition-all duration-300 hover:scale-110 filter grayscale invert opacity-40 hover:opacity-70 hover:grayscale-0 hover:invert-0"
+                className="transition-all duration-300 hover:scale-110  "
               >
                 <img
                   src={logo.logo_url}
