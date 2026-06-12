@@ -49,7 +49,7 @@ const DesktopHoverCards: React.FC<DesktopHoverCardsProps> = ({
   if (stories.length === 0) {
     return (
       <div className={`flex items-center justify-center h-96 ${className}`}>
-        <p className="text-gray-500">No stories available</p>
+        <p className="text-text-muted">No stories available</p>
       </div>
     );
   }
@@ -371,9 +371,9 @@ const DesktopHoverCards: React.FC<DesktopHoverCardsProps> = ({
 
       {/* Bottom navigation */}
       <div className="flex items-center justify-center mt-8 gap-6">
-        <div className="flex items-center gap-2 text-sm text-gray-600">
+        <div className="flex items-center gap-2 text-sm text-text-muted">
           <span>Hover cards to explore</span>
-          <div className="w-1 h-1 bg-gray-400 rounded-full" />
+          <div className="w-1.5 h-1.5 bg-border rounded-full" />
           <span>{displayStories.length} featured stories</span>
         </div>
       </div>
@@ -383,7 +383,7 @@ const DesktopHoverCards: React.FC<DesktopHoverCardsProps> = ({
         <div className="text-center mt-6">
           <Link
             to="/stories"
-            className="inline-flex items-center text-blue-600 hover:text-blue-700 font-semibold transition-colors duration-200 group"
+            className="inline-flex items-center text-primary hover:text-primary-hover font-semibold transition-colors duration-200 group"
           >
             View all stories
             <ChevronRight className="ml-1 w-4 h-4 transition-transform group-hover:translate-x-1" />

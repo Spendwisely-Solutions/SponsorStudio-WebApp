@@ -62,8 +62,8 @@ const whySponsorStudio = [
 const WhatIsSponsorStudio = () => {
   return (
     <section
-      className="relative w-full py-20 px-4 sm:px-8 overflow-hidden"
-      style={{ background: 'linear-gradient(135deg, #060D1F 0%, #0A1628 50%, #0D1F3C 100%)' }}
+      className="relative w-full py-20 px-4 sm:px-8 overflow-hidden transition-colors duration-500"
+      style={{ background: 'var(--gradient-what-is)' }}
       id="what-is-sponsor-studio"
     >
       {/* Background grid */}
@@ -71,17 +71,17 @@ const WhatIsSponsorStudio = () => {
         className="absolute inset-0 opacity-[0.04]"
         style={{
           backgroundImage: `
-            linear-gradient(rgba(0,212,255,0.8) 1px, transparent 1px),
-            linear-gradient(90deg, rgba(0,212,255,0.8) 1px, transparent 1px)
+            linear-gradient(color-mix(in srgb, var(--color-primary) 80%, transparent) 1px, transparent 1px),
+            linear-gradient(90deg, color-mix(in srgb, var(--color-primary) 80%, transparent) 1px, transparent 1px)
           `,
           backgroundSize: '60px 60px',
         }}
       />
       {/* Glow blobs */}
-      <div className="absolute top-0 left-1/4 w-96 h-96 rounded-full opacity-8"
-        style={{ background: 'radial-gradient(circle, rgba(0,212,255,0.15) 0%, transparent 70%)', filter: 'blur(60px)' }} />
-      <div className="absolute bottom-0 right-1/4 w-80 h-80 rounded-full opacity-8"
-        style={{ background: 'radial-gradient(circle, rgba(99,102,241,0.15) 0%, transparent 70%)', filter: 'blur(60px)' }} />
+      <div className="absolute top-0 left-1/4 w-96 h-96 rounded-full opacity-[0.08]"
+        style={{ background: 'radial-gradient(circle, color-mix(in srgb, var(--color-primary) 15%, transparent) 0%, transparent 70%)', filter: 'blur(60px)' }} />
+      <div className="absolute bottom-0 right-1/4 w-80 h-80 rounded-full opacity-[0.08]"
+        style={{ background: 'radial-gradient(circle, color-mix(in srgb, var(--color-secondary) 15%, transparent) 0%, transparent 70%)', filter: 'blur(60px)' }} />
 
       <div className="relative z-10 max-w-6xl mx-auto">
         {/* Section header */}
@@ -93,14 +93,13 @@ const WhatIsSponsorStudio = () => {
           transition={{ duration: 0.6, ease: "easeOut" }}
         >
           <div
-            className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-sm font-medium mb-6"
-            style={{ background: 'rgba(0,212,255,0.1)', border: '1px solid rgba(0,212,255,0.3)', color: '#00D4FF' }}
+            className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-sm font-medium mb-6 bg-info/10 border border-info/30 text-info"
           >
             <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse" />
             The Sponsorship Journey
           </div>
 
-          <h2 className="text-4xl sm:text-5xl md:text-6xl font-black text-white mb-6 leading-tight">
+          <h2 className="text-4xl sm:text-5xl md:text-6xl font-black text-text-primary mb-6 leading-tight">
             From discovery to impact{' '}
             <span
               style={{
@@ -112,7 +111,7 @@ const WhatIsSponsorStudio = () => {
               in 6 simple steps.
             </span>
           </h2>
-          <p className="text-gray-400 text-lg max-w-2xl mx-auto">
+          <p className="text-text-secondary text-lg max-w-2xl mx-auto">
             Our streamlined process takes you from discovering the perfect sponsorship opportunity to measuring real business impact.
           </p>
         </motion.div>
@@ -161,8 +160,8 @@ const WhatIsSponsorStudio = () => {
                   </div>
                 </motion.div>
 
-                <h3 className="text-white font-bold text-sm mb-1">{s.label}</h3>
-                <p className="text-gray-500 text-xs leading-relaxed">{s.description}</p>
+                <h3 className="text-text-primary font-bold text-sm mb-1">{s.label}</h3>
+                <p className="text-text-muted text-xs leading-relaxed">{s.description}</p>
               </motion.div>
             );
           })}
@@ -176,7 +175,7 @@ const WhatIsSponsorStudio = () => {
           viewport={{ once: true }}
           transition={{ duration: 0.6 }}
         >
-          <h3 className="text-2xl sm:text-3xl font-black text-white text-center mb-10">
+          <h3 className="text-2xl sm:text-3xl font-black text-text-primary text-center mb-10">
             Why{' '}
             <span style={{ background: 'linear-gradient(90deg, #00D4FF, #6366F1)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
               Sponsor Studio?
@@ -186,24 +185,15 @@ const WhatIsSponsorStudio = () => {
             {whySponsorStudio.map((item, i) => (
               <motion.div
                 key={i}
-                className="group rounded-2xl p-6 text-center transition-all duration-300 hover:scale-105 cursor-pointer"
-                style={{
-                  background: 'rgba(255,255,255,0.03)',
-                  border: '1px solid rgba(255,255,255,0.08)',
-                  backdropFilter: 'blur(10px)',
-                }}
-                whileHover={{
-                  background: 'rgba(0,212,255,0.05)',
-                  borderColor: 'rgba(0,212,255,0.2)',
-                }}
+                className="group rounded-2xl p-6 text-center transition-all duration-300 hover:scale-105 cursor-pointer bg-surface/30 border border-border backdrop-blur-md hover:bg-surface-hover/50 hover:border-primary/30"
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true }}
                 transition={{ duration: 0.4, delay: i * 0.1 }}
               >
                 <div className="text-3xl mb-3">{item.icon}</div>
-                <h4 className="text-white font-bold text-sm mb-2">{item.title}</h4>
-                <p className="text-gray-500 text-xs leading-relaxed">{item.desc}</p>
+                <h4 className="text-text-primary font-bold text-sm mb-2">{item.title}</h4>
+                <p className="text-text-secondary text-xs leading-relaxed">{item.desc}</p>
               </motion.div>
             ))}
           </div>
@@ -211,28 +201,24 @@ const WhatIsSponsorStudio = () => {
 
         {/* Testimonial / CTA strip */}
         <motion.div
-          className="relative rounded-3xl p-8 md:p-10 overflow-hidden"
-          style={{
-            background: 'linear-gradient(135deg, rgba(0,212,255,0.08), rgba(99,102,241,0.08))',
-            border: '1px solid rgba(0,212,255,0.2)',
-          }}
+          className="relative rounded-3xl p-8 md:p-10 overflow-hidden bg-surface border border-border transition-colors duration-500"
           initial={{ opacity: 0, y: 30 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.6 }}
         >
           <div className="absolute top-0 right-0 w-64 h-64 rounded-full opacity-10"
-            style={{ background: 'radial-gradient(circle, #00D4FF 0%, transparent 70%)', filter: 'blur(40px)' }} />
+            style={{ background: 'radial-gradient(circle, color-mix(in srgb, var(--color-primary) 15%, transparent) 0%, transparent 70%)', filter: 'blur(40px)' }} />
           <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-6">
             <div>
-              <p className="text-gray-300 text-lg italic mb-4 max-w-xl">
+              <p className="text-text-primary text-lg italic mb-4 max-w-xl">
                 "Sponsor Studio helped us find the perfect partner for our event. The process was seamless and ROI was exceptional."
               </p>
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-full bg-gradient-to-r from-cyan-500 to-blue-600 flex items-center justify-center text-white font-bold text-sm">D</div>
                 <div>
-                  <div className="text-white font-semibold text-sm">Drake Jost</div>
-                  <div className="text-gray-500 text-xs">marketing head</div>
+                  <div className="text-text-primary font-semibold text-sm">Drake Jost</div>
+                  <div className="text-text-muted text-xs">marketing head</div>
                 </div>
               </div>
             </div>
@@ -241,7 +227,7 @@ const WhatIsSponsorStudio = () => {
                 className="inline-flex items-center gap-2 px-8 py-4 rounded-2xl font-semibold text-[#0A1628] text-base transition-all duration-300 hover:scale-105"
                 style={{
                   background: 'linear-gradient(135deg, #00D4FF, #3B82F6)',
-                  boxShadow: '0 0 30px rgba(0,212,255,0.4)',
+                  boxShadow: '0 0 30px color-mix(in srgb, var(--color-primary) 40%, transparent)',
                 }}
               >
                 Go to Meetings

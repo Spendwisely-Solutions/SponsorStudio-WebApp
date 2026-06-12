@@ -28,16 +28,15 @@ const HeroSection: React.FC<HeroSectionProps> = ({ user, setShowAuthForm }) => {
   return (
     <div
       ref={heroRef}
-      className="relative min-h-screen flex flex-col overflow-hidden"
-      style={{ background: 'linear-gradient(135deg, #000000ff 0%, #0A1628 40%, #0D1F3C 70%, #0A1628 100%)' }}
+      className="relative min-h-screen flex flex-col overflow-hidden bg-gradient-to-br from-background via-background-secondary to-background transition-colors duration-500"
     >
       {/* Animated grid pattern */}
       <div
         className="absolute inset-0 opacity-[0.06]"
         style={{
           backgroundImage: `
-            linear-gradient(rgba(0,212,255,0.5) 1px, transparent 1px),
-            linear-gradient(90deg, rgba(0,212,255,0.5) 1px, transparent 1px)
+            linear-gradient(color-mix(in srgb, var(--color-primary) 15%, transparent) 1px, transparent 1px),
+            linear-gradient(90deg, color-mix(in srgb, var(--color-primary) 15%, transparent) 1px, transparent 1px)
           `,
           backgroundSize: '60px 60px',
         }}
@@ -45,20 +44,15 @@ const HeroSection: React.FC<HeroSectionProps> = ({ user, setShowAuthForm }) => {
 
       {/* Glowing orbs */}
       <div className="absolute top-1/4 left-1/4 w-[600px] h-[600px] rounded-full opacity-10"
-        style={{ background: 'radial-gradient(circle, #00D4FF 0%, transparent 70%)', filter: 'blur(40px)' }} />
+        style={{ background: 'radial-gradient(circle, color-mix(in srgb, var(--color-info) 10%, transparent) 0%, transparent 70%)', filter: 'blur(40px)' }} />
       <div className="absolute bottom-1/4 right-1/4 w-[400px] h-[400px] rounded-full opacity-10"
-        style={{ background: 'radial-gradient(circle, #6366F1 0%, transparent 70%)', filter: 'blur(40px)' }} />
+        style={{ background: 'radial-gradient(circle, color-mix(in srgb, var(--color-primary) 10%, transparent) 0%, transparent 70%)', filter: 'blur(40px)' }} />
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] rounded-full opacity-5"
-        style={{ background: 'radial-gradient(circle, #3B82F6 0%, transparent 70%)', filter: 'blur(60px)' }} />
+        style={{ background: 'radial-gradient(circle, color-mix(in srgb, var(--color-primary) 5%, transparent) 0%, transparent 70%)', filter: 'blur(60px)' }} />
 
       {/* India's #1 badge */}
       <div className="relative z-10 flex justify-center pt-28 md:pt-32 pb-2">
-        <div className="hero-animate opacity-0 animate-fade-in inline-flex items-center gap-2 px-4 py-1.5 rounded-full border text-xs font-medium"
-          style={{
-            background: 'rgba(0,212,255,0.1)',
-            borderColor: 'rgba(0,212,255,0.3)',
-            color: '#00D4FF',
-          }}>
+        <div className="hero-animate opacity-0 animate-fade-in inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-info/30 bg-info/10 text-info text-xs font-medium">
           <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse" />
           India's #1 Sponsorship Deal Platform
         </div>
@@ -69,7 +63,7 @@ const HeroSection: React.FC<HeroSectionProps> = ({ user, setShowAuthForm }) => {
         {/* Hero headline */}
         <h1 className="hero-animate opacity-0 animate-fade-in max-w-5xl mx-auto mb-6">
           <span
-            className="block text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-black leading-[1.05] tracking-tight text-white"
+            className="block text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-black leading-[1.05] tracking-tight text-text-primary"
           >
             Where Brands
           </span>
@@ -100,7 +94,7 @@ const HeroSection: React.FC<HeroSectionProps> = ({ user, setShowAuthForm }) => {
         </h1>
 
         {/* Subtitle */}
-        <p className="hero-animate opacity-0 animate-fade-in max-w-2xl text-lg sm:text-xl text-gray-400 leading-relaxed mb-10">
+        <p className="hero-animate opacity-0 animate-fade-in max-w-2xl text-lg sm:text-xl text-text-secondary leading-relaxed mb-10">
           Discover verified opportunities, build partnerships, sign agreements and measure real impact.
         </p>
 
@@ -133,12 +127,7 @@ const HeroSection: React.FC<HeroSectionProps> = ({ user, setShowAuthForm }) => {
               </button>
               <button
                 onClick={() => setShowAuthForm(true)}
-                className="inline-flex items-center gap-2 px-8 py-4 rounded-2xl font-semibold text-white text-base border transition-all duration-300 hover:scale-105 hover:bg-white/10"
-                style={{
-                  borderColor: 'rgba(255,255,255,0.3)',
-                  background: 'rgba(255,255,255,0.05)',
-                  backdropFilter: 'blur(10px)',
-                }}
+                className="inline-flex items-center gap-2 px-8 py-4 rounded-2xl font-semibold text-text-primary text-base border border-border bg-surface/20 backdrop-blur-md transition-all duration-300 hover:scale-105 hover:bg-surface-hover/30"
               >
                 Explore Opportunities
                 <ChevronRight className="w-5 h-5" />
@@ -153,12 +142,7 @@ const HeroSection: React.FC<HeroSectionProps> = ({ user, setShowAuthForm }) => {
             {stats.map((stat, i) => (
               <div
                 key={i}
-                className="relative group rounded-2xl p-4 text-center transition-all duration-300 hover:scale-105"
-                style={{
-                  background: 'rgba(255,255,255,0.04)',
-                  border: '1px solid rgba(255,255,255,0.08)',
-                  backdropFilter: 'blur(10px)',
-                }}
+                className="relative group rounded-2xl p-4 text-center transition-all duration-300 hover:scale-105 bg-surface border border-border backdrop-blur-md"
               >
                 <div
                   className="text-2xl sm:text-3xl font-black mb-1"
@@ -170,7 +154,7 @@ const HeroSection: React.FC<HeroSectionProps> = ({ user, setShowAuthForm }) => {
                 >
                   {stat.value}
                 </div>
-                <div className="text-xs sm:text-sm text-gray-400 font-medium">{stat.label}</div>
+                <div className="text-xs sm:text-sm text-text-secondary font-medium">{stat.label}</div>
                 {/* Hover glow */}
                 <div className="absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"
                   style={{ background: 'linear-gradient(135deg, rgba(0,212,255,0.05), rgba(99,102,241,0.05))' }} />
@@ -182,18 +166,13 @@ const HeroSection: React.FC<HeroSectionProps> = ({ user, setShowAuthForm }) => {
 
       {/* Hero Dashboard Image */}
       <div className="relative z-10 w-full max-w-6xl mx-auto px-4 sm:px-8 pb-16">
-        <div className="hero-animate opacity-0 animate-fade-in relative rounded-2xl overflow-hidden"
-          style={{
-            border: '1px solid rgba(0,212,255,0.2)',
-            boxShadow: '0 0 60px rgba(0,212,255,0.1), 0 40px 80px rgba(0,0,0,0.5)',
-          }}>
+        <div className="hero-animate opacity-0 animate-fade-in relative rounded-2xl overflow-hidden border border-border shadow-xl">
           {/* Top bar */}
-          <div className="flex items-center gap-2 px-4 py-3"
-            style={{ background: 'rgba(0,212,255,0.05)', borderBottom: '1px solid rgba(0,212,255,0.1)' }}>
+          <div className="flex items-center gap-2 px-4 py-3 bg-surface border-b border-border">
             <div className="w-3 h-3 rounded-full bg-red-500/70" />
             <div className="w-3 h-3 rounded-full bg-yellow-500/70" />
             <div className="w-3 h-3 rounded-full bg-green-500/70" />
-            <span className="ml-3 text-xs text-gray-500">sponsorstudio.in/dashboard</span>
+            <span className="ml-3 text-xs text-text-secondary">sponsorstudio.in/dashboard</span>
           </div>
           <img
             src="/hero-dashboard.png"
@@ -203,18 +182,18 @@ const HeroSection: React.FC<HeroSectionProps> = ({ user, setShowAuthForm }) => {
           />
           {/* Gradient fade at bottom */}
           <div className="absolute bottom-0 left-0 right-0 h-24"
-            style={{ background: 'linear-gradient(to top, #0A1628, transparent)' }} />
+            style={{ background: 'linear-gradient(to top, var(--color-background), transparent)' }} />
         </div>
       </div>
 
       {/* Trusted by */}
       <div className="relative z-10 w-full pb-12 text-center">
-        <p className="text-xs text-gray-600 uppercase tracking-widest mb-6 font-medium">
+        <p className="text-xs text-text-muted uppercase tracking-widest mb-6 font-medium">
           Trusted by 5000+ brands &amp; organizers
         </p>
         <div className="flex flex-wrap items-center justify-center gap-8 px-8 opacity-50 grayscale hover:opacity-70 transition-opacity duration-300">
           {['zomato', 'boat', 'puma', 'disney'].map((brand) => (
-            <div key={brand} className="text-gray-400 font-bold text-lg capitalize tracking-wide">
+            <div key={brand} className="text-text-secondary font-bold text-lg capitalize tracking-wide">
               {brand}
             </div>
           ))}

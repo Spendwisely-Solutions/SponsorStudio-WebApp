@@ -19,21 +19,21 @@ const ContactSection: React.FC<ContactSectionProps> = ({
 }) => {
   return (
     <section
-      className="py-20 relative z-10"
+      className="py-20 relative z-10 transition-colors duration-500"
+      style={{ background: 'var(--gradient-contact)' }}
       id="contact"
-      style={{ background: 'linear-gradient(180deg, #060D1F 0%, #0A1628 100%)' }}
     >
       {/* Background grid */}
-      <div className="absolute inset-0 opacity-[0.04]" style={{ backgroundImage: 'radial-gradient(rgba(0,212,255,0.8) 1px, transparent 1px)', backgroundSize: '40px 40px' }} />
+      <div className="absolute inset-0 opacity-[0.04]" style={{ backgroundImage: 'radial-gradient(color-mix(in srgb, var(--color-primary) 80%, transparent) 1px, transparent 1px)', backgroundSize: '40px 40px' }} />
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         <div className="text-center mb-16">
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 mb-6 rounded-full text-sm font-medium" style={{ background: 'rgba(0,212,255,0.1)', border: '1px solid rgba(0,212,255,0.3)', color: '#00D4FF' }}>
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 mb-6 rounded-full text-sm font-medium bg-info/10 border border-info/30 text-info">
             <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse" />
             Get In Touch
           </div>
           
           <h2
-            className="text-4xl sm:text-5xl md:text-6xl font-black text-white mb-4 leading-tight"
+            className="text-4xl sm:text-5xl md:text-6xl font-black text-text-primary mb-4 leading-tight"
             {...(!disableAnimations && {
               'data-aos': 'zoom-in-up',
               'data-aos-duration': '800',
@@ -47,7 +47,7 @@ const ContactSection: React.FC<ContactSectionProps> = ({
           </h2>
           
           <p
-            className="mt-4 max-w-2xl mx-auto text-lg text-gray-400 leading-relaxed"
+            className="mt-4 max-w-2xl mx-auto text-lg text-text-secondary leading-relaxed"
             {...(!disableAnimations && {
               'data-aos': 'zoom-in-up',
               'data-aos-duration': '800',

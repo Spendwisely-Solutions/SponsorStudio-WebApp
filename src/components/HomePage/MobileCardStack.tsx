@@ -21,7 +21,7 @@ const MobileCardStack: React.FC<MobileCardStackProps> = ({
   if (stories.length === 0) {
     return (
       <div className={`flex items-center justify-center h-96 ${className}`}>
-        <p className="text-gray-500">No stories available</p>
+        <p className="text-text-muted">No stories available</p>
       </div>
     );
   }
@@ -89,7 +89,7 @@ const MobileCardStack: React.FC<MobileCardStackProps> = ({
               }}
             >
               {/* Card */}
-              <div className="relative h-full bg-white rounded-2xl shadow-lg overflow-hidden border border-gray-100">
+              <div className="relative h-full bg-surface rounded-2xl shadow-lg overflow-hidden border border-border">
                 {/* Header Image */}
                 <div className="relative h-48">
                   <img
@@ -109,8 +109,8 @@ const MobileCardStack: React.FC<MobileCardStackProps> = ({
                       animate={{ opacity: 1, scale: 1 }}
                       transition={{ delay: 0.2, duration: 0.4 }}
                     >
-                      <div className="w-6 h-6 bg-blue-600 rounded-full flex items-center justify-center shadow-lg">
-                        <div className="w-2 h-2 bg-white rounded-full animate-pulse" />
+                      <div className="w-6 h-6 bg-primary rounded-full flex items-center justify-center shadow-lg">
+                        <div className="w-2 h-2 bg-text-inverse rounded-full animate-pulse" />
                       </div>
                     </motion.div>
                   )}
@@ -124,7 +124,7 @@ const MobileCardStack: React.FC<MobileCardStackProps> = ({
                   {/* Top Section - Meta + Title */}
                   <div className="flex-shrink-0">
                     {/* Meta Info */}
-                    <div className="flex items-center gap-3 mb-3 text-xs text-gray-500">
+                    <div className="flex items-center gap-3 mb-3 text-xs text-text-muted">
                       <div className="flex items-center">
                         <Clock className="w-3 h-3 mr-1" />
                         <span>Story #{index + 1}</span>
@@ -136,7 +136,7 @@ const MobileCardStack: React.FC<MobileCardStackProps> = ({
                     </div>
 
                     {/* Title with 2 lines max */}
-                    <h3 className={`font-bold text-gray-900 mb-3 leading-tight transition-all duration-300 ${
+                    <h3 className={`font-bold text-text-primary mb-3 leading-tight transition-all duration-300 ${
                       isActive ? 'text-lg' : 'text-base'
                     }`}>
                       <span className="block line-clamp-2">
@@ -156,7 +156,7 @@ const MobileCardStack: React.FC<MobileCardStackProps> = ({
                           transition={{ duration: 0.4, ease: [0.23, 1, 0.320, 1] }}
                           className="h-full"
                         >
-                          <p className="text-gray-700 text-sm leading-relaxed line-clamp-3 mb-4">
+                          <p className="text-text-secondary text-sm leading-relaxed line-clamp-3 mb-4">
                             {story.preview_text}
                           </p>
                           
@@ -168,7 +168,7 @@ const MobileCardStack: React.FC<MobileCardStackProps> = ({
                           >
                             <Link
                               to={`/stories/${story.id}`}
-                              className="inline-flex items-center justify-center w-full bg-blue-600 text-white font-semibold py-3 px-6 rounded-xl hover:bg-blue-700 transition-all duration-200 group text-sm"
+                              className="inline-flex items-center justify-center w-full bg-primary text-text-inverse font-semibold py-3 px-6 rounded-xl hover:bg-primary-hover transition-all duration-200 group text-sm"
                             >
                               Read Story
                               <ArrowUpRight className="ml-2 w-4 h-4 transition-transform duration-200 group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
@@ -182,7 +182,7 @@ const MobileCardStack: React.FC<MobileCardStackProps> = ({
                   {/* Inactive card message */}
                   {!isActive && (
                     <div className="flex-1 flex items-center justify-center">
-                      <span className="text-xs text-gray-400 font-medium">Tap to view</span>
+                      <span className="text-xs text-text-muted font-medium">Tap to view</span>
                     </div>
                   )}
                 </div>
@@ -195,16 +195,16 @@ const MobileCardStack: React.FC<MobileCardStackProps> = ({
         {/* Navigation Arrows */}
         <button
           onClick={prevStory}
-          className="absolute left-0 top-1/2 transform -translate-y-1/2 -translate-x-4 w-10 h-10 bg-white rounded-full shadow-lg flex items-center justify-center z-20 border border-gray-200 hover:shadow-xl transition-all duration-200"
+          className="absolute left-0 top-1/2 transform -translate-y-1/2 -translate-x-4 w-10 h-10 bg-surface rounded-full shadow-lg flex items-center justify-center z-20 border border-border hover:shadow-xl transition-all duration-200"
         >
-          <ChevronLeft className="w-5 h-5 text-gray-600" />
+          <ChevronLeft className="w-5 h-5 text-text-secondary" />
         </button>
 
         <button
           onClick={nextStory}
-          className="absolute right-0 top-1/2 transform -translate-y-1/2 translate-x-4 w-10 h-10 bg-white rounded-full shadow-lg flex items-center justify-center z-20 border border-gray-200 hover:shadow-xl transition-all duration-200"
+          className="absolute right-0 top-1/2 transform -translate-y-1/2 translate-x-4 w-10 h-10 bg-surface rounded-full shadow-lg flex items-center justify-center z-20 border border-border hover:shadow-xl transition-all duration-200"
         >
-          <ChevronRight className="w-5 h-5 text-gray-600" />
+          <ChevronRight className="w-5 h-5 text-text-secondary" />
         </button>
       </div>
 
@@ -216,8 +216,8 @@ const MobileCardStack: React.FC<MobileCardStackProps> = ({
             onClick={() => setCurrentIndex(index)}
             className={`h-1.5 rounded-full transition-all duration-300 ${
               index === currentIndex 
-                ? 'w-6 bg-blue-600' 
-                : 'w-1.5 bg-gray-300 hover:bg-gray-400'
+                ? 'w-6 bg-primary' 
+                : 'w-1.5 bg-surface-hover hover:bg-border'
             }`}
           />
         ))}
@@ -225,14 +225,14 @@ const MobileCardStack: React.FC<MobileCardStackProps> = ({
 
       {/* Story Info */}
       <div className="text-center px-4">
-        <p className="text-gray-600 text-sm mb-4">
+        <p className="text-text-secondary text-sm mb-4">
           Story {currentIndex + 1} of {displayStories.length}
         </p>
         
         {stories.length > 5 && (
           <Link
             to="/story"
-            className="inline-flex items-center text-blue-600 hover:text-blue-700 font-semibold transition-colors duration-200 group text-sm"
+            className="inline-flex items-center text-primary hover:text-primary-hover font-semibold transition-colors duration-200 group text-sm"
           >
             View all {stories.length} stories
             <ChevronRight className="ml-1 w-4 h-4 transition-transform group-hover:translate-x-1" />

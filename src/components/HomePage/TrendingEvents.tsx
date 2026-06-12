@@ -208,12 +208,7 @@ function TrendingEvents({ showAuthForm }: TrendingEventsProps) {
         onPointerUp={handlePointerUp}
       >
         <div
-          className="rounded-3xl shadow-xl px-4 py-6 flex flex-col items-center transition-transform duration-500 ease-[cubic-bezier(.4,0,.2,1)] animate-cardin"
-          style={{
-            background: 'rgba(255,255,255,0.04)',
-            border: '1px solid rgba(0,212,255,0.15)',
-            backdropFilter: 'blur(10px)',
-          }}
+          className="rounded-3xl shadow-xl px-4 py-6 flex flex-col items-center transition-transform duration-500 ease-[cubic-bezier(.4,0,.2,1)] animate-cardin bg-surface border border-border backdrop-blur-md"
         >
           <div
             className="w-full rounded-2xl overflow-hidden mb-4 bg-gradient-to-br from-blue-100 to-indigo-100 flex items-center justify-center"
@@ -237,16 +232,16 @@ function TrendingEvents({ showAuthForm }: TrendingEventsProps) {
                 poster={event.media_urls.find(url => url.match(/\.(jpg|jpeg|png|webp|avif)$/i)) || undefined}
               />
             ) : (
-              <div className="w-full h-full flex items-center justify-center text-gray-400 text-2xl">No Media</div>
+              <div className="w-full h-full flex items-center justify-center text-text-muted text-2xl">No Media</div>
             )}
           </div>
           <div className="text-center flex-1 flex flex-col justify-start w-full">
-            <h3 className="text-lg sm:text-xl font-bold text-white mb-1 truncate w-full" title={event.title}>
+            <h3 className="text-lg sm:text-xl font-bold text-text-primary mb-1 truncate w-full" title={event.title}>
               {event.title}
             </h3>
-            <div className="text-xs sm:text-sm text-cyan-400 mb-1">{formatDate(event.start_date)}</div>
-            <div className="text-xs sm:text-sm text-gray-500 mb-1">{event.location}</div>
-            <p className="text-gray-400 text-sm mb-2 line-clamp-2 w-full" title={event.description}>
+            <div className="text-xs sm:text-sm text-info mb-1">{formatDate(event.start_date)}</div>
+            <div className="text-xs sm:text-sm text-text-muted mb-1">{event.location}</div>
+            <p className="text-text-secondary text-sm mb-2 line-clamp-2 w-full" title={event.description}>
               {event.description}
             </p>
           </div>
@@ -257,25 +252,25 @@ function TrendingEvents({ showAuthForm }: TrendingEventsProps) {
 
   return (
     <div
-      className="relative w-full py-16 px-2 sm:px-8 overflow-hidden"
-      style={{ background: 'linear-gradient(180deg, #0A1628 0%, #0D1F3C 50%, #0A1628 100%)' }}
+      className="relative w-full py-16 px-2 sm:px-8 overflow-hidden transition-colors duration-500"
+      style={{ background: 'var(--gradient-trending-events)' }}
     >
       {/* Background grid */}
-      <div className="absolute inset-0 opacity-[0.04]" style={{ backgroundImage: 'radial-gradient(rgba(0,212,255,0.8) 1px, transparent 1px)', backgroundSize: '40px 40px' }} />
-      <div className="absolute top-0 left-0 w-72 h-72 rounded-full opacity-10" style={{ background: 'radial-gradient(circle, rgba(0,212,255,0.3) 0%, transparent 70%)', filter: 'blur(60px)' }} />
-      <div className="absolute bottom-0 right-0 w-60 h-60 rounded-full opacity-10" style={{ background: 'radial-gradient(circle, rgba(99,102,241,0.3) 0%, transparent 70%)', filter: 'blur(60px)' }} />
+      <div className="absolute inset-0 opacity-[0.04]" style={{ backgroundImage: 'radial-gradient(color-mix(in srgb, var(--color-primary) 80%, transparent) 1px, transparent 1px)', backgroundSize: '40px 40px' }} />
+      <div className="absolute top-0 left-0 w-72 h-72 rounded-full opacity-10" style={{ background: 'radial-gradient(circle, color-mix(in srgb, var(--color-primary) 15%, transparent) 0%, transparent 70%)', filter: 'blur(60px)' }} />
+      <div className="absolute bottom-0 right-0 w-60 h-60 rounded-full opacity-10" style={{ background: 'radial-gradient(circle, color-mix(in srgb, var(--color-secondary) 15%, transparent) 0%, transparent 70%)', filter: 'blur(60px)' }} />
 
       <div className="max-w-5xl mx-auto">
         <div className="text-center mb-14">
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 mb-6 rounded-full text-sm font-medium" style={{ background: 'rgba(0,212,255,0.1)', border: '1px solid rgba(0,212,255,0.3)', color: '#00D4FF' }}>
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 mb-6 rounded-full text-sm font-medium bg-info/10 border border-info/30 text-info">
             <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse" />
             What's Hot
           </div>
-          <h2 className="text-4xl sm:text-5xl md:text-6xl font-black text-white pb-3 leading-tight">
+          <h2 className="text-4xl sm:text-5xl md:text-6xl font-black text-text-primary pb-3 leading-tight">
             Trending{' '}
             <span style={{ background: 'linear-gradient(90deg, #00D4FF, #6366F1)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Events</span>
           </h2>
-          <p className="mt-4 max-w-2xl mx-auto text-lg text-gray-400 leading-relaxed">
+          <p className="mt-4 max-w-2xl mx-auto text-lg text-text-secondary leading-relaxed">
             Discover the most popular and upcoming events happening now on SponsorStudio
           </p>
         </div>
@@ -360,11 +355,8 @@ function TrendingEvents({ showAuthForm }: TrendingEventsProps) {
                     onPointerUp={handlePointerUp}
                   >
                     <div
-                      className="rounded-3xl shadow-xl px-4 py-6 flex flex-col items-center transition-transform duration-500 ease-[cubic-bezier(.4,0,.2,1)] animate-cardin mb-12"
+                      className="rounded-3xl shadow-xl px-4 py-6 flex flex-col items-center transition-transform duration-500 ease-[cubic-bezier(.4,0,.2,1)] animate-cardin mb-12 bg-surface border border-border backdrop-blur-md"
                       style={{
-                        background: 'rgba(255,255,255,0.04)',
-                        border: '1px solid rgba(0,212,255,0.15)',
-                        backdropFilter: 'blur(10px)',
                         width: isMobile ? '100%' : '18rem',
                         minWidth: isMobile ? '0' : '18rem',
                         maxWidth: isMobile ? '100%' : '18rem',
@@ -393,16 +385,16 @@ function TrendingEvents({ showAuthForm }: TrendingEventsProps) {
                             poster={event.media_urls.find(url => url.match(/\.(jpg|jpeg|png|webp|avif)$/i)) || undefined}
                           />
                         ) : (
-                          <div className="w-full h-full flex items-center justify-center text-gray-400 text-2xl">No Media</div>
+                          <div className="w-full h-full flex items-center justify-center text-text-muted text-2xl">No Media</div>
                         )}
                       </div>
                       <div className="text-center flex-1 flex flex-col justify-start w-full">
-                        <h3 className="text-lg sm:text-xl font-bold text-white mb-1 truncate w-full" title={event.title}>
+                        <h3 className="text-lg sm:text-xl font-bold text-text-primary mb-1 truncate w-full" title={event.title}>
                           {event.title}
                         </h3>
-                        <div className="text-xs sm:text-sm text-cyan-400 mb-1">{formatDate(event.start_date)}</div>
-                        <div className="text-xs sm:text-sm text-gray-500 mb-1">{event.location}</div>
-                        <p className="text-gray-400 text-sm mb-2 line-clamp-2 w-full" title={event.description}>
+                        <div className="text-xs sm:text-sm text-info mb-1">{formatDate(event.start_date)}</div>
+                        <div className="text-xs sm:text-sm text-text-muted mb-1">{event.location}</div>
+                        <p className="text-text-secondary text-sm mb-2 line-clamp-2 w-full" title={event.description}>
                           {event.description}
                         </p>
                       </div>
@@ -475,16 +467,16 @@ function TrendingEvents({ showAuthForm }: TrendingEventsProps) {
         }
         .slick-dots li button:before {
           font-size: 12px;
-          color: rgba(255, 255, 255, 0.7);
-          border: 2px solid #3b82f6;
+          color: var(--color-text-muted);
+          border: 2px solid var(--color-primary);
           border-radius: 50%;
           width: 12px;
           height: 12px;
           line-height: 12px;
         }
         .slick-dots li.slick-active button:before {
-          background: #3b82f6;
-          color: #3b82f6;
+          background: var(--color-primary);
+          color: var(--color-primary);
           transform: scale(1.25);
         }
       `}</style>
