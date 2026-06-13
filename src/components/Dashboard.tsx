@@ -1,12 +1,14 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
-import { ArrowRight, Building2, BarChart3, FileCheck, MessageSquare, Menu, ChevronRight, X, Home, Calendar, FileText, User, LogOut, BarChart2 } from 'lucide-react';
+import { ArrowRight, Building2, BarChart3, FileCheck, MessageSquare, Menu, ChevronRight, X, Home, Calendar, FileText, User, LogOut, BarChart2, Sun, Moon } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { sendContactEmail } from '../lib/email';
 import { Link, useNavigate } from 'react-router-dom';
 import AuthForm from './AuthComponents/AuthForm';
 import ProfileCompletionDialog from './ProfileCompletionDialog';
 import { useAuth } from '../contexts/AuthContext';
+import { useTheme } from '../contexts/ThemeContext';
+import Modal from './Modal';
 import type { Database } from '../lib/database.types';
 import Marquee from 'react-fast-marquee';
 import AdminDashboard from '../components/Admin/Dashboard/AdminDashboard';
@@ -40,6 +42,7 @@ type Match = Database['public']['Tables']['matches']['Row'] & {
 export default function Dashboard() {
   const location = useLocation();
   const { user, profile, loading } = useAuth();
+  const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<'dashboard' | 'matches' | 'profile' | 'messages' | 'meetings' | 'reports' | 'analytics'>(
     () => (location.state as any)?.activeTab || 'dashboard'
@@ -53,6 +56,7 @@ export default function Dashboard() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [avatarError, setAvatarError] = useState(false);
+  const [showSignOutConfirm, setShowSignOutConfirm] = useState(false);
 
   useEffect(() => {
     if ((location.state as any)?.activeTab) {
@@ -516,8 +520,17 @@ export default function Dashboard() {
             </li>
             <li>
               <button
-                onClick={handleSignOut}
-                className="w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-red-600 hover:bg-red-50"
+                onClick={toggleTheme}
+                className="w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-white/10 transition-colors duration-200"
+              >
+                {theme === 'dark' ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+                <span>{theme === 'dark' ? 'Light Mode' : 'Dark Mode'}</span>
+              </button>
+            </li>
+            <li>
+              <button
+                onClick={() => setShowSignOutConfirm(true)}
+                className="w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-500/10 transition-colors duration-200"
               >
                 <LogOut className="w-5 h-5" />
                 <span>Sign Out</span>
@@ -663,8 +676,17 @@ export default function Dashboard() {
             </li>
             <li>
               <button
-                onClick={() => { handleSignOut(); setMobileSidebarOpen(false); }}
-                className="w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-red-600 hover:bg-red-50"
+                onClick={() => { toggleTheme(); setMobileSidebarOpen(false); }}
+                className="w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-white/10 transition-colors duration-200"
+              >
+                {theme === 'dark' ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
+                <span>{theme === 'dark' ? 'Light Mode' : 'Dark Mode'}</span>
+              </button>
+            </li>
+            <li>
+              <button
+                onClick={() => { setShowSignOutConfirm(true); setMobileSidebarOpen(false); }}
+                className="w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-500/10 transition-colors duration-200"
               >
                 <LogOut className="w-5 h-5" />
                 <span>Sign Out</span>
@@ -755,6 +777,18 @@ export default function Dashboard() {
         {(activeTab === 'analytics' && (isCreator || isInfluencer)) && (
           <AnalyticsDashboard />
         )}
+
+        <Modal
+          isOpen={showSignOutConfirm}
+          onClose={() => setShowSignOutConfirm(false)}
+          onConfirm={handleSignOut}
+          title="Sign Out"
+          message="Are you sure you want to sign out of Sponsor Studio?"
+          confirmText="Sign Out"
+          cancelText="Cancel"
+          confirmButtonClass="bg-red-600 text-white hover:bg-red-700 dark:bg-red-500 dark:hover:bg-red-600 border-0"
+          cancelButtonClass="border-gray-300 text-gray-700 hover:bg-gray-50 dark:border-white/10 dark:text-gray-300 dark:hover:bg-white/10"
+        />
       </div>
     </div>
   );

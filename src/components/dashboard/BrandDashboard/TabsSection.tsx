@@ -13,25 +13,25 @@ const TabsSection: React.FC<TabsSectionProps> = ({
   pendingMatches,
 }) => {
   return (
-    <div className="sticky top-0 z-40 mb-4 sm:mb-6 border-b-0 bg-white/95 backdrop-blur-sm rounded-t-2xl shadow-lg w-[calc(100%+1rem)] -mx-2 sm:mx-0 sm:w-full overflow-hidden">
-      <div className="flex flex-row gap-px overflow-x-auto no-scrollbar w-full bg-white my-5 border-b border-gray-200">
+    <div className="sticky top-0 z-40 mb-4 sm:mb-6 border-b-0 bg-surface/95 backdrop-blur-sm rounded-t-2xl shadow-lg w-[calc(100%+1rem)] -mx-2 sm:mx-0 sm:w-full overflow-hidden">
+      <div className="flex flex-row gap-px overflow-x-auto no-scrollbar w-full bg-surface my-5 border-b border-border">
         <button
           onClick={() => setActiveTab('discover')}
           className={`relative flex-1 py-2.5 sm:py-3.5 px-1 cursor-pointer transition-all duration-300 ease-in-out ${
             activeTab === 'discover' 
-              ? 'text-[#2B4B9B] font-medium bg-blue-50/60 shadow-sm border-t border-x border-blue-100 rounded-t-lg translate-y-[-1px]'
-              : 'text-gray-600 hover:bg-black/5'
+              ? 'text-primary font-medium bg-primary/10 shadow-sm border-t border-x border-primary/20 rounded-t-lg translate-y-[-1px]'
+              : 'text-text-secondary hover:bg-surface-hover'
           }`}
         >
           <div className="flex flex-col items-center justify-center pb-[7px]">
             <span className="text-sm sm:text-base font-bold mb-1">
               Discover
             </span>
-            <span className={`text-[10px] sm:text-xs ${activeTab === 'discover' ? 'text-[#2B4B9B]/70 font-medium' : 'text-gray-500'}`}>
+            <span className={`text-[10px] sm:text-xs ${activeTab === 'discover' ? 'text-primary/70 font-medium' : 'text-text-muted'}`}>
               Events
             </span>
           </div>
-          <span className={`absolute bottom-0 left-0 w-full h-[3px] bg-[#2B4B9B] transform transition-all duration-300 ${
+          <span className={`absolute bottom-0 left-0 w-full h-[3px] bg-primary transform transition-all duration-300 ${
             activeTab === 'discover' ? 'opacity-100 scale-x-100' : 'opacity-0 scale-x-0'
           }`} style={{ bottom: '0' }} />
         </button>
@@ -41,8 +41,8 @@ const TabsSection: React.FC<TabsSectionProps> = ({
           onClick={() => setActiveTab('influencers')}
           className={`relative flex-1 py-2.5 sm:py-3.5 px-1 cursor-pointer transition-all duration-300 ease-in-out ${
             activeTab === 'influencers' 
-              ? 'text-purple-600 font-medium bg-purple-50/60 shadow-sm border-t border-x border-purple-100 rounded-t-lg translate-y-[-1px]'
-              : 'text-gray-600 hover:bg-black/5'
+              ? 'text-purple-600 font-medium bg-purple-50/15 shadow-sm border-t border-x border-purple-200/20 rounded-t-lg translate-y-[-1px]'
+              : 'text-text-secondary hover:bg-surface-hover'
           }`}
           style={{display:'none'}}
         >
@@ -50,7 +50,7 @@ const TabsSection: React.FC<TabsSectionProps> = ({
             <span className="text-sm sm:text-base font-bold mb-1">
               Discover
             </span>
-            <span className={`text-[10px] sm:text-xs ${activeTab === 'influencers' ? 'text-purple-600/70 font-medium' : 'text-gray-500'}`}>
+            <span className={`text-[10px] sm:text-xs ${activeTab === 'influencers' ? 'text-purple-600/70 font-medium' : 'text-text-muted'}`}>
               Influencers
             </span>
           </div>
@@ -64,8 +64,8 @@ const TabsSection: React.FC<TabsSectionProps> = ({
           onClick={() => setActiveTab('matches')}
           className={`relative flex-1 py-2.5 sm:py-3.5 px-1 cursor-pointer transition-all duration-300 ease-in-out ${
             activeTab === 'matches' 
-              ? 'text-green-600 font-medium bg-green-50/60 shadow-sm border-t border-x border-green-100 rounded-t-lg translate-y-[-1px]'
-              : 'text-gray-600 hover:bg-black/5'
+              ? 'text-success font-medium bg-success/15 shadow-sm border-t border-x border-success/20 rounded-t-lg translate-y-[-1px]'
+              : 'text-text-secondary hover:bg-surface-hover'
           }`}
         >
           <div className="flex flex-col items-center justify-center pb-[7px]">
@@ -77,11 +77,11 @@ const TabsSection: React.FC<TabsSectionProps> = ({
                 </span>
               )}
             </span>
-            <span className={`text-[10px] sm:text-xs ${activeTab === 'matches' ? 'text-green-600/70 font-medium' : 'text-gray-500'}`}>
+            <span className={`text-[10px] sm:text-xs ${activeTab === 'matches' ? 'text-success/70 font-medium' : 'text-text-muted'}`}>
               Your Connections
             </span>
           </div>
-          <span className={`absolute bottom-0 left-0 w-full h-[3px] bg-green-600 transform transition-all duration-300 ${
+          <span className={`absolute bottom-0 left-0 w-full h-[3px] bg-success transform transition-all duration-300 ${
             activeTab === 'matches' ? 'opacity-100 scale-x-100' : 'opacity-0 scale-x-0'
           }`} style={{ bottom: '0' }} />
         </button>

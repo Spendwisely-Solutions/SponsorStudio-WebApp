@@ -1,6 +1,7 @@
 import { motion } from 'framer-motion';
 import { Tooltip } from 'react-tooltip';
 import coinIcon from '../../../assets/dashboard/coin.png';
+import { useTheme } from '../../../contexts/ThemeContext';
 
 interface CreditBarProps {
   credits: number | null;
@@ -9,6 +10,7 @@ interface CreditBarProps {
 }
 
 export default function CreditBar({ credits, shakeCredits, onAddCredits }: CreditBarProps) {
+  const { theme } = useTheme();
   return (
     <>
       <motion.div
@@ -65,16 +67,17 @@ export default function CreditBar({ credits, shakeCredits, onAddCredits }: Credi
       <Tooltip
         id="credits-info-tooltip"
         place="bottom"
-        className="!bg-white !text-gray-800 !shadow-lg !border !border-gray-200 !rounded-lg !p-0 !opacity-100"
+        className="!shadow-lg !border !rounded-lg !p-0 !opacity-100"
         style={{
-          backgroundColor: '#ffffff',
-          color: '#1f2937',
+          backgroundColor: theme === 'dark' ? '#0D1F3C' : '#ffffff',
+          color: theme === 'dark' ? '#f9fafb' : '#1f2937',
+          borderColor: theme === 'dark' ? '#1f2937' : '#e2e8f0',
           borderRadius: '8px',
           padding: '0',
           fontSize: '14px',
           maxWidth: '360px',
           zIndex: 1000,
-          boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)',
+          boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.15)',
         }}
         html={`
           <div class="p-4">

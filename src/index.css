@@ -101,10 +101,10 @@
     --color-primary-hover: #0ea5e9;
     --color-secondary: #1e293b;
     --color-secondary-hover: #334155;
-    --color-success: #166534;
-    --color-warning: #ca8a04;
-    --color-danger: #b91c1c;
-    --color-info: #0369a1;
+    --color-success: #10b981;
+    --color-warning: #f59e0b;
+    --color-danger: #ef4444;
+    --color-info: #3b82f6;
 
     --color-background: #0A1628;
     --color-background-secondary: #060D1F;
@@ -215,4 +215,74 @@ body {
     scrollbar-width: none;
     /* Firefox */
   }
+}
+
+/* Global Dark Mode overrides for Tailwind utility classes in Dashboard and subcomponents */
+/* Background Overrides */
+.dark .bg-white {
+  background-color: var(--color-surface) !important;
+}
+.dark .bg-gray-50,
+.dark .bg-gray-100 {
+  background-color: var(--color-background-secondary) !important;
+}
+.dark .bg-gray-200 {
+  background-color: var(--color-surface-hover) !important;
+}
+.dark .bg-blue-50 {
+  background-color: rgba(56, 189, 248, 0.15) !important;
+}
+
+/* Text Overrides */
+.dark .text-gray-900,
+.dark .text-gray-800,
+.dark .text-gray-950 {
+  color: var(--color-text-primary) !important;
+}
+.dark .text-gray-700,
+.dark .text-gray-600,
+.dark .text-gray-500 {
+  color: var(--color-text-secondary) !important;
+}
+.dark .text-gray-400 {
+  color: var(--color-text-muted) !important;
+}
+
+/* Border Overrides */
+.dark .border-gray-100,
+.dark .border-gray-200,
+.dark .border-gray-300 {
+  border-color: var(--color-border) !important;
+}
+
+/* Hover States */
+.dark .hover\:bg-gray-50:hover,
+.dark .hover\:bg-gray-100:hover {
+  background-color: var(--color-surface-hover) !important;
+}
+
+/* Brand Colors Overrides */
+.dark .bg-\[\#2B4B9B\] {
+  background-color: var(--color-primary) !important;
+}
+.dark .hover\:bg-\[\#1a2f61\]:hover {
+  background-color: var(--color-primary-hover) !important;
+}
+.dark .text-\[\#2B4B9B\] {
+  color: var(--color-primary) !important;
+}
+.dark .border-\[\#2B4B9B\] {
+  border-color: var(--color-primary) !important;
+}
+.dark .focus\:ring-\[\#2B4B9B\]:focus {
+  --tw-ring-color: var(--color-primary) !important;
+}
+.dark .focus\:border-\[\#2B4B9B\]:focus {
+  border-color: var(--color-primary) !important;
+}
+
+/* Skeleton overrides */
+.dark .react-loading-skeleton {
+  --base-color: #1e293b !important;
+  --highlight-color: #334155 !important;
 }
