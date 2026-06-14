@@ -546,7 +546,7 @@ const OpportunityCard: ComponentType<OpportunityCardProps> = memo(
 
     const detailCards = [
       {
-        icon: <DollarSign className="w-5 h-5 sm:w-6 sm:h-6 text-gray-700" />,
+        icon: <DollarSign className="w-5 h-5 sm:w-6 sm:h-6 text-gray-700 dark:text-sky-400" />,
         label: (() => {
           const pr = opportunity.price_range;
           if (pr) {
@@ -576,7 +576,7 @@ const OpportunityCard: ComponentType<OpportunityCardProps> = memo(
         })(),
       },
       {
-        icon: <FileText className="w-5 h-5 sm:w-6 sm:h-6 text-gray-700" />,
+        icon: <FileText className="w-5 h-5 sm:w-6 sm:h-6 text-gray-700 dark:text-indigo-400" />,
         label: 'Brochure',
         value: opportunity.sponsorship_brochure_url ? (
           <div className="flex flex-col space-y-1">
@@ -585,7 +585,7 @@ const OpportunityCard: ComponentType<OpportunityCardProps> = memo(
                 href={opportunity.sponsorship_brochure_url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="flex items-center text-blue-600 hover:text-blue-800"
+                className="flex items-center text-blue-600 dark:text-sky-400 hover:text-blue-800 dark:hover:text-sky-300 font-medium"
                 aria-label="View sponsorship brochure"
               >
                 <LinkIcon className="w-4 h-4 mr-1" />
@@ -595,10 +595,10 @@ const OpportunityCard: ComponentType<OpportunityCardProps> = memo(
               <button
                 onClick={handleUnlockBrochure}
                 disabled={credits < 100 || isUnlocking}
-                className={`flex items-center px-2 py-1 rounded-md transition-colors duration-200 ${
+                className={`flex items-center px-2 py-1 rounded-md transition-all duration-200 border-0 font-medium click-effect ${
                   credits < 100 || isUnlocking
-                    ? 'bg-gray-400/80 text-gray-600 cursor-not-allowed'
-                    : 'bg-blue-600/80 text-white hover:bg-blue-700/90'
+                    ? 'bg-gray-400/80 dark:bg-white/5 text-gray-600 dark:text-gray-500 cursor-not-allowed'
+                    : 'bg-blue-600/80 dark:bg-gradient-to-r dark:from-sky-400 dark:to-blue-500 dark:text-slate-950 text-white hover:bg-blue-700/90 shadow-md dark:shadow-sky-500/10'
                 }`}
                 aria-label="Unlock sponsorship brochure, costs 100 credits"
               >
@@ -615,22 +615,22 @@ const OpportunityCard: ComponentType<OpportunityCardProps> = memo(
                 )}
               </button>
             )}
-            <p className="text-xs text-gray-500">Costs 100 credits to view</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400">Costs 100 credits to view</p>
           </div>
         ) : 'Not Available',
       },
       {
-        icon: <Tag className="w-5 h-5 sm:w-6 sm:h-6 text-gray-700" />,
+        icon: <Tag className="w-5 h-5 sm:w-6 sm:h-6 text-gray-700 dark:text-emerald-400" />,
         label: 'Category',
         value: opportunity.category_name || 'N/A',
       },
       {
-        icon: <Tag className="w-5 h-5 sm:w-6 sm:h-6 text-gray-700" />,
+        icon: <Tag className="w-5 h-5 sm:w-6 sm:h-6 text-gray-700 dark:text-pink-400" />,
         label: 'Ad Type',
         value: opportunity.ad_type || 'N/A',
       },
       {
-        icon: <User className="w-5 h-5 sm:w-6 sm:h-6 text-gray-700" />,
+        icon: <User className="w-5 h-5 sm:w-6 sm:h-6 text-gray-700 dark:text-amber-400" />,
         label: 'Creator',
         value: opportunity.creator_name || 'N/A',
       },
@@ -739,10 +739,10 @@ const OpportunityCard: ComponentType<OpportunityCardProps> = memo(
             <div className="absolute top-1/2 right-4 sm:right-6 transform -translate-y-1/2 flex flex-col gap-2">
               <button
                 onClick={() => handleButtonAction('like')}
-                className={`p-2 rounded-full transition-colors duration-200 ${
+                className={`p-2 rounded-full transition-all duration-200 click-effect ${
                   credits < 50 || isSwipePending
                     ? 'bg-gray-400/80 cursor-not-allowed'
-                    : 'bg-green-600/80 hover:bg-green-700/90'
+                    : 'bg-green-600/80 hover:bg-green-700/90 hover:scale-105'
                 }`}
                 aria-label="Like"
                 disabled={credits < 50 || isSwipePending}
@@ -751,8 +751,8 @@ const OpportunityCard: ComponentType<OpportunityCardProps> = memo(
               </button>
               <button
                 onClick={() => handleButtonAction('dislike')}
-                className={`p-2 rounded-full transition-colors duration-200 ${
-                  isSwipePending ? 'bg-gray-400/80 cursor-not-allowed' : 'bg-red-600/80 hover:bg-red-700/90'
+                className={`p-2 rounded-full transition-all duration-200 click-effect ${
+                  isSwipePending ? 'bg-gray-400/80 cursor-not-allowed' : 'bg-red-600/80 hover:bg-red-700/90 hover:scale-105'
                 }`}
                 aria-label="Reject"
                 disabled={isSwipePending}
@@ -762,47 +762,47 @@ const OpportunityCard: ComponentType<OpportunityCardProps> = memo(
             </div>
           </motion.div>
           {thumbnailGallery}
-          <div className="bg-gray-100 py-4 sm:py-6">
+          <div className="bg-transparent py-4 sm:py-6">
             <div className="grid grid-cols-1">
-              <div className="bg-white rounded-lg p-4 shadow-md">
-                <p className="text-sm sm:text-base text-gray-600">Description</p>
-                <p className="text-base sm:text-lg text-gray-900 text-justify">
+              <div className="liquid-glass-card rounded-xl p-4">
+                <p className="text-sm sm:text-base text-gray-600 dark:text-gray-400 font-medium mb-1">Description</p>
+                <p className="text-base sm:text-lg text-gray-900 dark:text-gray-200 text-justify">
                   {opportunity.description || 'Not specified'}
                 </p>
               </div>
             </div>
           </div>
-          <div className="bg-gray-100">
+          <div className="bg-transparent">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {opportunity.requirements && opportunity.requirements.trim() !== '' && (
-                <div className="bg-white rounded-lg p-3 shadow-md">
-                  <p className="text-xs sm:text-sm text-gray-600">Requirements</p>
-                  <p className="text-base sm:text-lg text-gray-900 text-justify">
+                <div className="liquid-glass-card rounded-xl p-3">
+                  <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 font-medium mb-1">Requirements</p>
+                  <p className="text-base sm:text-lg text-gray-900 dark:text-gray-200 text-justify">
                     {opportunity.requirements}
                   </p>
                 </div>
               )}
               {opportunity.benefits && opportunity.benefits.trim() !== '' && (
-                <div className="bg-white rounded-lg p-3 shadow-md">
-                  <p className="text-xs sm:text-sm text-gray-600">Benefits</p>
-                  <p className="text-base sm:text-lg text-gray-900 text-justify">
+                <div className="liquid-glass-card rounded-xl p-3">
+                  <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 font-medium mb-1">Benefits</p>
+                  <p className="text-base sm:text-lg text-gray-900 dark:text-gray-200 text-justify">
                     {opportunity.benefits}
                   </p>
                 </div>
               )}
             </div>
           </div>
-          <div className="bg-gray-100 py-4 sm:py-6">
+          <div className="bg-transparent py-4 sm:py-6">
             <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
               {detailCards.map((card, index) => (
                 <div
                   key={index}
-                  className="bg-white rounded-lg p-3 flex items-center space-x-3 shadow-md"
+                  className="liquid-glass-card rounded-xl p-3.5 flex items-center space-x-3 click-effect"
                 >
                   {card.icon}
                   <div>
-                    <p className="text-xs sm:text-sm text-gray-600">{card.label}</p>
-                    <p className="text-sm sm:text-base text-gray-900">{card.value}</p>
+                    <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400 font-medium">{card.label}</p>
+                    <p className="text-sm sm:text-base text-gray-900 dark:text-white font-semibold">{card.value}</p>
                   </div>
                 </div>
               ))}

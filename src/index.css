@@ -218,40 +218,40 @@ body {
 }
 
 /* Global Dark Mode overrides for Tailwind utility classes in Dashboard and subcomponents */
-/* Background Overrides */
-.dark .bg-white {
+/* Background Overrides - Exclude transparency/opacity utility classes */
+.dark .bg-white:not([class*="bg-white/"]) {
   background-color: var(--color-surface) !important;
 }
-.dark .bg-gray-50,
-.dark .bg-gray-100 {
+.dark .bg-gray-50:not([class*="bg-gray-50/"]),
+.dark .bg-gray-100:not([class*="bg-gray-100/"]) {
   background-color: var(--color-background-secondary) !important;
 }
-.dark .bg-gray-200 {
+.dark .bg-gray-200:not([class*="bg-gray-200/"]) {
   background-color: var(--color-surface-hover) !important;
 }
-.dark .bg-blue-50 {
+.dark .bg-blue-50:not([class*="bg-blue-50/"]) {
   background-color: rgba(56, 189, 248, 0.15) !important;
 }
 
-/* Text Overrides */
-.dark .text-gray-900,
-.dark .text-gray-800,
-.dark .text-gray-950 {
+/* Text Overrides - Exclude transparency/opacity utility classes */
+.dark .text-gray-900:not([class*="text-gray-900/"]),
+.dark .text-gray-800:not([class*="text-gray-800/"]),
+.dark .text-gray-950:not([class*="text-gray-950/"]) {
   color: var(--color-text-primary) !important;
 }
-.dark .text-gray-700,
-.dark .text-gray-600,
-.dark .text-gray-500 {
+.dark .text-gray-700:not([class*="text-gray-700/"]),
+.dark .text-gray-600:not([class*="text-gray-600/"]),
+.dark .text-gray-500:not([class*="text-gray-500/"]) {
   color: var(--color-text-secondary) !important;
 }
-.dark .text-gray-400 {
+.dark .text-gray-400:not([class*="text-gray-400/"]) {
   color: var(--color-text-muted) !important;
 }
 
-/* Border Overrides */
-.dark .border-gray-100,
-.dark .border-gray-200,
-.dark .border-gray-300 {
+/* Border Overrides - Exclude transparency/opacity utility classes */
+.dark .border-gray-100:not([class*="border-gray-100/"]),
+.dark .border-gray-200:not([class*="border-gray-200/"]),
+.dark .border-gray-300:not([class*="border-gray-300/"]) {
   border-color: var(--color-border) !important;
 }
 
@@ -262,7 +262,7 @@ body {
 }
 
 /* Brand Colors Overrides */
-.dark .bg-\[\#2B4B9B\] {
+.dark .bg-\[\#2B4B9B\]:not([class*="bg-\[\#2B4B9B\]/"]) {
   background-color: var(--color-primary) !important;
 }
 .dark .hover\:bg-\[\#1a2f61\]:hover {
@@ -285,4 +285,74 @@ body {
 .dark .react-loading-skeleton {
   --base-color: #1e293b !important;
   --highlight-color: #334155 !important;
+}
+
+/* Liquid Glass Card Aesthetic */
+.liquid-glass-card {
+  background: rgba(255, 255, 255, 0.7) !important;
+  backdrop-filter: blur(20px) saturate(120%) !important;
+  -webkit-backdrop-filter: blur(20px) saturate(120%) !important;
+  border: 1px solid rgba(0, 0, 0, 0.06) !important;
+  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.04) !important;
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
+.liquid-glass-card:hover {
+  border: 1px solid rgba(0, 0, 0, 0.12) !important;
+  box-shadow: 0 12px 40px 0 rgba(31, 38, 135, 0.08) !important;
+}
+
+.dark .liquid-glass-card {
+  background: rgba(13, 31, 60, 0.45) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  box-shadow: 0 8px 32px 0 rgba(0, 212, 255, 0.05) !important;
+}
+
+.dark .liquid-glass-card:hover {
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+  box-shadow: 0 12px 40px 0 rgba(0, 212, 255, 0.08) !important;
+}
+
+/* Orbit Animations for Background Blobs */
+@keyframes orbit-1 {
+  0% {
+    transform: translate(0px, 0px) scale(1);
+  }
+  33% {
+    transform: translate(30px, -50px) scale(1.1);
+  }
+  66% {
+    transform: translate(-20px, 20px) scale(0.95);
+  }
+  100% {
+    transform: translate(0px, 0px) scale(1);
+  }
+}
+
+@keyframes orbit-2 {
+  0% {
+    transform: translate(0px, 0px) scale(1);
+  }
+  50% {
+    transform: translate(-40px, 40px) scale(1.05);
+  }
+  100% {
+    transform: translate(0px, 0px) scale(1);
+  }
+}
+
+.animate-orbit-slow {
+  animation: orbit-1 20s infinite ease-in-out;
+}
+
+.animate-orbit-delayed {
+  animation: orbit-2 25s infinite ease-in-out;
+}
+
+/* Click Shrink active transitions */
+.click-effect {
+  transition: transform 0.2s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+.click-effect:active {
+  transform: scale(0.96) !important;
 }

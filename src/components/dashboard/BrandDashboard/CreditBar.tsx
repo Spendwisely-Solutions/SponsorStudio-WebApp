@@ -14,19 +14,21 @@ export default function CreditBar({ credits, shakeCredits, onAddCredits }: Credi
   return (
     <>
       <motion.div
-        className="mb-3 sm:mb-5 bg-white p-2.5 sm:p-4 rounded-xl shadow-sm border border-gray-200 transition-all duration-300 hover:shadow-md overflow-hidden"
+        className="mb-3 sm:mb-5 liquid-glass-card p-2.5 sm:p-4 rounded-xl overflow-hidden"
         animate={shakeCredits ? { x: [0, -10, 10, -10, 10, 0], transition: { duration: 0.5 } } : {}}
+        whileHover={{ scale: 1.005, transition: { duration: 0.2 } }}
       >
         <div className="flex flex-wrap items-center justify-between gap-2">
           {/* Credit Balance */}
           <div className="flex items-center space-x-2 sm:space-x-3.5 min-w-0">
-            <div className="w-7 h-7 sm:w-10 sm:h-10 bg-blue-50 rounded-lg flex items-center justify-center flex-shrink-0">
+            <div className="w-7 h-7 sm:w-10 sm:h-10 bg-blue-50 dark:bg-sky-500/10 dark:border dark:border-sky-500/20 rounded-lg flex items-center justify-center flex-shrink-0 shadow-[0_0_15px_rgba(56,189,248,0.15)]">
               <img src={coinIcon} alt="Credits" className="w-3.5 h-3.5 sm:w-5 sm:h-5" />
             </div>
-            <div className="min-w-0">
-              <span className="text-base sm:text-xl font-bold text-gray-800 whitespace-nowrap">
-                {credits ?? 'N/A'} <span className="text-xs sm:text-sm text-gray-500 font-normal">credits</span>
+            <div className="min-w-0 flex items-baseline">
+              <span className="text-base sm:text-xl font-bold text-gray-800 dark:text-transparent dark:bg-clip-text dark:bg-gradient-to-r dark:from-sky-400 dark:to-indigo-300 whitespace-nowrap">
+                {credits ?? 'N/A'}
               </span>
+              <span className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 font-normal ml-1">credits</span>
             </div>
           </div>
 
@@ -34,7 +36,7 @@ export default function CreditBar({ credits, shakeCredits, onAddCredits }: Credi
           <div className="flex items-center gap-1 sm:gap-3 flex-shrink-0">
             {/* How Credits Work Button */}
             <button
-              className="flex items-center gap-1 p-1 sm:p-2 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded-lg transition-all duration-200"
+              className="flex items-center gap-1 p-1 sm:p-2 text-blue-600 dark:text-sky-400 hover:text-blue-800 dark:hover:text-sky-300 hover:bg-blue-50 dark:hover:bg-white/5 rounded-lg transition-all duration-200 click-effect"
               data-tooltip-id="credits-info-tooltip"
               title="How credits work"
             >
@@ -51,13 +53,13 @@ export default function CreditBar({ credits, shakeCredits, onAddCredits }: Credi
 
             {/* Add Credits Button */}
             <button
-              className="flex items-center gap-1 px-4 py-2 sm:px-4 sm:py-2 bg-[#2B4B9B] text-white rounded-lg hover:bg-[#1a2f61] transition-all duration-200 w-32 h-12 sm:w-auto sm:h-auto"
+              className="flex items-center justify-center gap-1 px-4 py-2 bg-[#2B4B9B] dark:bg-gradient-to-r dark:from-sky-400 dark:to-blue-500 dark:text-slate-950 dark:font-semibold text-white rounded-lg hover:bg-[#1a2f61] dark:hover:from-sky-500 dark:hover:to-blue-600 transition-all duration-200 w-32 h-12 sm:w-auto sm:h-auto border-0 shadow-lg dark:shadow-sky-500/25 click-effect"
               onClick={onAddCredits}
             >
               <svg className="w-5 h-5 sm:w-3.5 sm:h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
               </svg>
-              <span className="text-sm sm:text-sm font-medium">Add Credits</span>
+              <span className="text-sm font-medium">Add Credits</span>
             </button>
           </div>
         </div>
