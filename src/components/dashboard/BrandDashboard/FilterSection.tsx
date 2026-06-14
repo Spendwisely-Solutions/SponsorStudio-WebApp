@@ -144,9 +144,9 @@ const FilterSection: React.FC<FilterSectionProps> = ({
                 onChange={(e) => setSelectedCategory(e.target.value)}
                 className="w-full px-2 sm:px-3 py-1.5 sm:py-2 border border-gray-300 dark:border-white/10 bg-white dark:bg-slate-950/40 dark:text-gray-200 rounded-lg focus:ring-2 focus:ring-sky-400/50 focus:border-sky-400 text-xs sm:text-sm cursor-pointer click-effect"
               >
-                <option value="" className="dark:bg-[#0D1F3C]">All Categories</option>
+                <option value="" className="dark:bg-[#121212]">All Categories</option>
                 {categories.map((category) => (
-                  <option key={category.id} value={category.id} className="dark:bg-[#0D1F3C]">
+                  <option key={category.id} value={category.id} className="dark:bg-[#121212]">
                     {category.name}
                   </option>
                 ))}
@@ -161,10 +161,10 @@ const FilterSection: React.FC<FilterSectionProps> = ({
                   onChange={(e) => setAdTypeFilter(e.target.value)}
                   className="w-full px-2 sm:px-3 py-1.5 sm:py-2 border border-gray-300 dark:border-white/10 bg-white dark:bg-slate-950/40 dark:text-gray-200 rounded-lg focus:ring-2 focus:ring-sky-400/50 focus:border-sky-400 text-xs sm:text-sm cursor-pointer click-effect"
                 >
-                  <option value="" className="dark:bg-[#0D1F3C]">All Statuses</option>
-                  <option value="pending" className="dark:bg-[#0D1F3C]">Pending</option>
-                  <option value="accepted" className="dark:bg-[#0D1F3C]">Accepted</option>
-                  <option value="rejected" className="dark:bg-[#0D1F3C]">Rejected</option>
+                  <option value="" className="dark:bg-[#121212]">All Statuses</option>
+                  <option value="pending" className="dark:bg-[#121212]">Pending</option>
+                  <option value="accepted" className="dark:bg-[#121212]">Accepted</option>
+                  <option value="rejected" className="dark:bg-[#121212]">Rejected</option>
                 </select>
               </div>
             )}
@@ -177,11 +177,11 @@ const FilterSection: React.FC<FilterSectionProps> = ({
                   onChange={(e) => setAdTypeFilter(e.target.value)}
                   className="w-full px-2 sm:px-3 py-1.5 sm:py-2 border border-gray-300 dark:border-white/10 bg-white dark:bg-slate-950/40 dark:text-gray-200 rounded-lg focus:ring-2 focus:ring-sky-400/50 focus:border-sky-400 text-xs sm:text-sm cursor-pointer click-effect"
                 >
-                  <option value="" className="dark:bg-[#0D1F3C]">All Types</option>
-                  <option value="photo" className="dark:bg-[#0D1F3C]">Photo</option>
-                  <option value="video" className="dark:bg-[#0D1F3C]">Video</option>
-                  <option value="article" className="dark:bg-[#0D1F3C]">Article</option>
-                  <option value="review" className="dark:bg-[#0D1F3C]">Review</option>
+                  <option value="" className="dark:bg-[#121212]">All Types</option>
+                  <option value="photo" className="dark:bg-[#121212]">Photo</option>
+                  <option value="video" className="dark:bg-[#121212]">Video</option>
+                  <option value="article" className="dark:bg-[#121212]">Article</option>
+                  <option value="review" className="dark:bg-[#121212]">Review</option>
                 </select>
               </div>
             )}
@@ -195,13 +195,13 @@ const FilterSection: React.FC<FilterSectionProps> = ({
                 onChange={(e) => setPriceRangeFilter(e.target.value)}
                 className="w-full px-2 sm:px-3 py-1.5 sm:py-2 border border-gray-300 dark:border-white/10 bg-white dark:bg-slate-950/40 dark:text-gray-200 rounded-lg focus:ring-2 focus:ring-sky-400/50 focus:border-sky-400 text-xs sm:text-sm cursor-pointer click-effect"
               >
-                <option value="" className="dark:bg-[#0D1F3C]">Any Budget</option>
-                <option value="0-10000" className="dark:bg-[#0D1F3C]">Under ₹10,000</option>
-                <option value="10000-50000" className="dark:bg-[#0D1F3C]">₹10K - ₹50K</option>
-                <option value="50000-100000" className="dark:bg-[#0D1F3C]">₹50K - ₹1L</option>
-                <option value="100000-500000" className="dark:bg-[#0D1F3C]">₹1L - ₹5L</option>
-                <option value="500000-1000000" className="dark:bg-[#0D1F3C]">₹5L - ₹10L</option>
-                <option value="1000000-" className="dark:bg-[#0D1F3C]">Above ₹10L</option>
+                <option value="" className="dark:bg-[#121212]">Any Budget</option>
+                <option value="0-10000" className="dark:bg-[#121212]">Under ₹10,000</option>
+                <option value="10000-50000" className="dark:bg-[#121212]">₹10K - ₹50K</option>
+                <option value="50000-100000" className="dark:bg-[#121212]">₹50K - ₹1L</option>
+                <option value="100000-500000" className="dark:bg-[#121212]">₹1L - ₹5L</option>
+                <option value="500000-1000000" className="dark:bg-[#121212]">₹5L - ₹10L</option>
+                <option value="1000000-" className="dark:bg-[#121212]">Above ₹10L</option>
               </select>
             </div>
 

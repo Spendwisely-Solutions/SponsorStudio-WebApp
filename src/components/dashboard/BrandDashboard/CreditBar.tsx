@@ -71,7 +71,7 @@ export default function CreditBar({ credits, shakeCredits, onAddCredits }: Credi
         place="bottom"
         className="!shadow-lg !border !rounded-lg !p-0 !opacity-100"
         style={{
-          backgroundColor: theme === 'dark' ? '#0D1F3C' : '#ffffff',
+          backgroundColor: theme === 'dark' ? '#121212' : '#ffffff',
           color: theme === 'dark' ? '#f9fafb' : '#1f2937',
           borderColor: theme === 'dark' ? '#1f2937' : '#e2e8f0',
           borderRadius: '8px',

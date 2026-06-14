@@ -106,33 +106,33 @@
     --color-danger: #ef4444;
     --color-info: #3b82f6;
 
-    --color-background: #0A1628;
-    --color-background-secondary: #060D1F;
-    --color-surface: #0D1F3C;
-    --color-surface-hover: #1e293b;
+    --color-background: #000000;
+    --color-background-secondary: #080808;
+    --color-surface: #121212;
+    --color-surface-hover: #1c1c1e;
 
     --color-text-primary: #f9fafb;
     --color-text-secondary: #d1d5db;
     --color-text-muted: #9ca3af;
-    --color-text-inverse: #0b0f19;
+    --color-text-inverse: #000000;
 
-    --color-border: #1f2937;
-    --color-border-hover: #374151;
+    --color-border: #1a1a1a;
+    --color-border-hover: #2d2d2d;
 
-    --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.5);
-    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -1px rgba(0, 0, 0, 0.2);
-    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.4), 0 4px 6px -2px rgba(0, 0, 0, 0.3);
-    --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.5), 0 10px 10px -5px rgba(0, 0, 0, 0.4);
+    --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.7);
+    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.5), 0 2px 4px -1px rgba(0, 0, 0, 0.3);
+    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.6), 0 4px 6px -2px rgba(0, 0, 0, 0.4);
+    --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.7), 0 10px 10px -5px rgba(0, 0, 0, 0.5);
 
     /* Alternating section gradients for original premium dark mode */
-    --gradient-trusted-by: linear-gradient(180deg, #0A1628 0%, #0D1F3C 100%);
-    --gradient-what-is: linear-gradient(135deg, #060D1F 0%, #0A1628 50%, #0D1F3C 100%);
-    --gradient-how-it-works: linear-gradient(180deg, #0D1F3C 0%, #0A1628 50%, #060D1F 100%);
-    --gradient-trending-events: linear-gradient(180deg, #0A1628 0%, #0D1F3C 50%, #0A1628 100%);
-    --gradient-clients: linear-gradient(180deg, #060D1F 0%, #0A1628 50%, #0D1F3C 100%);
-    --gradient-success-stories: linear-gradient(180deg, #0D1F3C 0%, #0A1628 50%, #060D1F 100%);
-    --gradient-contact: linear-gradient(180deg, #060D1F 0%, #0A1628 100%);
-    --gradient-footer: linear-gradient(180deg, #060D1F 0%, #040A14 100%);
+    --gradient-trusted-by: linear-gradient(180deg, #000000 0%, #080808 100%);
+    --gradient-what-is: linear-gradient(135deg, #080808 0%, #000000 50%, #121212 100%);
+    --gradient-how-it-works: linear-gradient(180deg, #121212 0%, #000000 50%, #080808 100%);
+    --gradient-trending-events: linear-gradient(180deg, #000000 0%, #080808 50%, #000000 100%);
+    --gradient-clients: linear-gradient(180deg, #080808 0%, #000000 50%, #121212 100%);
+    --gradient-success-stories: linear-gradient(180deg, #121212 0%, #000000 50%, #080808 100%);
+    --gradient-contact: linear-gradient(180deg, #080808 0%, #000000 100%);
+    --gradient-footer: linear-gradient(180deg, #080808 0%, #000000 100%);
   }
 }
 

@@ -139,7 +139,7 @@ const NavBar: React.FC<NavBarProps> = ({
                   <ChevronDown className={`w-4 h-4 transition-transform duration-200 ${resourcesOpen ? 'rotate-180' : ''}`} />
                 </button>
                 {resourcesOpen && (
-                  <div className="absolute top-full right-0 mt-2 w-48 bg-white dark:bg-[#0D1F3C] border border-gray-200 dark:border-white/10 rounded-xl shadow-[0_8px_32px_rgba(0,0,0,0.15)] dark:shadow-[0_8px_32px_rgba(0,0,0,0.4)] overflow-hidden backdrop-blur-xl">
+                  <div className="absolute top-full right-0 mt-2 w-48 bg-white dark:bg-[#121212] border border-gray-200 dark:border-white/10 rounded-xl shadow-[0_8px_32px_rgba(0,0,0,0.15)] dark:shadow-[0_8px_32px_rgba(0,0,0,0.4)] overflow-hidden backdrop-blur-xl">
                     {resourceLinks.map((link, i) =>
                       link.to ? (
                         <Link

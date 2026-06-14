@@ -399,7 +399,7 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gradient-to-br dark:from-[#060D1F] dark:via-[#0A1628] dark:to-[#0D1F3C] flex relative overflow-hidden transition-colors duration-500">
+    <div className="min-h-screen bg-gray-50 dark:bg-gradient-to-br dark:from-black dark:via-black dark:to-neutral-900 flex relative overflow-hidden transition-colors duration-500">
       {/* Grid overlay for dark mode */}
       <div
         className="absolute inset-0 opacity-[0.02] dark:opacity-[0.05] pointer-events-none z-0"
@@ -429,7 +429,7 @@ export default function Dashboard() {
       />
 
       {/* Desktop Sidebar */}
-      <div className="w-64 bg-white/100 dark:bg-[#060D1F]/60 dark:backdrop-blur-lg dark:border-r dark:border-white/5 shadow-md hidden md:block fixed h-full z-20">
+      <div className="w-64 bg-white/100 dark:bg-black/60 dark:backdrop-blur-lg dark:border-r dark:border-white/5 shadow-md hidden md:block fixed h-full z-20">
         <div className="p-6">
           <img 
             src="https://i.ibb.co/ZzPfwrxP/logo-final-png.png" 
@@ -584,7 +584,7 @@ export default function Dashboard() {
 
       {/* Mobile Sidebar */}
       <div
-        className={`fixed inset-y-0 left-0 w-64 bg-white/100 dark:bg-[#060D1F]/90 dark:backdrop-blur-lg border-r dark:border-white/5 shadow-md z-50 transform ${
+        className={`fixed inset-y-0 left-0 w-64 bg-white/100 dark:bg-black/90 dark:backdrop-blur-lg border-r dark:border-white/5 shadow-md z-50 transform ${
           mobileSidebarOpen ? 'translate-x-0' : '-translate-x-full'
         } transition-transform duration-300 ease-in-out md:hidden`}
       >
@@ -755,7 +755,7 @@ export default function Dashboard() {
       </div>
 
       {/* Mobile Bottom Navigation */}
-      <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white dark:bg-[#0D1F3C] border-t dark:border-white/5 shadow-t z-50">
+      <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white dark:bg-surface border-t dark:border-white/5 shadow-t z-50">
         <div className="flex justify-around p-2">
           <button
             onClick={() => setActiveTab('dashboard')}
