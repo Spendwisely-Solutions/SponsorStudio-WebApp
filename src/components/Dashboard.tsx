@@ -73,6 +73,7 @@ export default function Dashboard() {
   useEffect(() => {
     if (profile) {
       setUserProfile(profile);
+      setAvatarError(false);
       fetchUserData();
     }
   }, [profile]);
@@ -446,7 +447,10 @@ export default function Dashboard() {
                 onError={() => setAvatarError(true)}
               />
             ) : (
-              <div className="w-10 h-10 rounded-full bg-[#2B4B9B] dark:bg-primary/25 dark:text-primary dark:border dark:border-primary/30 flex items-center justify-center text-white">
+              <div 
+                className="w-10 h-10 rounded-full dark:border dark:border-primary/30 flex items-center justify-center font-semibold"
+                style={{ backgroundColor: theme === 'dark' ? 'rgba(56, 189, 248, 0.2)' : '#2B4B9B', color: theme === 'dark' ? '#38bdf8' : '#ffffff' }}
+              >
                 {userProfile?.company_name ? userProfile.company_name.charAt(0).toUpperCase() : user?.email?.charAt(0).toUpperCase()}
               </div>
             )}
@@ -609,7 +613,10 @@ export default function Dashboard() {
                 onError={() => setAvatarError(true)}
               />
             ) : (
-              <div className="w-10 h-10 rounded-full bg-[#2B4B9B] dark:bg-primary/25 dark:text-primary flex items-center justify-center text-white">
+              <div 
+                className="w-10 h-10 rounded-full dark:border dark:border-primary/30 flex items-center justify-center font-semibold"
+                style={{ backgroundColor: theme === 'dark' ? 'rgba(56, 189, 248, 0.2)' : '#2B4B9B', color: theme === 'dark' ? '#38bdf8' : '#ffffff' }}
+              >
                 {userProfile?.company_name ? userProfile.company_name.charAt(0).toUpperCase() : user?.email?.charAt(0).toUpperCase()}
               </div>
             )}
