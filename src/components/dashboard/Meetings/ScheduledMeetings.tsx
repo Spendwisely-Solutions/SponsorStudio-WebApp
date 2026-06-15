@@ -231,7 +231,7 @@ export default function ScheduledMeetings({ meetings, isBrand }: ScheduledMeetin
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: 20 }}
                   transition={{ duration: 0.3, delay: index * 0.1 }}
-                  className={`border border-gray-200 rounded-xl p-6 bg-white shadow-sm ${
+                  className={`liquid-glass-card rounded-xl p-6 shadow-sm ${
                     index === filteredMeetings.length - 1 ? 'mb-4' : ''
                   }`}
                 >
@@ -311,7 +311,7 @@ export default function ScheduledMeetings({ meetings, isBrand }: ScheduledMeetin
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
-        className="hidden sm:block bg-white rounded-xl shadow-lg p-6"
+        className="hidden sm:block liquid-glass-card rounded-xl shadow-lg p-6"
       >
         {content}
       </motion.div>

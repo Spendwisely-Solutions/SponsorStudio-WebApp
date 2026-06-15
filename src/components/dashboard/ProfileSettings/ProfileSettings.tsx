@@ -599,7 +599,7 @@ export default function ProfileSettings({ profile }: ProfileSettingsProps) {
   };
 
   return (
-    <div className="bg-white rounded-lg shadow-lg p-6 pb-14 sm:pb-6 relative w-full">
+    <div className="liquid-glass-card rounded-lg shadow-lg p-6 pb-14 sm:pb-6 relative w-full">
       <motion.h2
         className="text-3xl font-bold text-gray-800 mb-8 border-b-2 border-[#2B4B9B] pb-2"
         initial={{ opacity: 0, y: -20 }}
@@ -753,7 +753,7 @@ export default function ProfileSettings({ profile }: ProfileSettingsProps) {
           animate="visible"
         >
           <motion.div
-            className="bg-gray-50 p-6 rounded-lg shadow-sm"
+            className="liquid-glass-card p-6 rounded-lg shadow-sm"
             whileHover={{ boxShadow: '0 4px 20px rgba(0,0,0,0.1)' }}
           >
             <motion.h3
@@ -874,7 +874,7 @@ export default function ProfileSettings({ profile }: ProfileSettingsProps) {
           </motion.div>
 
           <motion.div
-            className="bg-gray-50 p-6 rounded-lg shadow-sm"
+            className="liquid-glass-card p-6 rounded-lg shadow-sm"
             whileHover={{ boxShadow: '0 4px 20px rgba(0,0,0,0.1)' }}
           >
             <motion.h3
@@ -1031,7 +1031,7 @@ export default function ProfileSettings({ profile }: ProfileSettingsProps) {
               animate="visible"
             >
               <motion.div
-                className="bg-gray-50 p-6 rounded-lg shadow-sm"
+                className="liquid-glass-card p-6 rounded-lg shadow-sm"
                 whileHover={{ boxShadow: '0 4px 20px rgba(0,0,0,0.1)' }}
               >
                 <motion.h3
@@ -1127,7 +1127,7 @@ export default function ProfileSettings({ profile }: ProfileSettingsProps) {
                 </div>
               </motion.div>
               <motion.div
-                className="bg-gray-50 p-6 rounded-lg shadow-sm"
+                className="liquid-glass-card p-6 rounded-lg shadow-sm"
                 whileHover={{ boxShadow: '0 4px 20px rgba(0,0,0,0.1)' }}
               >
                 <motion.h3

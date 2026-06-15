@@ -125,7 +125,7 @@ export default function Header({
           >
             Reports
           </motion.h1>
-          <div className="bg-white p-4 rounded-lg shadow-sm flex items-center justify-between">
+          <div className="liquid-glass-card p-4 rounded-lg shadow-sm flex items-center justify-between">
             <motion.div
               animate={shakeCredits ? { x: [0, -10, 10, -10, 10, 0] } : {}}
               transition={{ duration: 0.5 }}
