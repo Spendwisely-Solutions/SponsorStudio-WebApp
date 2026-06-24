@@ -366,10 +366,9 @@ export default function CreatorDashboard({ onUpdateProfile }: BrandDashboardProp
         const uploadPromises = formData.media_files.map(async (file) => {
           const fileName = `${Date.now()}_${file.name.replace(/[^a-zA-Z0-9._-]/g, '_')}`;
           const filePath = `opportunities/${user.id}/${fileName}`;
-          const fileBuffer = await file.arrayBuffer();
           const { data, error } = await supabase.storage
             .from('media')
-            .upload(filePath, fileBuffer, {
+            .upload(filePath, file, {
               cacheControl: '3600',
               upsert: false,
               contentType: file.type,
@@ -389,22 +388,21 @@ export default function CreatorDashboard({ onUpdateProfile }: BrandDashboardProp
         const file = formData.sponsorship_brochure_file;
         const fileName = `${Date.now()}_brochure_${file.name.replace(/[^a-zA-Z0-9._-]/g, '_')}`;
         const filePath = `opportunities/${user.id}/${fileName}`;
-        const fileBuffer = await file.arrayBuffer();
         const { data, error } = await supabase.storage
           .from('media')
-          .upload(filePath, fileBuffer, {
+          .upload(filePath, file, {
             cacheControl: '3600',
             upsert: false,
             contentType: file.type,
           });
         if (error) {
-            throw new Error(`Failed to upload sponsorship brochure ${file.name}: ${error.message}`);
-          }
-          const { data: publicUrlData } = supabase.storage.from('media').getPublicUrl(filePath);
-          if (!publicUrlData.publicUrl) {
-            throw new Error('Failed to generate public URL');
-          }
-          sponsorshipBrochureUrl = publicUrlData.publicUrl;
+          throw new Error(`Failed to upload sponsorship brochure ${file.name}: ${error.message}`);
+        }
+        const { data: publicUrlData } = supabase.storage.from('media').getPublicUrl(filePath);
+        if (!publicUrlData.publicUrl) {
+          throw new Error('Failed to generate public URL');
+        }
+        sponsorshipBrochureUrl = publicUrlData.publicUrl;
       }
       const opportunityData = {
         ...formData,
