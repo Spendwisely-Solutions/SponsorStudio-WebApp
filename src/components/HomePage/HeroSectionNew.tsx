@@ -1,8 +1,8 @@
 import React, { useEffect, useRef } from 'react';
-import { ArrowRight, Play, Zap, Shield, Target, Star } from 'lucide-react';
+import { ArrowRight, Play, Zap, Shield, Target, Star, ExternalLink } from 'lucide-react';
 import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
-import { User } from '../../App';
+import type { User } from './Home';
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -176,14 +176,14 @@ const HeroSection: React.FC<HeroSectionProps> = ({ user, setShowAuthForm }) => {
                   ref={titleRef}
                   className="flex flex-col justify-center bg-gradient-to-r from-blue-600 via-indigo-600 to-purple-600 bg-clip-text text-transparent min-h-[120px] sm:min-h-[160px] md:min-h-[180px] lg:min-h-[220px]"
                 >
-                  All in one Platform for<br className="md:block" />
+                  The Marketplace for<br className="md:block" />
                   <span className="block mt-2 md:mt-0 pb-3">Event Sponsorships</span>
                 </span>
               </h1>
 
               {/* Subtitle */}
               <p className="text-xl sm:text-2xl text-gray-600 leading-relaxed max-w-2xl mx-auto lg:mx-0 font-light mt-2">
-                Connect with the right partners for your next event. Our platform delivers precise matches and guaranteed results.
+                Discover, pitch, and secure sponsorships - all in one place.
               </p>
             </div>
 
@@ -213,16 +213,20 @@ const HeroSection: React.FC<HeroSectionProps> = ({ user, setShowAuthForm }) => {
                     <ArrowRight className="ml-2 sm:ml-3 h-4 sm:h-5 w-4 sm:w-5 group-hover:translate-x-1 transition-transform duration-200" />
                   </button>
                 )}
-                <a href="#about-video" className="flex-1 sm:flex-none hidden">
-                  <button className="group inline-flex items-center px-4 sm:px-8 py-3 sm:py-4 bg-white/80 backdrop-blur-sm text-gray-700 text-base sm:text-lg font-semibold rounded-2xl border-2 border-gray-200/50 hover:border-blue-300 hover:bg-blue-50/50 transition-all duration-300 shadow-lg hover:shadow-xl w-full justify-center">
-                    <div className="w-8 sm:w-10 h-8 sm:h-10 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-full flex items-center justify-center mr-2 sm:mr-3 group-hover:scale-110 transition-transform duration-200">
-                      <Play className="w-3 sm:w-4 h-3 sm:h-4 text-white ml-0.5" fill="currentColor" />
-                    </div>
-                    <span className="hidden sm:inline">Watch Demo</span>
-                    <span className="sm:hidden">Demo</span>
-                  </button>
+                <a
+                  href="https://demo.sponsorstudio.in/"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="group inline-flex items-center px-4 sm:px-8 py-3 sm:py-4 bg-white/85 backdrop-blur-sm text-gray-700 text-base sm:text-lg font-semibold rounded-2xl border-2 border-gray-200/50 hover:border-blue-300 hover:bg-blue-50/50 transition-all duration-300 shadow-lg hover:shadow-xl flex-1 sm:flex-none justify-center"
+                >
+                  <div className="w-8 sm:w-10 h-8 sm:h-10 bg-gradient-to-r from-blue-500 to-indigo-500 rounded-full flex items-center justify-center mr-2 sm:mr-3 group-hover:scale-110 transition-transform duration-200">
+                    <Play className="w-3 sm:w-4 h-3 sm:h-4 text-white ml-0.5" fill="currentColor" />
+                  </div>
+                  <span>Try Live Demo</span>
+                  <ExternalLink className="w-4 h-4 ml-2" />
                 </a>
               </div>
+              <p className="text-sm text-gray-500">No signup required for demo preview</p>
             </div>
           </div>
 
