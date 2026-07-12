@@ -19,10 +19,10 @@ const HeroSection: React.FC<HeroSectionProps> = ({ user, setShowAuthForm }) => {
   }, []);
 
   const stats = [
-    { value: '12K+', label: 'Events Listed' },
-    { value: '80+', label: 'Sponsors' },
-    { value: '₹25L+', label: 'Funds Raised' },
-    { value: '98%', label: 'Success Rate' },
+    { value: '1000+', label: 'Events Listed' },
+    { value: '50+', label: 'Brands and counting' },
+    { value: '2 Cr+', label: 'Funds Raised' },
+    { value: '100+', label: 'Deals Facilitated' },
   ];
 
   return (
@@ -62,13 +62,11 @@ const HeroSection: React.FC<HeroSectionProps> = ({ user, setShowAuthForm }) => {
       <div className="relative z-10 flex-1 flex flex-col items-center justify-center px-4 sm:px-6 text-center pt-6 pb-16">
         {/* Hero headline */}
         <h1 className="hero-animate opacity-0 animate-fade-in max-w-5xl mx-auto mb-6">
-          <span
-            className="block text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-black leading-[1.05] tracking-tight text-text-primary"
-          >
-            Where Brands
+          <span className="block text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-black leading-[1.05] tracking-tight text-text-primary">
+            Where Brands and Events
           </span>
           <span
-            className="block text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-black leading-[1.05] tracking-tight"
+            className="block text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-black leading-[1.05] tracking-tight"
             style={{
               background: 'linear-gradient(90deg, #00D4FF 0%, #6366F1 50%, #00D4FF 100%)',
               backgroundSize: '200% auto',
@@ -77,41 +75,38 @@ const HeroSection: React.FC<HeroSectionProps> = ({ user, setShowAuthForm }) => {
               animation: 'shimmer 4s linear infinite',
             }}
           >
-            Find. Connect.
-          </span>
-          <span
-            className="block text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-black leading-[1.05] tracking-tight"
-            style={{
-              background: 'linear-gradient(90deg, #6366F1 0%, #00D4FF 50%, #6366F1 100%)',
-              backgroundSize: '200% auto',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-              animation: 'shimmer 4s linear infinite reverse',
-            }}
-          >
-            Sponsor. Succeed.
+            Build Better Partnerships.
           </span>
         </h1>
 
         {/* Subtitle */}
-        <p className="hero-animate opacity-0 animate-fade-in max-w-2xl text-lg sm:text-xl text-text-secondary leading-relaxed mb-10">
-          Discover verified opportunities, build partnerships, sign agreements and measure real impact.
+        <p className="hero-animate opacity-0 animate-fade-in max-w-3xl text-base sm:text-lg md:text-xl text-text-secondary leading-relaxed mb-10">
+          Sponsor Studio brings organizers and brands together on a trusted platform designed to discover opportunities, simplify negotiations, and deliver measurable sponsorship success.
         </p>
 
         {/* CTA Buttons */}
         <div className="hero-animate opacity-0 animate-fade-in flex flex-col sm:flex-row gap-4 mb-16">
           {user ? (
-            <a
-              href="/dashboard"
-              className="group inline-flex items-center gap-2 px-8 py-4 rounded-2xl font-semibold text-[#0A1628] text-base transition-all duration-300 hover:scale-105"
-              style={{
-                background: 'linear-gradient(135deg, #00D4FF, #3B82F6)',
-                boxShadow: '0 0 30px rgba(0,212,255,0.4)',
-              }}
-            >
-              Go to Dashboard
-              <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-            </a>
+            <>
+              <a
+                href="/dashboard"
+                className="group inline-flex items-center gap-2 px-8 py-4 rounded-2xl font-semibold text-[#0A1628] text-base transition-all duration-300 hover:scale-105"
+                style={{
+                  background: 'linear-gradient(135deg, #00D4FF, #3B82F6)',
+                  boxShadow: '0 0 30px rgba(0,212,255,0.4)',
+                }}
+              >
+                Explore Opportunities
+                <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
+              </a>
+              <a
+                href="/dashboard"
+                className="inline-flex items-center gap-2 px-8 py-4 rounded-2xl font-semibold text-text-primary text-base border border-border bg-surface/20 backdrop-blur-md transition-all duration-300 hover:scale-105 hover:bg-surface-hover/30"
+              >
+                List Your Event
+                <ChevronRight className="w-5 h-5" />
+              </a>
+            </>
           ) : (
             <>
               <button
@@ -122,14 +117,14 @@ const HeroSection: React.FC<HeroSectionProps> = ({ user, setShowAuthForm }) => {
                   boxShadow: '0 0 30px rgba(0,212,255,0.4)',
                 }}
               >
-                I'm a Brand
+                Explore Opportunities
                 <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
               </button>
               <button
                 onClick={() => setShowAuthForm(true)}
                 className="inline-flex items-center gap-2 px-8 py-4 rounded-2xl font-semibold text-text-primary text-base border border-border bg-surface/20 backdrop-blur-md transition-all duration-300 hover:scale-105 hover:bg-surface-hover/30"
               >
-                Explore Opportunities
+                List Your Event
                 <ChevronRight className="w-5 h-5" />
               </button>
             </>
@@ -137,7 +132,7 @@ const HeroSection: React.FC<HeroSectionProps> = ({ user, setShowAuthForm }) => {
         </div>
 
         {/* Stats Row */}
-        <div className="hero-animate opacity-0 animate-fade-in w-full max-w-3xl mx-auto">
+        <div className="hero-animate opacity-0 animate-fade-in w-full max-w-4xl mx-auto">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
             {stats.map((stat, i) => (
               <div
@@ -164,10 +159,9 @@ const HeroSection: React.FC<HeroSectionProps> = ({ user, setShowAuthForm }) => {
         </div>
       </div>
 
-      {/* Hero Dashboard Image */}
+      {/* Hero Dashboard Image - Hidden for now
       <div className="relative z-10 w-full max-w-6xl mx-auto px-4 sm:px-8 pb-16">
         <div className="hero-animate opacity-0 animate-fade-in relative rounded-2xl overflow-hidden border border-border shadow-xl">
-          {/* Top bar */}
           <div className="flex items-center gap-2 px-4 py-3 bg-surface border-b border-border">
             <div className="w-3 h-3 rounded-full bg-red-500/70" />
             <div className="w-3 h-3 rounded-full bg-yellow-500/70" />
@@ -180,25 +174,11 @@ const HeroSection: React.FC<HeroSectionProps> = ({ user, setShowAuthForm }) => {
             className="w-full h-auto object-cover"
             style={{ maxHeight: '520px', objectPosition: 'top' }}
           />
-          {/* Gradient fade at bottom */}
           <div className="absolute bottom-0 left-0 right-0 h-24"
             style={{ background: 'linear-gradient(to top, var(--color-background), transparent)' }} />
         </div>
       </div>
-
-      {/* Trusted by */}
-      <div className="relative z-10 w-full pb-12 text-center">
-        <p className="text-xs text-text-muted uppercase tracking-widest mb-6 font-medium">
-          Trusted by 5000+ brands &amp; organizers
-        </p>
-        <div className="flex flex-wrap items-center justify-center gap-8 px-8 opacity-50 grayscale hover:opacity-70 transition-opacity duration-300">
-          {['zomato', 'boat', 'puma', 'disney'].map((brand) => (
-            <div key={brand} className="text-text-secondary font-bold text-lg capitalize tracking-wide">
-              {brand}
-            </div>
-          ))}
-        </div>
-      </div>
+      */}
 
       {/* CSS Animations */}
       <style>{`

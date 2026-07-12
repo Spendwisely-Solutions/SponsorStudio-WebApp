@@ -527,7 +527,7 @@ const ProfilePage = () => {
         >
           <ArrowLeft className="w-5 h-5" />
         </button>
-        <div className="liquid-glass-card rounded-xl shadow-lg p-8 mt-12">
+        <div className="bg-white rounded-xl shadow-lg p-8 mt-12">
           <div className="flex flex-col items-center">
             {userData.profile_picture || userData.profile_picture_url ? (
               <img

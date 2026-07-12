@@ -70,7 +70,7 @@ export default function GeneralReports({
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -20 }}
                 transition={{ duration: 0.3, delay: index * 0.05 }}
-                className="liquid-glass-card rounded-lg shadow-sm p-4 mb-3 hover:shadow-md transition-all"
+                className="bg-white rounded-lg shadow-sm p-4 border border-gray-200 mb-3 hover:shadow-md transition-all"
               >
                 <div className="space-y-2">
                   <h3 className="text-base font-semibold text-gray-900 truncate">

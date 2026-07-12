@@ -26,6 +26,9 @@ import ContactUs from './pages/ContactUs';
 import Blogs from './pages/Blogs';
 import EventDetails from './pages/EventDetails';
 import DesignSystem from './pages/DesignSystem';
+import PlatformOverview from './pages/PlatformOverview';
+import AgencyServices from './pages/AgencyServices';
+import AboutUs from './pages/AboutUs';
 
 // Export FormData interface for use in components
 export interface FormData {
@@ -61,6 +64,9 @@ function App() {
             <Route path='/blog/:id' element={<SuccessStoryPage />} />
             <Route path='/events' element={<EventDetails />} />
             <Route path="/design-system" element={<DesignSystem />} />
+            <Route path="/platform-overview" element={<PlatformOverview />} />
+            <Route path="/agency-services" element={<AgencyServices />} />
+            <Route path="/about-us" element={<AboutUs />} />
 
 
 

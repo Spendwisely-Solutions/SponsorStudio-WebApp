@@ -169,6 +169,7 @@ const NavBar: React.FC<NavBarProps> = ({
 
           {/* Right: Auth Buttons */}
           <div className="hidden md:flex items-center gap-3">
+            {/* Theme toggle hidden for now
             <button
               onClick={toggleTheme}
               className="p-2 md:p-2.5 rounded-xl bg-black/5 dark:bg-white/5 border border-black/10 dark:border-white/10 text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-black/10 dark:hover:bg-white/10 hover:border-black/20 dark:hover:border-white/20 transition-all duration-300"
@@ -176,6 +177,7 @@ const NavBar: React.FC<NavBarProps> = ({
             >
               {theme === 'dark' ? <Sun className="w-4 h-4 md:w-5 md:h-5" /> : <Moon className="w-4 h-4 md:w-5 md:h-5" />}
             </button>
+            */}
             {!hideAuthButton && (user ? (
               <Link
                 to="/dashboard"
@@ -222,6 +224,7 @@ const NavBar: React.FC<NavBarProps> = ({
           {/* Mobile menu button */}
           {!hideMobileMenu && (
             <div className="flex items-center gap-2 md:hidden">
+              {/* Theme toggle hidden for now
               <button
                 onClick={toggleTheme}
                 className="p-2 rounded-lg bg-black/5 dark:bg-white/10 border border-black/10 dark:border-white/20 text-gray-700 dark:text-white hover:bg-black/10 dark:hover:bg-white/20 transition-all duration-200"
@@ -229,6 +232,7 @@ const NavBar: React.FC<NavBarProps> = ({
               >
                 {theme === 'dark' ? <Sun className="h-5 w-5" /> : <Moon className="h-5 w-5" />}
               </button>
+              */}
               <button
                 onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
                 className="md:hidden p-2 rounded-lg bg-black/5 dark:bg-white/10 border border-black/10 dark:border-white/20 text-gray-700 dark:text-white hover:bg-black/10 dark:hover:bg-white/20 transition-all duration-200"

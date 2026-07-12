@@ -1,77 +1,86 @@
 import { motion } from "framer-motion";
-import { Search, Heart, Link2, BarChart3, Calendar, Users, Handshake, TrendingUp } from "lucide-react";
+import { 
+  Search, 
+  Eye, 
+  MessageSquare, 
+  TrendingUp, 
+  PlusCircle, 
+  Sparkles, 
+  Layers, 
+  CheckCircle2 
+} from "lucide-react";
 import { useState } from "react";
 
 const HowItWorks = () => {
-  const [activeTab, setActiveTab] = useState<'brands' | 'events'>('brands');
+  const [activeTab, setActiveTab] = useState<'brands' | 'organizers'>('brands');
 
   const brandSteps = [
     {
       step: "01",
-      title: "Discover Events",
-      description: "Explore a curated list of verified events relevant to your brand goals",
+      title: "Discover Verified Events",
+      description: "Browse opportunities filtered by audience, budgets, industry, location, and objectives.",
       icon: Search,
       color: "#00D4FF",
     },
     {
       step: "02",
-      title: "Show Interest",
-      description: "Right swipe and shortlist events that fit your marketing strategy",
-      icon: Heart,
+      title: "Compare & Evaluate",
+      description: "Review sponsorship packages, pricing, and expected reach with complete transparency.",
+      icon: Eye,
       color: "#F472B6",
     },
     {
       step: "03",
-      title: "Get Matched",
-      description: "Connect with organizers when both sides show mutual interest",
-      icon: Link2,
+      title: "Connect & Collaborate",
+      description: "Chat directly with organizers and finalize partnerships faster.",
+      icon: MessageSquare,
       color: "#34D399",
     },
     {
       step: "04",
-      title: "Get Insights",
-      description: "Close the deal and receive detailed post-event analytics reports",
-      icon: BarChart3,
-      color: "#A78BFA",
-    },
-  ];
-
-  const eventSteps = [
-    {
-      step: "01",
-      title: "List Your Event",
-      description: "Submit your event details; our team verifies and approves it",
-      icon: Calendar,
-      color: "#00D4FF",
-    },
-    {
-      step: "02",
-      title: "Connect with Brands",
-      description: "Discover interested brands and unlock mutual match opportunities",
-      icon: Users,
-      color: "#F472B6",
-    },
-    {
-      step: "03",
-      title: "Secure Partnerships",
-      description: "Meet brands virtually and finalize sponsorship agreements",
-      icon: Handshake,
-      color: "#34D399",
-    },
-    {
-      step: "04",
-      title: "Track Performance",
-      description: "Manage sponsors, track engagement, and measure event success",
+      title: "Track ROI",
+      description: "Measure campaign performance with risk analysis reports, post-event reports and other key insights.",
       icon: TrendingUp,
       color: "#A78BFA",
     },
   ];
 
-  const currentSteps = activeTab === 'brands' ? brandSteps : eventSteps;
+  const organizerSteps = [
+    {
+      step: "01",
+      title: "Create Your Event",
+      description: "Showcase your event with your sponsorship packages and audience insights.",
+      icon: PlusCircle,
+      color: "#00D4FF",
+    },
+    {
+      step: "02",
+      title: "Get Discovered",
+      description: "Reach brands actively looking for sponsorship opportunities.",
+      icon: Sparkles,
+      color: "#F472B6",
+    },
+    {
+      step: "03",
+      title: "Manage Conversations & Progress",
+      description: "Handle negotiations, agreements and your events sponsorship progress in one place.",
+      icon: Layers,
+      color: "#34D399",
+    },
+    {
+      step: "04",
+      title: "Secure Funding & Measure Success",
+      description: "Close deals and build long-term sponsor relationships.",
+      icon: CheckCircle2,
+      color: "#A78BFA",
+    },
+  ];
+
+  const currentSteps = activeTab === 'brands' ? brandSteps : organizerSteps;
 
   return (
     <section
-      className="relative w-full py-20 px-4 sm:px-8 overflow-hidden transition-colors duration-500"
+      className="relative w-full py-20 px-4 sm:px-8 overflow-hidden transition-colors duration-500 bg-background-secondary"
       style={{ background: 'var(--gradient-how-it-works)' }}
       id="how-we-work"
     >
@@ -101,11 +110,11 @@ const HowItWorks = () => {
             className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-sm font-medium mb-6 bg-info/10 border border-info/30 text-info"
           >
             <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse" />
-            Our Process
+            How We Work
           </div>
 
           <h2 className="text-4xl sm:text-5xl md:text-6xl font-black text-text-primary mb-6 leading-tight">
-            How{' '}
+            Built for Every Side of an{' '}
             <span
               style={{
                 background: 'linear-gradient(90deg, #00D4FF, #6366F1)',
@@ -113,16 +122,16 @@ const HowItWorks = () => {
                 WebkitTextFillColor: 'transparent',
               }}
             >
-              We Work
+              Event Sponsorship.
             </span>
           </h2>
 
           {/* Tab Toggle */}
-          <div className="flex justify-center mb-4">
+          <div className="flex justify-center mb-8">
             <div
               className="relative flex p-1 rounded-2xl bg-surface border border-border"
             >
-              {(['brands', 'events'] as const).map((tab) => (
+              {(['brands', 'organizers'] as const).map((tab) => (
                 <button
                   key={tab}
                   onClick={() => setActiveTab(tab)}
@@ -138,16 +147,16 @@ const HowItWorks = () => {
                     boxShadow: activeTab === tab ? '0 0 20px color-mix(in srgb, var(--color-primary) 40%, transparent)' : 'none',
                   }}
                 >
-                  {tab === 'brands' ? 'For Brands' : 'For Organizers'}
+                  {tab === 'brands' ? 'Brands' : 'Event Organizers'}
                 </button>
               ))}
             </div>
           </div>
 
-          <p className="text-text-secondary text-lg max-w-2xl mx-auto">
+          <p className="text-text-secondary text-lg max-w-2xl mx-auto min-h-[56px] flex items-center justify-center">
             {activeTab === 'brands'
-              ? "We make it easy for brands to find the right events, connect with organizers, and secure valuable partnerships."
-              : "We help events get discovered by the right brands and secure sponsorships with ease."}
+              ? "Filter out events best fit for you, and manage every aspect of the partnership easily."
+              : "Say goodbye to endless cold follow ups, and secure valuable event sponsors through us."}
           </p>
         </motion.div>
 

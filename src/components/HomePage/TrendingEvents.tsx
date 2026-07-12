@@ -15,9 +15,11 @@ type TrendingEvent = {
 
 interface TrendingEventsProps {
   showAuthForm?: () => void;
+  onSelectEvent?: (event: TrendingEvent) => void;
 }
 
-function TrendingEvents({ showAuthForm }: TrendingEventsProps) {
+function TrendingEvents({ showAuthForm, onSelectEvent }: TrendingEventsProps) {
+  const { user, profile } = useAuth();
   const [events, setEvents] = useState<TrendingEvent[]>([]);
   const [loading, setLoading] = useState(true);
   const [isMobile, setIsMobile] = useState(false);
@@ -40,6 +42,23 @@ function TrendingEvents({ showAuthForm }: TrendingEventsProps) {
         setLoading(false);
       });
   }, []);
+
+  // Check for pending event view after authentication
+  useEffect(() => {
+    if (user && onSelectEvent) {
+      const pendingEventStr = sessionStorage.getItem('pending_event_view_details');
+      if (pendingEventStr) {
+        try {
+          const pendingEvent = JSON.parse(pendingEventStr);
+          onSelectEvent(pendingEvent);
+        } catch (e) {
+          console.error('Error parsing pending event view', e);
+        } finally {
+          sessionStorage.removeItem('pending_event_view_details');
+        }
+      }
+    }
+  }, [user, onSelectEvent]);
 
   // Responsive: Detect mobile view
   useEffect(() => {
@@ -135,8 +154,6 @@ function TrendingEvents({ showAuthForm }: TrendingEventsProps) {
     return startObj.toLocaleDateString('en-US', options);
   };
 
-  const { user, profile } = useAuth();
-
   // Render single event card (non-slider)
   const renderSingleEvent = (event: TrendingEvent) => {
     let mediaUrl = '';
@@ -185,17 +202,14 @@ function TrendingEvents({ showAuthForm }: TrendingEventsProps) {
     };
     const handlePointerUp = (e: React.PointerEvent<HTMLDivElement>) => {
       if (!moved) {
-        // If not logged in, show auth form
+        // If not logged in, show auth form and save details to open post-login
         if (!user) {
+          sessionStorage.setItem('pending_event_view_details', JSON.stringify(event));
           if (typeof showAuthForm === 'function') showAuthForm();
           return;
         }
-        // Only allow dashboard navigation for brand users
-        if (profile?.user_type === 'brand') {
-          const searchParam = encodeURIComponent(event.title);
-          window.location.href = `/dashboard?search=${searchParam}`;
-        }
-        // Do nothing for other user types
+        // Trigger drawer callback
+        onSelectEvent?.(event);
       }
     };
 
@@ -268,10 +282,10 @@ function TrendingEvents({ showAuthForm }: TrendingEventsProps) {
           </div>
           <h2 className="text-4xl sm:text-5xl md:text-6xl font-black text-text-primary pb-3 leading-tight">
             Trending{' '}
-            <span style={{ background: 'linear-gradient(90deg, #00D4FF, #6366F1)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Events</span>
+            <span style={{ background: 'linear-gradient(90deg, #00D4FF, #6366F1)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>Event</span>
           </h2>
           <p className="mt-4 max-w-2xl mx-auto text-lg text-text-secondary leading-relaxed">
-            Discover the most popular and upcoming events happening now on SponsorStudio
+            Discover the most popular and upcoming events listed on sponsor studio
           </p>
         </div>
 
@@ -332,17 +346,14 @@ function TrendingEvents({ showAuthForm }: TrendingEventsProps) {
                 };
                 const handlePointerUp = (e: React.PointerEvent<HTMLDivElement>) => {
                   if (!moved) {
-                    // If not logged in, show auth form
+                    // If not logged in, show auth form and save details to open post-login
                     if (!user) {
+                      sessionStorage.setItem('pending_event_view_details', JSON.stringify(event));
                       if (typeof showAuthForm === 'function') showAuthForm();
                       return;
                     }
-                    // Only allow dashboard navigation for brand users
-                    if (profile?.user_type === 'brand') {
-                      const searchParam = encodeURIComponent(event.title);
-                      window.location.href = `/dashboard?search=${searchParam}`;
-                    }
-                    // Do nothing for other user types
+                    // Trigger drawer callback
+                    onSelectEvent?.(event);
                   }
                 };
 

@@ -275,7 +275,7 @@ export default function ReportsList() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="hidden sm:block liquid-glass-card rounded-xl shadow-lg p-6">
+      <div className="hidden sm:block bg-white rounded-xl shadow-lg p-6">
         <Header
           credits={credits}
           shakeCredits={shakeCredits}

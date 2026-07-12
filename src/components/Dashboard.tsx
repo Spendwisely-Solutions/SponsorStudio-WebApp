@@ -1,14 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { useLocation } from 'react-router-dom';
-import { ArrowRight, Building2, BarChart3, FileCheck, MessageSquare, Menu, ChevronRight, X, Home, Calendar, FileText, User, LogOut, BarChart2, Sun, Moon } from 'lucide-react';
+import { ArrowRight, Building2, BarChart3, FileCheck, MessageSquare, Menu, ChevronRight, X, Home, Calendar, FileText, User, LogOut, BarChart2 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { sendContactEmail } from '../lib/email';
 import { Link, useNavigate } from 'react-router-dom';
 import AuthForm from './AuthComponents/AuthForm';
 import ProfileCompletionDialog from './ProfileCompletionDialog';
 import { useAuth } from '../contexts/AuthContext';
-import { useTheme } from '../contexts/ThemeContext';
-import Modal from './Modal';
 import type { Database } from '../lib/database.types';
 import Marquee from 'react-fast-marquee';
 import AdminDashboard from '../components/Admin/Dashboard/AdminDashboard';
@@ -42,7 +40,6 @@ type Match = Database['public']['Tables']['matches']['Row'] & {
 export default function Dashboard() {
   const location = useLocation();
   const { user, profile, loading } = useAuth();
-  const { theme, toggleTheme } = useTheme();
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<'dashboard' | 'matches' | 'profile' | 'messages' | 'meetings' | 'reports' | 'analytics'>(
     () => (location.state as any)?.activeTab || 'dashboard'
@@ -56,7 +53,6 @@ export default function Dashboard() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [avatarError, setAvatarError] = useState(false);
-  const [showSignOutConfirm, setShowSignOutConfirm] = useState(false);
 
   useEffect(() => {
     if ((location.state as any)?.activeTab) {
@@ -73,7 +69,6 @@ export default function Dashboard() {
   useEffect(() => {
     if (profile) {
       setUserProfile(profile);
-      setAvatarError(false);
       fetchUserData();
     }
   }, [profile]);
@@ -400,37 +395,9 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gradient-to-br dark:from-black dark:via-black dark:to-neutral-900 flex relative overflow-hidden transition-colors duration-500">
-      {/* Grid overlay for dark mode */}
-      <div
-        className="absolute inset-0 opacity-[0.02] dark:opacity-[0.05] pointer-events-none z-0"
-        style={{
-          backgroundImage: `
-            linear-gradient(color-mix(in srgb, var(--color-primary) 15%, transparent) 1px, transparent 1px),
-            linear-gradient(90deg, color-mix(in srgb, var(--color-primary) 15%, transparent) 1px, transparent 1px)
-          `,
-          backgroundSize: '60px 60px',
-        }}
-      />
-
-      {/* Glowing background orbs for dark mode */}
-      <div
-        className="hidden dark:block absolute top-0 left-0 w-[500px] h-[500px] rounded-full opacity-[0.08] pointer-events-none z-0 animate-orbit-slow"
-        style={{
-          background: 'radial-gradient(circle, var(--color-primary) 0%, transparent 70%)',
-          filter: 'blur(60px)',
-        }}
-      />
-      <div
-        className="hidden dark:block absolute bottom-0 right-0 w-[600px] h-[600px] rounded-full opacity-[0.06] pointer-events-none z-0 animate-orbit-delayed"
-        style={{
-          background: 'radial-gradient(circle, var(--color-info) 0%, transparent 70%)',
-          filter: 'blur(80px)',
-        }}
-      />
-
+    <div className="min-h-screen bg-gray-50 flex">
       {/* Desktop Sidebar */}
-      <div className="w-64 bg-white/100 dark:bg-black/60 dark:backdrop-blur-lg dark:border-r dark:border-white/5 shadow-md hidden md:block fixed h-full z-20">
+      <div className="w-64 bg-white shadow-md hidden md:block fixed h-full">
         <div className="p-6">
           <img 
             src="https://i.ibb.co/ZzPfwrxP/logo-final-png.png" 
@@ -447,16 +414,13 @@ export default function Dashboard() {
                 onError={() => setAvatarError(true)}
               />
             ) : (
-              <div 
-                className="w-10 h-10 rounded-full dark:border dark:border-primary/30 flex items-center justify-center font-semibold"
-                style={{ backgroundColor: theme === 'dark' ? 'rgba(56, 189, 248, 0.2)' : '#2B4B9B', color: theme === 'dark' ? '#38bdf8' : '#ffffff' }}
-              >
+              <div className="w-10 h-10 rounded-full bg-[#2B4B9B] flex items-center justify-center text-white">
                 {userProfile?.company_name ? userProfile.company_name.charAt(0).toUpperCase() : user?.email?.charAt(0).toUpperCase()}
               </div>
             )}
             <div>
-              <p className="font-medium dark:text-white">{userProfile?.company_name || 'Your Account'}</p>
-              <p className="text-sm text-gray-500 dark:text-gray-400">
+              <p className="font-medium">{userProfile?.company_name || 'Your Account'}</p>
+              <p className="text-sm text-gray-500">
                 {userProfile?.user_type === 'event_organizer'
                   ? 'Opportunity Provider'
                   : userProfile?.user_type.replace('_', ' ')}
@@ -469,10 +433,8 @@ export default function Dashboard() {
             <li>
               <button
                 onClick={() => setActiveTab('dashboard')}
-                className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg click-effect ${
-                  activeTab === 'dashboard' 
-                    ? 'bg-blue-50/100 text-[#2B4B9B]/100 dark:bg-sky-500/10 dark:text-sky-400 dark:border-l-4 dark:border-sky-400 dark:rounded-r-lg dark:rounded-l-none' 
-                    : 'text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-white/5'
+                className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg ${
+                  activeTab === 'dashboard' ? 'bg-blue-50 text-[#2B4B9B]' : 'text-gray-700 hover:bg-gray-100'
                 }`}
               >
                 <Home className="w-5 h-5" />
@@ -482,10 +444,8 @@ export default function Dashboard() {
             <li className='hidden'>
               <button
                 onClick={() => setActiveTab('messages')}
-                className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg click-effect ${
-                  activeTab === 'messages' 
-                    ? 'bg-blue-50/100 text-[#2B4B9B]/100 dark:bg-sky-500/10 dark:text-sky-400' 
-                    : 'text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-white/5'
+                className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg ${
+                  activeTab === 'messages' ? 'bg-blue-50 text-[#2B4B9B]' : 'text-gray-700 hover:bg-gray-100'
                 }`}
                 style={{display:'none'}}
               >
@@ -496,10 +456,8 @@ export default function Dashboard() {
             <li>
               <button
                 onClick={() => setActiveTab('meetings')}
-                className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg click-effect ${
-                  activeTab === 'meetings' 
-                    ? 'bg-blue-50/100 text-[#2B4B9B]/100 dark:bg-sky-500/10 dark:text-sky-400 dark:border-l-4 dark:border-sky-400 dark:rounded-r-lg dark:rounded-l-none' 
-                    : 'text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-white/5'
+                className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg ${
+                  activeTab === 'meetings' ? 'bg-blue-50 text-[#2B4B9B]' : 'text-gray-700 hover:bg-gray-100'
                 }`}
               >
                 <Calendar className="w-5 h-5" />
@@ -510,10 +468,8 @@ export default function Dashboard() {
               <li>
                 <button
                   onClick={() => setActiveTab('reports')}
-                  className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg click-effect ${
-                    activeTab === 'reports' 
-                      ? 'bg-blue-50/100 text-[#2B4B9B]/100 dark:bg-sky-500/10 dark:text-sky-400 dark:border-l-4 dark:border-sky-400 dark:rounded-r-lg dark:rounded-l-none' 
-                      : 'text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-white/5'
+                  className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg ${
+                    activeTab === 'reports' ? 'bg-blue-50 text-[#2B4B9B]' : 'text-gray-700 hover:bg-gray-100'
                   }`}
                 >
                   <FileText className="w-5 h-5" />
@@ -525,10 +481,8 @@ export default function Dashboard() {
               <li>
                 <button
                   onClick={() => setActiveTab('analytics')}
-                  className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg click-effect ${
-                    activeTab === 'analytics' 
-                      ? 'bg-blue-50/100 text-[#2B4B9B]/100 dark:bg-sky-500/10 dark:text-sky-400 dark:border-l-4 dark:border-sky-400 dark:rounded-r-lg dark:rounded-l-none' 
-                      : 'text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-white/5'
+                  className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg ${
+                    activeTab === 'analytics' ? 'bg-blue-50 text-[#2B4B9B]' : 'text-gray-700 hover:bg-gray-100'
                   }`}
                 >
                   <BarChart2 className="w-5 h-5" />
@@ -540,10 +494,8 @@ export default function Dashboard() {
               <li className='hidden'>
                 <button
                   onClick={() => setActiveTab('messages')}
-                  className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg click-effect ${
-                    activeTab === 'messages' 
-                      ? 'bg-blue-50/100 text-[#2B4B9B]/100 dark:bg-sky-500/10 dark:text-sky-400' 
-                      : 'text-gray-700 hover:bg-gray-100 dark:text-gray-300'
+                  className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg ${
+                    activeTab === 'messages' ? 'bg-blue-50 text-[#2B4B9B]' : 'text-gray-700 hover:bg-gray-100'
                   }`}
                 >
                   <BarChart2 className="w-5 h-5" />
@@ -554,10 +506,8 @@ export default function Dashboard() {
             <li>
               <button
                 onClick={() => setActiveTab('profile')}
-                className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg click-effect ${
-                  activeTab === 'profile' 
-                    ? 'bg-blue-50/100 text-[#2B4B9B]/100 dark:bg-sky-500/10 dark:text-sky-400 dark:border-l-4 dark:border-sky-400 dark:rounded-r-lg dark:rounded-l-none' 
-                    : 'text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-white/5'
+                className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg ${
+                  activeTab === 'profile' ? 'bg-blue-50 text-[#2B4B9B]' : 'text-gray-700 hover:bg-gray-100'
                 }`}
               >
                 <User className="w-5 h-5" />
@@ -566,17 +516,8 @@ export default function Dashboard() {
             </li>
             <li>
               <button
-                onClick={toggleTheme}
-                className="w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-white/5 transition-colors duration-200 click-effect"
-              >
-                {theme === 'dark' ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
-                <span>{theme === 'dark' ? 'Light Mode' : 'Dark Mode'}</span>
-              </button>
-            </li>
-            <li>
-              <button
-                onClick={() => setShowSignOutConfirm(true)}
-                className="w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-500/10 transition-colors duration-200 click-effect"
+                onClick={handleSignOut}
+                className="w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-red-600 hover:bg-red-50"
               >
                 <LogOut className="w-5 h-5" />
                 <span>Sign Out</span>
@@ -588,7 +529,7 @@ export default function Dashboard() {
 
       {/* Mobile Sidebar */}
       <div
-        className={`fixed inset-y-0 left-0 w-64 bg-white/100 dark:bg-black/90 dark:backdrop-blur-lg border-r dark:border-white/5 shadow-md z-50 transform ${
+        className={`fixed inset-y-0 left-0 w-64 bg-white shadow-md z-50 transform ${
           mobileSidebarOpen ? 'translate-x-0' : '-translate-x-full'
         } transition-transform duration-300 ease-in-out md:hidden`}
       >
@@ -601,7 +542,7 @@ export default function Dashboard() {
               onClick={() => navigate('/')}
             />
             <button onClick={() => setMobileSidebarOpen(false)}>
-              <X className="w-6 h-6 text-gray-600 dark:text-gray-300" />
+              <X className="w-6 h-6 text-gray-600" />
             </button>
           </div>
           <div className="flex items-center space-x-3 mb-8">
@@ -613,16 +554,13 @@ export default function Dashboard() {
                 onError={() => setAvatarError(true)}
               />
             ) : (
-              <div 
-                className="w-10 h-10 rounded-full dark:border dark:border-primary/30 flex items-center justify-center font-semibold"
-                style={{ backgroundColor: theme === 'dark' ? 'rgba(56, 189, 248, 0.2)' : '#2B4B9B', color: theme === 'dark' ? '#38bdf8' : '#ffffff' }}
-              >
+              <div className="w-10 h-10 rounded-full bg-[#2B4B9B] flex items-center justify-center text-white">
                 {userProfile?.company_name ? userProfile.company_name.charAt(0).toUpperCase() : user?.email?.charAt(0).toUpperCase()}
               </div>
             )}
             <div>
-              <p className="font-medium dark:text-white">{userProfile?.company_name || 'Your Account'}</p>
-              <p className="text-sm text-gray-500 dark:text-gray-400">{userProfile?.user_type.replace('_', ' ')}</p>
+              <p className="font-medium">{userProfile?.company_name || 'Your Account'}</p>
+              <p className="text-sm text-gray-500">{userProfile?.user_type.replace('_', ' ')}</p>
             </div>
           </div>
         </div>
@@ -631,10 +569,8 @@ export default function Dashboard() {
             <li>
               <button
                 onClick={() => { setActiveTab('dashboard'); setMobileSidebarOpen(false); }}
-                className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg click-effect ${
-                  activeTab === 'dashboard' 
-                    ? 'bg-blue-50/100 text-[#2B4B9B]/100 dark:bg-sky-500/10 dark:text-sky-400' 
-                    : 'text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-white/5'
+                className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg ${
+                  activeTab === 'dashboard' ? 'bg-blue-50 text-[#2B4B9B]' : 'text-gray-700 hover:bg-gray-100'
                 }`}
               >
                 <Home className="w-5 h-5" />
@@ -644,10 +580,8 @@ export default function Dashboard() {
             <li className='hidden'>
               <button
                 onClick={() => { setActiveTab('messages'); setMobileSidebarOpen(false); }}
-                className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg click-effect ${
-                  activeTab === 'messages' 
-                    ? 'bg-blue-50/100 text-[#2B4B9B]/100 dark:bg-sky-500/10 dark:text-sky-400' 
-                    : 'text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-white/5'
+                className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg ${
+                  activeTab === 'messages' ? 'bg-blue-50 text-[#2B4B9B]' : 'text-gray-700 hover:bg-gray-100'
                 }`}
                 style={{display:'none'}}
               >
@@ -658,10 +592,8 @@ export default function Dashboard() {
             <li>
               <button
                 onClick={() => { setActiveTab('meetings'); setMobileSidebarOpen(false); }}
-                className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg click-effect ${
-                  activeTab === 'meetings' 
-                    ? 'bg-blue-50/100 text-[#2B4B9B]/100 dark:bg-sky-500/10 dark:text-sky-400' 
-                    : 'text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-white/5'
+                className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg ${
+                  activeTab === 'meetings' ? 'bg-blue-50 text-[#2B4B9B]' : 'text-gray-700 hover:bg-gray-100'
                 }`}
               >
                 <Calendar className="w-5 h-5" />
@@ -672,10 +604,8 @@ export default function Dashboard() {
               <li>
                 <button
                   onClick={() => { setActiveTab('reports'); setMobileSidebarOpen(false); }}
-                  className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg click-effect ${
-                    activeTab === 'reports' 
-                      ? 'bg-blue-50/100 text-[#2B4B9B]/100 dark:bg-sky-500/10 dark:text-sky-400' 
-                      : 'text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-white/5'
+                  className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg ${
+                    activeTab === 'reports' ? 'bg-blue-50 text-[#2B4B9B]' : 'text-gray-700 hover:bg-gray-100'
                   }`}
                 >
                   <FileText className="w-5 h-5" />
@@ -687,10 +617,8 @@ export default function Dashboard() {
               <li className='hidden'>
                 <button
                   onClick={() => { setActiveTab('messages'); setMobileSidebarOpen(false); }}
-                  className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg click-effect ${
-                    activeTab === 'reports' 
-                      ? 'bg-blue-50/100 text-[#2B4B9B]/100 dark:bg-sky-500/10 dark:text-sky-400' 
-                      : 'text-gray-700 hover:bg-gray-100 dark:text-gray-300'
+                  className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg ${
+                    activeTab === 'reports' ? 'bg-blue-50 text-[#2B4B9B]' : 'text-gray-700 hover:bg-gray-100'
                   }`}
                 >
                   <FileText className="w-5 h-5" />
@@ -702,10 +630,8 @@ export default function Dashboard() {
               <li>
                 <button
                   onClick={() => { setActiveTab('analytics'); setMobileSidebarOpen(false); }}
-                  className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg click-effect ${
-                    activeTab === 'analytics' 
-                      ? 'bg-blue-50/100 text-[#2B4B9B]/100 dark:bg-sky-500/10 dark:text-sky-400' 
-                      : 'text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-white/5'
+                  className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg ${
+                    activeTab === 'analytics' ? 'bg-blue-50 text-[#2B4B9B]' : 'text-gray-700 hover:bg-gray-100'
                   }`}
                 >
                   <BarChart2 className="w-5 h-5" />
@@ -716,10 +642,8 @@ export default function Dashboard() {
             <li className='hidden'>
               <button
                 onClick={() => { setActiveTab('messages'); setMobileSidebarOpen(false); }}
-                className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg click-effect ${
-                  activeTab === 'profile' 
-                    ? 'bg-blue-50/100 text-[#2B4B9B]/100 dark:bg-sky-500/10 dark:text-sky-400' 
-                    : 'text-gray-700 hover:bg-gray-100 dark:text-gray-300'
+                className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg ${
+                  activeTab === 'profile' ? 'bg-blue-50 text-[#2B4B9B]' : 'text-gray-700 hover:bg-gray-100'
                 }`}
               >
                 <User className="w-5 h-5" />
@@ -729,10 +653,8 @@ export default function Dashboard() {
             <li>
               <button
                 onClick={() => { setActiveTab('profile'); setMobileSidebarOpen(false); }}
-                className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg click-effect ${
-                  activeTab === 'profile' 
-                    ? 'bg-blue-50/100 text-[#2B4B9B]/100 dark:bg-sky-500/10 dark:text-sky-400' 
-                    : 'text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-white/5'
+                className={`w-full flex items-center space-x-3 px-4 py-3 rounded-lg ${
+                  activeTab === 'profile' ? 'bg-blue-50 text-[#2B4B9B]' : 'text-gray-700 hover:bg-gray-100'
                 }`}
               >
                 <User className="w-5 h-5" />
@@ -741,17 +663,8 @@ export default function Dashboard() {
             </li>
             <li>
               <button
-                onClick={() => { toggleTheme(); setMobileSidebarOpen(false); }}
-                className="w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-white/5 transition-colors duration-200 click-effect"
-              >
-                {theme === 'dark' ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
-                <span>{theme === 'dark' ? 'Light Mode' : 'Dark Mode'}</span>
-              </button>
-            </li>
-            <li>
-              <button
-                onClick={() => { setShowSignOutConfirm(true); setMobileSidebarOpen(false); }}
-                className="w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-500/10 transition-colors duration-200 click-effect"
+                onClick={() => { handleSignOut(); setMobileSidebarOpen(false); }}
+                className="w-full flex items-center space-x-3 px-4 py-3 rounded-lg text-red-600 hover:bg-red-50"
               >
                 <LogOut className="w-5 h-5" />
                 <span>Sign Out</span>
@@ -762,39 +675,39 @@ export default function Dashboard() {
       </div>
 
       {/* Mobile Bottom Navigation */}
-      <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white dark:bg-surface border-t dark:border-white/5 shadow-t z-50">
+      <div className="md:hidden fixed bottom-0 left-0 right-0 bg-white shadow-t z-50">
         <div className="flex justify-around p-2">
           <button
             onClick={() => setActiveTab('dashboard')}
-            className={`p-2 rounded-lg ${activeTab === 'dashboard' ? 'text-[#2B4B9B] dark:text-primary' : 'text-gray-500 dark:text-gray-400'}`}
+            className={`p-2 rounded-lg ${activeTab === 'dashboard' ? 'text-[#2B4B9B]' : 'text-gray-500'}`}
           >
             <Home className="w-6 h-6 mx-auto" />
           </button>
           {isBrand && (
             <button
               onClick={() => setActiveTab('reports')}
-              className={`p-2 rounded-lg ${activeTab === 'reports' ? 'text-[#2B4B9B] dark:text-primary' : 'text-gray-500 dark:text-gray-400'}`}
+              className={`p-2 rounded-lg ${activeTab === 'reports' ? 'text-[#2B4B9B]' : 'text-gray-500'}`}
             >
               <FileText className="w-6 h-6 mx-auto" />
             </button>
           )}
           <button
             onClick={() => setActiveTab('meetings')}
-            className={`p-2 rounded-lg ${activeTab === 'meetings' ? 'text-[#2B4B9B] dark:text-primary' : 'text-gray-500 dark:text-gray-400'}`}
+            className={`p-2 rounded-lg ${activeTab === 'meetings' ? 'text-[#2B4B9B]' : 'text-gray-500'}`}
           >
             <Calendar className="w-6 h-6 mx-auto" />
           </button>
           {(isCreator || isInfluencer) && (
             <button
               onClick={() => setActiveTab('analytics')}
-              className={`p-2 rounded-lg ${activeTab === 'analytics' ? 'text-[#2B4B9B] dark:text-primary' : 'text-gray-500 dark:text-gray-400'}`}
+              className={`p-2 rounded-lg ${activeTab === 'analytics' ? 'text-[#2B4B9B]' : 'text-gray-500'}`}
             >
               <BarChart2 className="w-6 h-6 mx-auto" />
             </button>
           )}
           <button
             onClick={() => setActiveTab('profile')}
-            className={`p-2 rounded-lg ${activeTab === 'profile' ? 'text-[#2B4B9B] dark:text-primary' : 'text-gray-500 dark:text-gray-400'}`}
+            className={`p-2 rounded-lg ${activeTab === 'profile' ? 'text-[#2B4B9B]' : 'text-gray-500'}`}
           >
             <User className="w-6 h-6 mx-auto" />
           </button>
@@ -802,12 +715,12 @@ export default function Dashboard() {
       </div>
 
       {/* Main Content */}
-      <div className="flex-1 md:ml-64 p-6 z-10">
+      <div className="flex-1 md:ml-64 p-6">
         {/* Mobile Header with Menu Button */}
         <div className="md:hidden flex items-center justify-between mb-1">
           <button
             onClick={() => setMobileSidebarOpen(true)}
-            className="p-2 rounded-lg text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-white/5"
+            className="p-2 rounded-lg text-gray-600 hover:bg-gray-100"
           >
             <Menu className="w-6 h-6" />
           </button>
@@ -842,18 +755,6 @@ export default function Dashboard() {
         {(activeTab === 'analytics' && (isCreator || isInfluencer)) && (
           <AnalyticsDashboard />
         )}
-
-        <Modal
-          isOpen={showSignOutConfirm}
-          onClose={() => setShowSignOutConfirm(false)}
-          onConfirm={handleSignOut}
-          title="Sign Out"
-          message="Are you sure you want to sign out of Sponsor Studio?"
-          confirmText="Sign Out"
-          cancelText="Cancel"
-          confirmButtonClass="bg-red-600 text-white hover:bg-red-700 dark:bg-red-500 dark:hover:bg-red-600 border-0"
-          cancelButtonClass="border-gray-300 text-gray-700 hover:bg-gray-50 dark:border-white/10 dark:text-gray-300 dark:hover:bg-white/10"
-        />
       </div>
     </div>
   );
