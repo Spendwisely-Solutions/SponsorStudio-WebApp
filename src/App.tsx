@@ -29,6 +29,8 @@ import DesignSystem from './pages/DesignSystem';
 import PlatformOverview from './pages/PlatformOverview';
 import AgencyServices from './pages/AgencyServices';
 import AboutUs from './pages/AboutUs';
+import SignIn from './pages/SignIn';
+import BookDemo from './pages/BookDemo';
 
 // Export FormData interface for use in components
 export interface FormData {
@@ -47,6 +49,7 @@ function App() {
           <Router>
           <Routes>
             <Route path="/" element={<Home />} />
+            <Route path="/signin" element={<SignIn />} />
             <Route path="/dashboard" element={<Dashboard />} />
             {/* <Route path="/profile/:userId" element={<ProfilePage />} /> */}
             {/* <Route path="/admin" element={<AdminLogin />} /> */}
@@ -67,6 +70,7 @@ function App() {
             <Route path="/platform-overview" element={<PlatformOverview />} />
             <Route path="/agency-services" element={<AgencyServices />} />
             <Route path="/about-us" element={<AboutUs />} />
+            <Route path="/book-demo" element={<BookDemo />} />
 
 
 

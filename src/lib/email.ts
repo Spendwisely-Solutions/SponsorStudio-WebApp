@@ -125,3 +125,34 @@ export const sendMeetingConfirmation = async (
     return false;
   }
 };
+
+export const sendDemoRequestEmail = async (formData: {
+  name: string;
+  email: string;
+  phone: string;
+  jobTitle: string;
+  companyName: string;
+  role: string;
+  budget?: string;
+  message: string;
+}) => {
+  const formattedMessage = `
+--- New Demo Booking Request ---
+Company Name: ${formData.companyName}
+Contact Name: ${formData.name}
+Job Title: ${formData.jobTitle}
+Role: ${formData.role}
+Annual Budget / Revenue: ${formData.budget || 'Not specified'}
+
+Notes / Message:
+${formData.message}
+  `;
+
+  return sendContactEmail({
+    name: formData.name,
+    email: formData.email,
+    phone: formData.phone,
+    message: formattedMessage,
+    organization_type: formData.role,
+  });
+};

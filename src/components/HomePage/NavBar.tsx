@@ -204,20 +204,20 @@ const NavBar: React.FC<NavBarProps> = ({
                 </div>
               </Link>
             ) : (
-              <>
-                <button
-                  onClick={() => setShowAuthForm(true)}
-                  className="px-5 py-2 text-sm font-medium text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors duration-200"
+              <div className="flex items-center gap-3">
+                <Link
+                  to="/book-demo"
+                  className="px-4 py-2 text-sm font-semibold text-gray-700 dark:text-gray-200 border border-gray-300 dark:border-white/20 rounded-xl hover:bg-black/5 dark:hover:bg-white/10 transition-all duration-300"
                 >
-                  Log In
-                </button>
-                <button
-                  onClick={() => setShowAuthForm(true)}
+                  Book a Demo
+                </Link>
+                <Link
+                  to="/signin"
                   className="px-5 py-2 text-sm font-semibold text-[#0A1628] bg-gradient-to-r from-cyan-400 to-blue-500 rounded-xl hover:from-cyan-300 hover:to-blue-400 shadow-[0_0_20px_rgba(0,212,255,0.3)] hover:shadow-[0_0_30px_rgba(0,212,255,0.5)] transition-all duration-300 transform hover:scale-105"
                 >
                   Get Started
-                </button>
-              </>
+                </Link>
+              </div>
             ))}
           </div>
 
@@ -303,20 +303,22 @@ const NavBar: React.FC<NavBarProps> = ({
                       </div>
                     </Link>
                   ) : (
-                    <>
-                      <button
-                        onClick={() => { setShowAuthForm(true); setMobileMenuOpen(false); }}
-                        className="w-full py-3 text-gray-600 dark:text-gray-300 border border-black/10 dark:border-white/20 rounded-xl hover:bg-black/5 dark:hover:bg-white/10 transition-all"
+                    <div className="space-y-2">
+                      <Link
+                        to="/book-demo"
+                        onClick={() => setMobileMenuOpen(false)}
+                        className="block w-full py-3 text-center font-semibold text-gray-700 dark:text-gray-200 border border-gray-300 dark:border-white/20 rounded-xl bg-surface hover:bg-surface-hover/80 transition-colors"
                       >
-                        Log In
-                      </button>
-                      <button
-                        onClick={() => { setShowAuthForm(true); setMobileMenuOpen(false); }}
-                        className="w-full py-3 font-semibold text-[#0A1628] bg-gradient-to-r from-cyan-400 to-blue-500 rounded-xl shadow-[0_0_20px_rgba(0,212,255,0.3)] transition-all"
+                        Book a Demo
+                      </Link>
+                      <Link
+                        to="/signin"
+                        onClick={() => setMobileMenuOpen(false)}
+                        className="block w-full py-3 text-center font-semibold text-[#0A1628] bg-gradient-to-r from-cyan-400 to-blue-500 rounded-xl shadow-[0_0_20px_rgba(0,212,255,0.3)] transition-all"
                       >
                         Get Started
-                      </button>
-                    </>
+                      </Link>
+                    </div>
                   )}
                 </div>
               )}

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { X } from 'lucide-react';
 import { supabase } from '../../lib/supabase';
 import AuthForm from '../../components/AuthComponents/AuthForm';
@@ -77,17 +78,19 @@ interface Profile {
 
 const Home: React.FC = () => {
   const { user, profile, isProfileComplete, setShowProfileDialog } = useAuth();
+  const navigate = useNavigate();
   const [clientLogos, setClientLogos] = useState<ClientLogo[]>([]);
   const [successStories, setSuccessStories] = useState<SuccessStory[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [showAllStories, setShowAllStories] = useState<boolean>(false);
-  const [showAuthForm, setShowAuthForm] = useState<boolean>(false);
   const [selectedEvent, setSelectedEvent] = useState<any | null>(null);
   
-  // Add a useEffect to log when showAuthForm state changes
-  useEffect(() => {
-  }, [showAuthForm]);
+  const setShowAuthForm = (value: boolean) => {
+    if (value) {
+      navigate('/signin');
+    }
+  };
   const [mobileMenuOpen, setMobileMenuOpen] = useState<boolean>(false);
   const [shouldShowProfileDialog, setShouldShowProfileDialog] = useState<boolean>(false);
 
@@ -168,19 +171,6 @@ const Home: React.FC = () => {
 
   return (
     <div className="min-h-screen bg-background text-text-primary transition-colors duration-500 overflow-x-hidden">
-      {showAuthForm && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="relative w-full max-w-md">
-            <button
-              onClick={() => setShowAuthForm(false)}
-              className="absolute top-4 right-4 text-gray-500 hover:text-gray-700 z-10 will-change-transform md:top-3 md:right-10"
-            >
-              <X className="h-6 w-6" />
-            </button>
-            <AuthForm onSuccess={() => setShowAuthForm(false)} onSignUpSuccess={() => setShowAuthForm(false)} />
-          </div>
-        </div>
-      )}
 
       <NavBar
         user={user}
