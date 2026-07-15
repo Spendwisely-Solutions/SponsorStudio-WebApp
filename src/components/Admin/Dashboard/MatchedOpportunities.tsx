@@ -130,17 +130,29 @@ export default function MatchedOpportunities({ searchTerm, setSearchTerm, setSta
 
       const profilesWithEmails = await Promise.all(
         profilesData.map(async (profile: any) => {
-          const { data: emailData, error: emailError } = await supabase.functions.invoke('get-user-email', {
-            body: { userId: profile.id }
-          });
-          if (emailError) {
-            console.error(`Error fetching email for profile ${profile.id}:`, emailError);
+          try {
+            const response = await fetch(
+              `${import.meta.env.VITE_API_URL || 'http://localhost:3001'}/api/users/${profile.id}/email`,
+              {
+                method: 'GET',
+                headers: {
+                  'Content-Type': 'application/json',
+                  Authorization: `Bearer ${await supabase.auth.getSession().then(({ data }) => data.session?.access_token)}`,
+                },
+              }
+            );
+            const resData = await response.json();
+            if (!resData.success || !resData.data?.email) {
+              throw new Error(resData.error?.message || 'Failed to fetch email');
+            }
+            return {
+              ...profile,
+              email: resData.data.email
+            };
+          } catch (error) {
+            console.error(`Error fetching email for profile ${profile.id}:`, error);
             return { ...profile, email: 'Not set' };
           }
-          return {
-            ...profile,
-            email: emailData?.email || 'Not set'
-          };
         })
       );
 

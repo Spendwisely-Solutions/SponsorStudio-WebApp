@@ -254,23 +254,22 @@ export default function CreatorDashboard({ onUpdateProfile }: BrandDashboardProp
 
   const fetchBrandEmail = async (brandId: string): Promise<string> => {
     try {
-      // Ensure the Supabase edge function 'get-user-email' returns only the email field to avoid exposing sensitive data
+      // Direct query to the new Express backend API
       const response = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/get-user-email`,
+        `${import.meta.env.VITE_API_URL || 'http://localhost:3001'}/api/users/${brandId}/email`,
         {
-          method: 'POST',
+          method: 'GET',
           headers: {
             'Content-Type': 'application/json',
             Authorization: `Bearer ${await supabase.auth.getSession().then(({ data }) => data.session?.access_token)}`,
           },
-          body: JSON.stringify({ userId: brandId }),
         }
       );
-      const data = await response.json();
-      if (data.error || !data.email) {
-        throw new Error(data.error || 'Failed to fetch brand email');
+      const resData = await response.json();
+      if (!resData.success || !resData.data?.email) {
+        throw new Error(resData.error?.message || 'Failed to fetch brand email');
       }
-      return data.email;
+      return resData.data.email;
     } catch (error: any) {
       console.error('Error fetching brand email for brandId:', brandId, error.message);
       throw error;
