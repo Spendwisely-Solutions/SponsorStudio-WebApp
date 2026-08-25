@@ -1,0 +1,327 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    /* Fonts */
+    --font-sans: Inter, system-ui, -apple-system, sans-serif;
+    --font-mono: JetBrains Mono, Courier New, monospace;
+
+    /* Typographic scale */
+    --font-size-xs: 0.75rem;
+    --font-size-sm: 0.875rem;
+    --font-size-md: 1rem;
+    --font-size-lg: 1.125rem;
+    --font-size-xl: 1.25rem;
+    --font-size-2xl: 1.5rem;
+    --font-size-3xl: 1.875rem;
+    --font-size-4xl: 2.25rem;
+
+    --font-weight-light: 300;
+    --font-weight-normal: 400;
+    --font-weight-medium: 500;
+    --font-weight-semibold: 600;
+    --font-weight-bold: 700;
+    --font-weight-black: 900;
+
+    --line-height-none: 1;
+    --line-height-tight: 1.25;
+    --line-height-snug: 1.375;
+    --line-height-normal: 1.5;
+    --line-height-relaxed: 1.625;
+    --line-height-loose: 2;
+
+    /* Spacing */
+    --spacing-xs: 0.25rem;
+    --spacing-sm: 0.5rem;
+    --spacing-md: 1rem;
+    --spacing-lg: 1.5rem;
+    --spacing-xl: 2rem;
+    --spacing-2xl: 3rem;
+
+    /* Radius */
+    --radius-sm: 0.25rem;
+    --radius-md: 0.375rem;
+    --radius-lg: 0.5rem;
+    --radius-xl: 0.75rem;
+    --radius-full: 9999px;
+
+    /* Z-Indices */
+    --z-dropdown: 1000;
+    --z-sticky: 1020;
+    --z-modal: 1050;
+    --z-toast: 1090;
+    --z-tooltip: 1100;
+  }
+
+  /* Light Theme Specific Colors & Shadows */
+  [data-theme="light"], :root:not([data-theme="dark"]) {
+    --color-primary: #1a73e8;
+    --color-primary-hover: #155ec2;
+    --color-secondary: #cbd5e1;
+    --color-secondary-hover: #94a3b8;
+    --color-success: #16a34a;
+    --color-warning: #d97706;
+    --color-danger: #dc2626;
+    --color-info: #0ea5e9;
+
+    --color-background: #ffffff;
+    --color-background-secondary: #f8fafc;
+    --color-surface: #ffffff;
+    --color-surface-hover: #f1f5f9;
+
+    --color-text-primary: #1e293b;
+    --color-text-secondary: #64748b;
+    --color-text-muted: #94a3b8;
+    --color-text-inverse: #ffffff;
+
+    --color-border: #e2e8f0;
+    --color-border-hover: #cbd5e1;
+
+    --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+    --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+
+    /* Alternating section gradients for premium light mode */
+    --gradient-trusted-by: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+    --gradient-what-is: linear-gradient(135deg, #f8fafc 0%, #ffffff 50%, #f1f5f9 100%);
+    --gradient-how-it-works: linear-gradient(180deg, #f1f5f9 0%, #f8fafc 50%, #ffffff 100%);
+    --gradient-trending-events: linear-gradient(180deg, #ffffff 0%, #f8fafc 50%, #ffffff 100%);
+    --gradient-clients: linear-gradient(180deg, #f8fafc 0%, #ffffff 50%, #f8fafc 100%);
+    --gradient-success-stories: linear-gradient(180deg, #ffffff 0%, #f8fafc 50%, #ffffff 100%);
+    --gradient-contact: linear-gradient(180deg, #f8fafc 0%, #ffffff 100%);
+    --gradient-footer: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+  }
+
+  /* Dark Theme Specific Colors & Shadows */
+  [data-theme="dark"], .dark {
+    --color-primary: #38bdf8;
+    --color-primary-hover: #0ea5e9;
+    --color-secondary: #1e293b;
+    --color-secondary-hover: #334155;
+    --color-success: #10b981;
+    --color-warning: #f59e0b;
+    --color-danger: #ef4444;
+    --color-info: #3b82f6;
+
+    --color-background: #000000;
+    --color-background-secondary: #080808;
+    --color-surface: #121212;
+    --color-surface-hover: #1c1c1e;
+
+    --color-text-primary: #f9fafb;
+    --color-text-secondary: #d1d5db;
+    --color-text-muted: #9ca3af;
+    --color-text-inverse: #000000;
+
+    --color-border: #1a1a1a;
+    --color-border-hover: #2d2d2d;
+
+    --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.7);
+    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.5), 0 2px 4px -1px rgba(0, 0, 0, 0.3);
+    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.6), 0 4px 6px -2px rgba(0, 0, 0, 0.4);
+    --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.7), 0 10px 10px -5px rgba(0, 0, 0, 0.5);
+
+    /* Alternating section gradients for original premium dark mode */
+    --gradient-trusted-by: linear-gradient(180deg, #000000 0%, #080808 100%);
+    --gradient-what-is: linear-gradient(135deg, #080808 0%, #000000 50%, #121212 100%);
+    --gradient-how-it-works: linear-gradient(180deg, #121212 0%, #000000 50%, #080808 100%);
+    --gradient-trending-events: linear-gradient(180deg, #000000 0%, #080808 50%, #000000 100%);
+    --gradient-clients: linear-gradient(180deg, #080808 0%, #000000 50%, #121212 100%);
+    --gradient-success-stories: linear-gradient(180deg, #121212 0%, #000000 50%, #080808 100%);
+    --gradient-contact: linear-gradient(180deg, #080808 0%, #000000 100%);
+    --gradient-footer: linear-gradient(180deg, #080808 0%, #000000 100%);
+  }
+}
+
+@keyframes blink {
+  0%, 100% { opacity: 0; }
+  50% { opacity: 1; }
+}
+
+.animate-blink {
+  animation: blink 1s infinite;
+}
+
+@keyframes bounce-x {
+  0%, 100% { transform: translateX(0); }
+  50% { transform: translateX(3px); }
+}
+
+.animate-bounce-x {
+  animation: bounce-x 1s infinite;
+}
+
+.duration-1000 {
+  transition-duration: 1000ms;
+}
+
+.marquee-blur::before,
+.marquee-blur::after {
+  content: '';
+  position: absolute;
+  z-index: 2;
+  width: 150px;
+  height: 100%;
+  top: 0;
+  pointer-events: none;
+}
+
+.marquee-blur::before {
+  left: 0;
+  background: linear-gradient(to right, rgb(249, 250, 251), rgba(249, 250, 251, 0));
+}
+
+.marquee-blur::after {
+  right: 0;
+  background: linear-gradient(to left, rgb(249, 250, 251), rgba(156, 180, 203, 0));
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  overflow-x: hidden;
+  background: var(--color-background);
+  color: var(--color-text-primary);
+  font-family: Inter, system-ui, -apple-system, sans-serif;
+}
+
+@layer utilities {
+  /* Hide scrollbar for Chrome, Safari and Opera */
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Hide scrollbar for IE, Edge and Firefox */
+  .no-scrollbar {
+    -ms-overflow-style: none; /* IE and Edge */
+    scrollbar-width: none; /* Firefox */
+  }
+}
+
+/* Global Dark Mode overrides for Tailwind utility classes in Dashboard and subcomponents */
+.dark .bg-white:not([class*="bg-white/"]) {
+  background-color: var(--color-surface) !important;
+}
+.dark .bg-gray-50:not([class*="bg-gray-50/"]),
+.dark .bg-gray-100:not([class*="bg-gray-100/"]) {
+  background-color: var(--color-background-secondary) !important;
+}
+.dark .bg-gray-200:not([class*="bg-gray-200/"]) {
+  background-color: var(--color-surface-hover) !important;
+}
+.dark .bg-blue-50:not([class*="bg-blue-50/"]) {
+  background-color: rgba(56, 189, 248, 0.15) !important;
+}
+
+/* Text Overrides */
+.dark .text-gray-900:not([class*="text-gray-900/"]),
+.dark .text-gray-800:not([class*="text-gray-800/"]),
+.dark .text-gray-950:not([class*="text-gray-950/"]) {
+  color: var(--color-text-primary) !important;
+}
+.dark .text-gray-700:not([class*="text-gray-700/"]),
+.dark .text-gray-600:not([class*="text-gray-600/"]),
+.dark .text-gray-500:not([class*="text-gray-500/"]) {
+  color: var(--color-text-secondary) !important;
+}
+.dark .text-gray-400:not([class*="text-gray-400/"]) {
+  color: var(--color-text-muted) !important;
+}
+
+/* Border Overrides */
+.dark .border-gray-100:not([class*="border-gray-100/"]),
+.dark .border-gray-200:not([class*="border-gray-200/"]),
+.dark .border-gray-300:not([class*="border-gray-300/"]) {
+  border-color: var(--color-border) !important;
+}
+
+/* Hover States */
+.dark .hover\:bg-gray-50:hover,
+.dark .hover\:bg-gray-100:hover {
+  background-color: var(--color-surface-hover) !important;
+}
+
+/* Brand Colors Overrides */
+.dark .bg-\[\#2B4B9B\]:not([class*="bg-\[\#2B4B9B\]/"]) {
+  background-color: var(--color-primary) !important;
+}
+.dark .hover\:bg-\[\#1a2f61\]:hover {
+  background-color: var(--color-primary-hover) !important;
+}
+.dark .text-\[\#2B4B9B\] {
+  color: var(--color-primary) !important;
+}
+.dark .border-\[\#2B4B9B\] {
+  border-color: var(--color-primary) !important;
+}
+.dark .focus\:ring-\[\#2B4B9B\]:focus {
+  --tw-ring-color: var(--color-primary) !important;
+}
+.dark .focus\:border-\[\#2B4B9B\]:focus {
+  border-color: var(--color-primary) !important;
+}
+
+/* Skeleton overrides */
+.dark .react-loading-skeleton {
+  --base-color: #1e293b !important;
+  --highlight-color: #334155 !important;
+}
+
+/* Liquid Glass Card Aesthetic */
+.liquid-glass-card {
+  background: rgba(255, 255, 255, 0.7) !important;
+  backdrop-filter: blur(20px) saturate(120%) !important;
+  -webkit-backdrop-filter: blur(20px) saturate(120%) !important;
+  border: 1px solid rgba(0, 0, 0, 0.06) !important;
+  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.04) !important;
+  transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
+.liquid-glass-card:hover {
+  border: 1px solid rgba(0, 0, 0, 0.12) !important;
+  box-shadow: 0 12px 40px 0 rgba(31, 38, 135, 0.08) !important;
+}
+
+.dark .liquid-glass-card {
+  background: rgba(13, 31, 60, 0.45) !important;
+  border: 1px solid rgba(255, 255, 255, 0.08) !important;
+  box-shadow: 0 8px 32px 0 rgba(0, 212, 255, 0.05) !important;
+}
+
+.dark .liquid-glass-card:hover {
+  border: 1px solid rgba(255, 255, 255, 0.15) !important;
+  box-shadow: 0 12px 40px 0 rgba(0, 212, 255, 0.08) !important;
+}
+
+/* Orbit Animations for Background Blobs */
+@keyframes orbit-1 {
+  0% { transform: translate(0px, 0px) scale(1); }
+  33% { transform: translate(30px, -50px) scale(1.1); }
+  66% { transform: translate(-20px, 20px) scale(0.95); }
+  100% { transform: translate(0px, 0px) scale(1); }
+}
+
+@keyframes orbit-2 {
+  0% { transform: translate(0px, 0px) scale(1); }
+  50% { transform: translate(-40px, 40px) scale(1.05); }
+  100% { transform: translate(0px, 0px) scale(1); }
+}
+
+.animate-orbit-slow {
+  animation: orbit-1 20s infinite ease-in-out;
+}
+
+.animate-orbit-delayed {
+  animation: orbit-2 25s infinite ease-in-out;
+}
+
+/* Click Shrink active transitions */
+.click-effect {
+  transition: transform 0.2s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+.click-effect:active {
+  transform: scale(0.96) !important;
+}

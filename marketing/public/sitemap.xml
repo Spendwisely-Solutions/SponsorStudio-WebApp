@@ -1,0 +1,120 @@
+﻿<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://www.sitemaps.org/schemas/sitemap/0.9
+        http://www.sitemaps.org/schemas/sitemap/0.9/sitemap.xsd">
+
+<!-- Homepage -->
+<url>
+	<loc>https://www.sponsorstudio.in/</loc>
+	<lastmod>2025-09-10</lastmod>
+	<changefreq>weekly</changefreq>
+	<priority>1.0</priority>
+</url>
+
+<!-- Main Application Pages -->
+<url>
+	<loc>https://www.sponsorstudio.in/dashboard</loc>
+	<lastmod>2025-09-10</lastmod>
+	<changefreq>daily</changefreq>
+	<priority>0.9</priority>
+</url>
+
+<url>
+	<loc>https://www.sponsorstudio.in/stories</loc>
+	<lastmod>2025-09-11</lastmod>
+	<changefreq>daily</changefreq>
+	<priority>0.9</priority>
+</url>
+<url>
+	<loc>https://www.sponsorstudio.in/blogs</loc>
+	<lastmod>2025-09-11</lastmod>
+	<changefreq>daily</changefreq>
+	<priority>0.9</priority>
+</url>
+
+<url>
+	<loc>https://www.sponsorstudio.in/faq</loc>
+	<lastmod>2025-09-10</lastmod>
+	<changefreq>daily</changefreq>
+	<priority>0.9</priority>
+</url>
+
+<!-- Authentication Pages -->
+
+
+<!-- Success & Profile Pages -->
+<!-- <url>
+	<loc>https://www.sponsorstudio.in/success</loc>
+	<lastmod>2025-09-10</lastmod>
+	<changefreq>weekly</changefreq>
+	<priority>0.6</priority>
+</url> -->
+
+<!-- Purchase/Credits -->
+<!-- <url>
+	<loc>https://www.sponsorstudio.in/purchase</loc>
+	<lastmod>2025-09-10</lastmod>
+	<changefreq>monthly</changefreq>
+	<priority>0.6</priority>
+</url> -->
+
+<!-- Note: Dynamic success story pages (/story/:id) are generated automatically with individual OG images and meta tags -->
+
+<!-- Static Homepage Sections (for SEO) -->
+<url>
+	<loc>https://www.sponsorstudio.in/#how-we-work</loc>
+	<lastmod>2025-09-10</lastmod>
+	<changefreq>monthly</changefreq>
+	<priority>0.6</priority>
+</url>
+
+<url>
+	<loc>https://www.sponsorstudio.in/#clients</loc>
+	<lastmod>2025-09-10</lastmod>
+	<changefreq>monthly</changefreq>
+	<priority>0.5</priority>
+</url>
+
+<url>
+	<loc>https://www.sponsorstudio.in/#success</loc>
+	<lastmod>2025-09-10</lastmod>
+	<changefreq>weekly</changefreq>
+	<priority>0.6</priority>
+</url>
+
+<url>
+	<loc>https://www.sponsorstudio.in/#contact</loc>
+	<lastmod>2025-09-10</lastmod>
+	<changefreq>monthly</changefreq>
+	<priority>0.6</priority>
+</url>
+<url>
+	<loc>https://www.sponsorstudio.in/how-we-work</loc>
+	<lastmod>2025-09-10</lastmod>
+	<changefreq>daily</changefreq>
+	<priority>0.9</priority>
+</url>
+<url>
+	<loc>https://www.sponsorstudio.in/how-we-work</loc>
+	<lastmod>2025-09-10</lastmod>
+	<changefreq>daily</changefreq>
+	<priority>0.9</priority>
+</url>
+<url>
+	<loc>https://www.sponsorstudio.in/trending-events</loc>
+	<lastmod>2025-09-10</lastmod>
+	<changefreq>daily</changefreq>
+	<priority>0.9</priority>
+</url>
+<url>
+	<loc>https://www.sponsorstudio.in/contact-us</loc>
+	<lastmod>2025-09-10</lastmod>
+	<changefreq>daily</changefreq>
+	<priority>0.9</priority>
+</url>
+
+
+
+
+</urlset>
