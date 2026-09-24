@@ -128,23 +128,11 @@ const ContactForm: React.FC<ContactFormProps> = ({ formData, setFormData, showTh
   }, []);
 
   return (
-    <div ref={formRef} className="max-w-3xl mx-auto mt-12 relative">
-      {/* Background elements */}
-      <div className="absolute -z-10 inset-0 opacity-20 pointer-events-none overflow-hidden">
-        <div className="absolute -top-10 -right-10 w-64 h-64 rounded-full bg-primary/10 mix-blend-multiply filter blur-xl animate-float"></div>
-        <div className="absolute -bottom-10 -left-10 w-64 h-64 rounded-full bg-secondary/10 mix-blend-multiply filter blur-xl animate-float-slow"></div>
-        <div className="absolute top-1/2 -translate-y-1/2 left-1/4 w-32 h-32 rounded-full bg-info/10 mix-blend-multiply filter blur-lg animate-float-delayed"></div>
-        <div className="absolute -bottom-5 right-1/4 w-40 h-40 rounded-full bg-cyan-300/10 mix-blend-multiply filter blur-xl animate-float-slow"></div>
-        
-        {/* Geometric shapes */}
-        <div className="absolute top-10 left-10 w-16 h-16 border-2 border-primary/20 rounded-lg rotate-45"></div>
-        <div className="absolute bottom-20 right-20 w-24 h-24 border-2 border-secondary/20 rounded-full"></div>
-        <div className="absolute top-1/3 right-1/3 w-10 h-10 border-2 border-info/20 rotate-12"></div>
-      </div>
+    <div ref={formRef} className="relative">
       
       {showThankYou ? (
         <div
-          className="bg-surface/90 backdrop-blur-sm border border-success/30 rounded-2xl p-10 text-center shadow-xl relative overflow-hidden"
+          className="bg-surface border border-border rounded-card p-10 text-center relative overflow-hidden"
           {...(!disableAnimations && {
             'data-aos': 'zoom-in-up',
             'data-aos-duration': '500',
@@ -161,11 +149,11 @@ const ContactForm: React.FC<ContactFormProps> = ({ formData, setFormData, showTh
           </div>
           
           <div className="relative">
-            <div className="w-24 h-24 mx-auto bg-gradient-to-r from-success to-emerald-500 rounded-full flex items-center justify-center mb-8 shadow-lg animate-bounce-slow">
+            <div className="w-24 h-24 mx-auto rounded-full bg-success text-white flex items-center justify-center mb-8">
               <Check className="h-12 w-12 text-white" strokeWidth={3} />
             </div>
             
-            <h3 className="text-3xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-success to-emerald-600 mb-4">
+            <h3 className="text-3xl font-semibold mb-4">
               Message Sent Successfully!
             </h3>
             
@@ -184,7 +172,7 @@ const ContactForm: React.FC<ContactFormProps> = ({ formData, setFormData, showTh
         </div>
       ) : (
         <div
-          className="bg-surface/80 backdrop-blur-sm p-10 rounded-2xl shadow-xl border border-border"
+          className="bg-surface p-6 sm:p-8 rounded-card border border-border"
           {...(!disableAnimations && {
             'data-aos': 'zoom-in-up',
             'data-aos-duration': '500',
@@ -223,7 +211,7 @@ const ContactForm: React.FC<ContactFormProps> = ({ formData, setFormData, showTh
                   onFocus={() => setFocusedField('name')}
                   onBlur={() => setFocusedField(null)}
                   placeholder="Your name"
-                  className={`block w-full rounded-lg border-2 border-solid ${
+                  className={`block w-full rounded-lg border border-solid ${
                     formErrors.name ? 'border-danger bg-danger/10' : 
                     focusedField === 'name' ? 'border-primary ring-2 ring-primary/20' : 'border-border'
                   } bg-surface pl-12 pr-4 py-3 text-text-primary placeholder-text-muted focus:outline-none text-lg sm:text-base transition-all duration-200`}
@@ -250,7 +238,7 @@ const ContactForm: React.FC<ContactFormProps> = ({ formData, setFormData, showTh
                 Email
               </label>
               <div className="relative flex flex-col">
-                <div className="absolute inset-y-0 bottom-5  left-0 flex items-center pl-4 pointer-events-none">
+                <div className="absolute inset-y-0 bottom-5 left-0 flex items-center pl-4 pointer-events-none">
                   <Mail className={`h-5 w-5 ${formErrors.email ? 'text-danger' : 'text-text-muted'}`} />
                 </div>
                 <input
@@ -266,7 +254,7 @@ const ContactForm: React.FC<ContactFormProps> = ({ formData, setFormData, showTh
                   onFocus={() => setFocusedField('email')}
                   onBlur={() => setFocusedField(null)}
                   placeholder="Your email address"
-                  className={`block w-full rounded-lg border-2 border-solid ${
+                  className={`block w-full rounded-lg border border-solid ${
                     formErrors.email ? 'border-danger bg-danger/10' : 
                     focusedField === 'email' ? 'border-primary ring-2 ring-primary/20' : 'border-border'
                   } bg-surface pl-12 pr-4 py-3 text-text-primary placeholder-text-muted focus:outline-none text-lg sm:text-base transition-all duration-200`}
@@ -304,7 +292,7 @@ const ContactForm: React.FC<ContactFormProps> = ({ formData, setFormData, showTh
                   onFocus={() => setFocusedField('phone')}
                   onBlur={() => setFocusedField(null)}
                   placeholder="Your phone number"
-                  className={`block w-full rounded-lg border-2 border-solid ${
+                  className={`block w-full rounded-lg border border-solid ${
                     focusedField === 'phone' ? 'border-primary ring-2 ring-primary/20' : 'border-border'
                   } bg-surface pl-12 pr-4 py-3 text-text-primary placeholder-text-muted focus:outline-none text-lg sm:text-base transition-all duration-200`}
                 />
@@ -338,7 +326,7 @@ const ContactForm: React.FC<ContactFormProps> = ({ formData, setFormData, showTh
                   }}
                   onFocus={() => setFocusedField('organization_type')}
                   onBlur={() => setFocusedField(null)}
-                  className={`block w-full rounded-lg border-2 border-solid ${
+                  className={`block w-full rounded-lg border border-solid ${
                     formErrors.organization_type ? 'border-danger bg-danger/10' : 
                     focusedField === 'organization_type' ? 'border-primary ring-2 ring-primary/20' : 'border-border'
                   } bg-surface pl-12 pr-4 py-3 text-text-primary focus:outline-none text-lg sm:text-base transition-all duration-200 appearance-none`}
@@ -392,7 +380,7 @@ const ContactForm: React.FC<ContactFormProps> = ({ formData, setFormData, showTh
                   onFocus={() => setFocusedField('message')}
                   onBlur={() => setFocusedField(null)}
                   placeholder="Your message"
-                  className={`block w-full rounded-lg border-2 border-solid ${
+                  className={`block w-full rounded-lg border border-solid ${
                     formErrors.message ? 'border-danger bg-danger/10' : 
                     focusedField === 'message' ? 'border-primary ring-2 ring-primary/20' : 'border-border'
                   } bg-surface pl-12 pr-4 py-3 text-text-primary placeholder-text-muted focus:outline-none text-lg sm:text-base transition-all duration-200`}
@@ -442,7 +430,7 @@ const ContactForm: React.FC<ContactFormProps> = ({ formData, setFormData, showTh
                       }
                     });
                 }}
-                className="w-full py-3 px-6 bg-gradient-to-r from-primary to-primary-hover text-text-inverse rounded-lg font-medium hover:from-primary-hover hover:to-primary focus:ring-2 focus:ring-primary/50 text-lg sm:text-base transform transition-all duration-200 hover:shadow-lg flex items-center justify-center gap-2"
+                className="w-full py-3 px-6 bg-primary hover:bg-primary-hover text-text-inverse rounded-lg font-medium focus:ring-2 focus:ring-primary/50 text-lg sm:text-base transform transition-all duration-200 hover:shadow-lg flex items-center justify-center gap-2"
               >
                 <Send className="h-5 w-5" />
                 Send Message

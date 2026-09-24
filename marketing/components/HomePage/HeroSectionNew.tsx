@@ -1,200 +1,98 @@
-import React, { useEffect, useRef } from 'react';
-import { ArrowRight, ChevronRight } from 'lucide-react';
-import { User } from './Home';
+'use client';
 
-interface HeroSectionProps {
-  user: User | null;
-  setShowAuthForm: (value: boolean) => void;
-}
+import React from 'react';
+import { motion } from 'framer-motion';
+import Link from 'next/link';
+import { ArrowRight, Users } from 'lucide-react';
+import Button from '../ui/Button';
+import { SIGN_UP_BRAND_URL, SIGN_UP_ORGANIZER_URL } from '../../lib/site';
+import CountUp from '../motion/CountUp';
+import HeroFeatureReel from './HeroFeatureReel';
+import { useIntroReady } from '../motion/Intro';
 
-const HeroSection: React.FC<HeroSectionProps> = ({ user, setShowAuthForm }) => {
-  const heroRef = useRef<HTMLDivElement>(null);
+const stats = [
+  { value: '1,000+', label: 'Events listed' },
+  { value: '50+', label: 'Brands on board' },
+  { value: '₹2 Cr+', label: 'Sponsorship raised' },
+  { value: '100+', label: 'Deals closed' },
+];
 
-  useEffect(() => {
-    // Stagger in the hero elements
-    const elements = heroRef.current?.querySelectorAll('.hero-animate');
-    elements?.forEach((el, i) => {
-      (el as HTMLElement).style.animationDelay = `${i * 0.15}s`;
-    });
-  }, []);
-
-  const stats = [
-    { value: '1000+', label: 'Events Listed' },
-    { value: '50+', label: 'Brands and counting' },
-    { value: '2 Cr+', label: 'Funds Raised' },
-    { value: '100+', label: 'Deals Facilitated' },
-  ];
+const HeroSection: React.FC = () => {
+  // Entrance timing, in seconds from the moment the launch screen lifts.
+  const ready = useIntroReady();
+  const fadeUp = (delay: number) => ({
+    initial: { opacity: 0, y: 16 },
+    animate: ready ? { opacity: 1, y: 0 } : { opacity: 0, y: 16 },
+    transition: { duration: 0.7, delay },
+  });
 
   return (
-    <div
-      ref={heroRef}
-      className="relative min-h-screen flex flex-col overflow-hidden bg-gradient-to-br from-background via-background-secondary to-background transition-colors duration-500"
-    >
-      {/* Animated grid pattern */}
-      <div
-        className="absolute inset-0 opacity-[0.06]"
-        style={{
-          backgroundImage: `
-            linear-gradient(color-mix(in srgb, var(--color-primary) 15%, transparent) 1px, transparent 1px),
-            linear-gradient(90deg, color-mix(in srgb, var(--color-primary) 15%, transparent) 1px, transparent 1px)
-          `,
-          backgroundSize: '60px 60px',
-        }}
-      />
-
-      {/* Glowing orbs */}
-      <div className="absolute top-1/4 left-1/4 w-[600px] h-[600px] rounded-full opacity-10"
-        style={{ background: 'radial-gradient(circle, color-mix(in srgb, var(--color-info) 10%, transparent) 0%, transparent 70%)', filter: 'blur(40px)' }} />
-      <div className="absolute bottom-1/4 right-1/4 w-[400px] h-[400px] rounded-full opacity-10"
-        style={{ background: 'radial-gradient(circle, color-mix(in srgb, var(--color-primary) 10%, transparent) 0%, transparent 70%)', filter: 'blur(40px)' }} />
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] rounded-full opacity-5"
-        style={{ background: 'radial-gradient(circle, color-mix(in srgb, var(--color-primary) 5%, transparent) 0%, transparent 70%)', filter: 'blur(60px)' }} />
-
-      {/* India's #1 badge */}
-      <div className="relative z-10 flex justify-center pt-28 md:pt-32 pb-2">
-        <div className="hero-animate opacity-0 animate-fade-in inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-info/30 bg-info/10 text-info text-xs font-medium">
-          <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse" />
-          India's #1 Sponsorship Deal Platform
-        </div>
-      </div>
-
-      {/* Main content */}
-      <div className="relative z-10 flex-1 flex flex-col items-center justify-center px-4 sm:px-6 text-center pt-6 pb-16">
-        {/* Hero headline */}
-        <h1 className="hero-animate opacity-0 animate-fade-in max-w-5xl mx-auto mb-6">
-          <span className="block text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-black leading-[1.05] tracking-tight text-text-primary">
-            Where Brands and Events
-          </span>
-          <span
-            className="block text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-black leading-[1.05] tracking-tight"
-            style={{
-              background: 'linear-gradient(90deg, #00D4FF 0%, #6366F1 50%, #00D4FF 100%)',
-              backgroundSize: '200% auto',
-              WebkitBackgroundClip: 'text',
-              WebkitTextFillColor: 'transparent',
-              animation: 'shimmer 4s linear infinite',
-            }}
-          >
-            Build Better Partnerships.
-          </span>
-        </h1>
-
-        {/* Subtitle */}
-        <p className="hero-animate opacity-0 animate-fade-in max-w-3xl text-base sm:text-lg md:text-xl text-text-secondary leading-relaxed mb-10">
-          Sponsor Studio brings organizers and brands together on a trusted platform designed to discover opportunities, simplify negotiations, and deliver measurable sponsorship success.
-        </p>
-
-        {/* CTA Buttons */}
-        <div className="hero-animate opacity-0 animate-fade-in flex flex-col sm:flex-row gap-4 mb-16">
-          {user ? (
-            <>
-              <a
-                href="/dashboard"
-                className="group inline-flex items-center gap-2 px-8 py-4 rounded-2xl font-semibold text-[#0A1628] text-base transition-all duration-300 hover:scale-105"
-                style={{
-                  background: 'linear-gradient(135deg, #00D4FF, #3B82F6)',
-                  boxShadow: '0 0 30px rgba(0,212,255,0.4)',
-                }}
-              >
-                Explore Opportunities
-                <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-              </a>
-              <a
-                href="/dashboard"
-                className="inline-flex items-center gap-2 px-8 py-4 rounded-2xl font-semibold text-text-primary text-base border border-border bg-surface/20 backdrop-blur-md transition-all duration-300 hover:scale-105 hover:bg-surface-hover/30"
-              >
-                List Your Event
-                <ChevronRight className="w-5 h-5" />
-              </a>
-            </>
-          ) : (
-            <>
-              <button
-                onClick={() => setShowAuthForm(true)}
-                className="group inline-flex items-center gap-2 px-8 py-4 rounded-2xl font-semibold text-[#0A1628] text-base transition-all duration-300 hover:scale-105"
-                style={{
-                  background: 'linear-gradient(135deg, #00D4FF, #3B82F6)',
-                  boxShadow: '0 0 30px rgba(0,212,255,0.4)',
-                }}
-              >
-                Explore Opportunities
-                <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
-              </button>
-              <button
-                onClick={() => setShowAuthForm(true)}
-                className="inline-flex items-center gap-2 px-8 py-4 rounded-2xl font-semibold text-text-primary text-base border border-border bg-surface/20 backdrop-blur-md transition-all duration-300 hover:scale-105 hover:bg-surface-hover/30"
-              >
-                List Your Event
-                <ChevronRight className="w-5 h-5" />
-              </button>
-            </>
-          )}
-        </div>
-
-        {/* Stats Row */}
-        <div className="hero-animate opacity-0 animate-fade-in w-full max-w-4xl mx-auto">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 md:gap-6">
-            {stats.map((stat, i) => (
-              <div
-                key={i}
-                className="relative group rounded-2xl p-4 text-center transition-all duration-300 hover:scale-105 bg-surface border border-border backdrop-blur-md"
-              >
-                <div
-                  className="text-2xl sm:text-3xl font-black mb-1"
-                  style={{
-                    background: 'linear-gradient(135deg, #00D4FF, #6366F1)',
-                    WebkitBackgroundClip: 'text',
-                    WebkitTextFillColor: 'transparent',
-                  }}
+    <section className="relative">
+      <div className="container-page grid items-center gap-14 pb-16 pt-8 sm:pt-12 lg:grid-cols-12 lg:gap-10 lg:pb-20 lg:pt-12">
+        <div className="lg:col-span-6">
+          {/* Each line rises from behind its own mask. The padding keeps descenders unclipped. */}
+          <h1 className="text-5xl text-text-primary sm:text-6xl xl:text-7xl">
+            {[
+              <>Sponsorships,</>,
+              <span key="italic" className="italic">minus the cold emails.</span>,
+            ].map((line, i) => (
+              <span key={i} className="-mb-[0.15em] block overflow-hidden pb-[0.15em]">
+                <motion.span
+                  className="block"
+                  initial={{ y: '110%' }}
+                  animate={{ y: ready ? 0 : '110%' }}
+                  transition={{ duration: 0.9, delay: 0.08 + i * 0.12 }}
                 >
-                  {stat.value}
-                </div>
-                <div className="text-xs sm:text-sm text-text-secondary font-medium">{stat.label}</div>
-                {/* Hover glow */}
-                <div className="absolute inset-0 rounded-2xl opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-                  style={{ background: 'linear-gradient(135deg, rgba(0,212,255,0.05), rgba(99,102,241,0.05))' }} />
+                  {line}
+                </motion.span>
+              </span>
+            ))}
+          </h1>
+          <motion.p className="mt-6 max-w-xl text-lg leading-relaxed text-text-secondary" {...fadeUp(0.35)}>
+            India&apos;s first sponsorship marketplace. Sponsor Studio connects brands with verified events, creators
+            and outdoor media, and takes care of everything from the first match to the signed MOU.
+          </motion.p>
+          <motion.div className="mt-9 flex flex-col gap-3 sm:flex-row" {...fadeUp(0.45)}>
+            <Button href={SIGN_UP_BRAND_URL} size="lg">
+              I&apos;m a brand
+              <ArrowRight className="h-4 w-4" />
+            </Button>
+            <Button href={SIGN_UP_ORGANIZER_URL} size="lg" variant="secondary">
+              <Users className="h-4 w-4" />
+              I&apos;m listing an event
+            </Button>
+          </motion.div>
+          <motion.p className="mt-5 text-sm text-text-muted" {...fadeUp(0.55)}>
+            Want a walkthrough first?{' '}
+            <Link href="/book-demo" className="font-medium text-text-primary underline underline-offset-4 hover:text-brand-600">
+              Book a demo
+            </Link>
+          </motion.p>
+
+          {/* Proof figures sit in the first screen, under the calls to action. */}
+          <motion.dl className="mt-10 grid grid-cols-2 gap-x-6 gap-y-5 border-t border-border pt-6 sm:grid-cols-4" {...fadeUp(0.65)}>
+            {stats.map((stat) => (
+              <div key={stat.label} className="flex flex-col-reverse">
+                <dt className="mt-1 text-xs leading-snug text-text-secondary">{stat.label}</dt>
+                <dd className="font-display text-3xl text-text-primary">
+                  <CountUp value={stat.value} />
+                </dd>
               </div>
             ))}
-          </div>
+          </motion.dl>
+        </div>
+
+        <div className="lg:col-span-6">
+          <motion.div {...fadeUp(0.4)}>
+            <HeroFeatureReel />
+          </motion.div>
+          <p className="mt-3 text-right font-mono text-[10px] uppercase tracking-wider text-text-muted">
+            Sample data
+          </p>
         </div>
       </div>
 
-      {/* Hero Dashboard Image - Hidden for now
-      <div className="relative z-10 w-full max-w-6xl mx-auto px-4 sm:px-8 pb-16">
-        <div className="hero-animate opacity-0 animate-fade-in relative rounded-2xl overflow-hidden border border-border shadow-xl">
-          <div className="flex items-center gap-2 px-4 py-3 bg-surface border-b border-border">
-            <div className="w-3 h-3 rounded-full bg-red-500/70" />
-            <div className="w-3 h-3 rounded-full bg-yellow-500/70" />
-            <div className="w-3 h-3 rounded-full bg-green-500/70" />
-            <span className="ml-3 text-xs text-text-secondary">sponsorstudio.in/dashboard</span>
-          </div>
-          <img
-            src="/hero-dashboard.png"
-            alt="SponsorStudio Dashboard Preview"
-            className="w-full h-auto object-cover"
-            style={{ maxHeight: '520px', objectPosition: 'top' }}
-          />
-          <div className="absolute bottom-0 left-0 right-0 h-24"
-            style={{ background: 'linear-gradient(to top, var(--color-background), transparent)' }} />
-        </div>
-      </div>
-      */}
-
-      {/* CSS Animations */}
-      <style>{`
-        @keyframes fade-in {
-          from { opacity: 0; transform: translateY(30px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
-        .animate-fade-in {
-          animation: fade-in 0.8s cubic-bezier(0.22, 1, 0.36, 1) forwards;
-        }
-        @keyframes shimmer {
-          0% { background-position: 0% center; }
-          100% { background-position: 200% center; }
-        }
-      `}</style>
-    </div>
+    </section>
   );
 };
 

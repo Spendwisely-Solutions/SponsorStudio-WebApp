@@ -35,7 +35,7 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
   const description = cleanText.length > 160 ? cleanText.substring(0, 157) + '...' : cleanText;
 
   return {
-    title: `${story.title} | Sponsor Studio`,
+    title: story.title,
     description,
     openGraph: {
       title: story.title,

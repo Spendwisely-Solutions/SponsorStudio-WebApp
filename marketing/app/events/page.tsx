@@ -3,7 +3,7 @@ import { Metadata } from 'next';
 import EventDetailsClient from '../../components/EventDetailsClient';
 
 export const metadata: Metadata = {
-  title: 'Event Details - Sponsor Studio',
+  title: 'Event details',
   description: 'View full event demographic details, budget targets, footfall numbers, and sponsorship benefits.',
 };
 

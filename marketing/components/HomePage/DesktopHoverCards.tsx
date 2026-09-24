@@ -240,7 +240,7 @@ const DesktopHoverCards: React.FC<DesktopHoverCardsProps> = ({
                         <div className="flex items-center gap-4">
                           <Link
                             href={`/stories/${story.id}`}
-                            className="inline-flex items-center bg-white text-gray-900 font-semibold px-6 py-3 rounded-xl hover:bg-gray-100 transition-all duration-300 ease-[cubic-bezier(0.08,0.82,0.17,1)] group/btn transform hover:scale-105"
+                            className="inline-flex items-center bg-white text-gray-900 font-semibold px-6 py-3 rounded-xl hover:bg-gray-100 transition-all duration-300 ease-[cubic-bezier(0.08,0.82,0.17,1)] group/btn transform"
                             style={{
                               willChange: 'transform, background-color',
                               transform: 'translateZ(0)'
@@ -346,7 +346,7 @@ const DesktopHoverCards: React.FC<DesktopHoverCardsProps> = ({
                     }}
                   >
                     <motion.div 
-                      className="w-3 h-3 bg-blue-600 rounded-full"
+                      className="w-3 h-3 bg-brand-600 rounded-full"
                       animate={shouldReduceMotion ? {} : {
                         scale: [1, 1.05, 1],
                         opacity: [1, 0.9, 1],

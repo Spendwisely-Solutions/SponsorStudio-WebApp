@@ -1,3 +1,5 @@
+'use client';
+
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { MessageSquare, X, Send, CheckCircle2, User, Mail, Phone, Users, ShieldAlert } from 'lucide-react';
@@ -66,7 +68,7 @@ const ContactWidget: React.FC = () => {
       <div className="fixed bottom-6 right-6 z-40">
         <motion.button
           onClick={() => setIsOpen(!isOpen)}
-          className="relative w-14 h-14 rounded-full bg-gradient-to-r from-[#00D4FF] to-[#3B82F6] flex items-center justify-center text-[#0A1628] shadow-2xl focus:outline-none hover:scale-105 active:scale-95 transition-transform duration-200"
+          className="relative w-14 h-14 rounded-full flex items-center justify-center bg-primary text-white hover:bg-primary-hover shadow-pop focus:outline-none active:scale-95 transition-transform duration-200"
           whileHover={{ scale: 1.1 }}
           whileTap={{ scale: 0.95 }}
           layoutId="contact-widget-button"
@@ -124,7 +126,7 @@ const ContactWidget: React.FC = () => {
                 <div className="space-y-1">
                   <label className="block text-xs font-semibold text-text-secondary">Name</label>
                   <div className="relative">
-                    <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted" />
+                    <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted pointer-events-none z-10" />
                     <input
                       type="text"
                       name="name"
@@ -141,7 +143,7 @@ const ContactWidget: React.FC = () => {
                 <div className="space-y-1">
                   <label className="block text-xs font-semibold text-text-secondary">Email Address</label>
                   <div className="relative">
-                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted" />
+                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted pointer-events-none z-10" />
                     <input
                       type="email"
                       name="email"
@@ -158,7 +160,7 @@ const ContactWidget: React.FC = () => {
                 <div className="space-y-1">
                   <label className="block text-xs font-semibold text-text-secondary">Phone (Optional)</label>
                   <div className="relative">
-                    <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted" />
+                    <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted pointer-events-none z-10" />
                     <input
                       type="tel"
                       name="phone"
@@ -174,17 +176,22 @@ const ContactWidget: React.FC = () => {
                 <div className="space-y-1">
                   <label className="block text-xs font-semibold text-text-secondary">Are you a Brand or Organizer?</label>
                   <div className="relative">
-                    <Users className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted" />
+                    <Users className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-text-muted pointer-events-none z-10" />
                     <select
                       name="organization_type"
                       value={formData.organization_type}
                       onChange={handleChange}
-                      className={`w-full pl-10 pr-4 py-2 rounded-xl text-sm bg-surface border ${errors.organization_type ? 'border-danger' : 'border-border'} focus:outline-none focus:border-primary text-text-primary transition-colors`}
+                      className={`w-full pl-10 pr-8 py-2 rounded-xl text-sm bg-surface border ${errors.organization_type ? 'border-danger' : 'border-border'} focus:outline-none focus:border-primary text-text-primary transition-colors appearance-none`}
                     >
                       <option value="">Select your role</option>
                       <option value="brand">Brand / Sponsor</option>
                       <option value="organizer">Event Organizer</option>
                     </select>
+                    <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none text-text-muted">
+                      <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+                      </svg>
+                    </div>
                   </div>
                   {errors.organization_type && <p className="text-[10px] text-danger">{errors.organization_type}</p>}
                 </div>
@@ -207,7 +214,7 @@ const ContactWidget: React.FC = () => {
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="w-full flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-gradient-to-r from-[#00D4FF] to-[#3B82F6] text-[#0A1628] font-bold text-sm hover:scale-[1.02] active:scale-95 disabled:opacity-50 transition-all duration-200"
+                  className="w-full flex items-center justify-center gap-2 px-5 py-3 rounded-xl bg-primary text-white hover:bg-primary-hover font-semibold text-sm active:scale-95 disabled:opacity-50 transition-all duration-200"
                 >
                   {isSubmitting ? (
                     <span>Submitting...</span>

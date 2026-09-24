@@ -1,234 +1,204 @@
-import { motion } from "framer-motion";
-import { 
-  Search, 
-  Eye, 
-  MessageSquare, 
-  TrendingUp, 
-  PlusCircle, 
-  Sparkles, 
-  Layers, 
-  CheckCircle2 
-} from "lucide-react";
-import { useState } from "react";
+'use client';
 
-const HowItWorks = () => {
-  const [activeTab, setActiveTab] = useState<'brands' | 'organizers'>('brands');
+import { useEffect, useRef, useState } from 'react';
+import Link from 'next/link';
+import { motion, useInView, useScroll, useSpring } from 'framer-motion';
+import { ArrowRight, BadgeCheck, CalendarCheck, CheckCircle2, FileSignature, LineChart, Search, Send, Users } from 'lucide-react';
 
-  const brandSteps = [
+type Audience = 'brands' | 'organizers';
+
+type Step = {
+  title: string;
+  description: string;
+  detail: string;
+  icon: React.ElementType;
+};
+
+// Steps follow the platform flow described in the product documentation.
+const steps: Record<Audience, Step[]> = {
+  brands: [
     {
-      step: "01",
-      title: "Discover Verified Events",
-      description: "Browse opportunities filtered by audience, budgets, industry, location, and objectives.",
+      title: 'Discover verified listings',
+      description: 'Browse events, creators and outdoor media filtered by audience, budget, category and city. Every listing has been checked by our team.',
+      detail: 'Filters: category · budget · location',
       icon: Search,
-      color: "#00D4FF",
     },
     {
-      step: "02",
-      title: "Compare & Evaluate",
-      description: "Review sponsorship packages, pricing, and expected reach with complete transparency.",
-      icon: Eye,
-      color: "#F472B6",
+      title: 'Express interest',
+      description: 'Like a listing to tell the organiser you are interested. Unlock the full brochure or request a risk analysis before you commit.',
+      detail: '50 credits per interest',
+      icon: Send,
     },
     {
-      step: "03",
-      title: "Connect & Collaborate",
-      description: "Chat directly with organizers and finalize partnerships faster.",
-      icon: MessageSquare,
-      color: "#34D399",
+      title: 'Meet and agree terms',
+      description: 'When the organiser accepts, we set up the meeting. Negotiate deliverables and close the deal with the paperwork handled.',
+      detail: 'Match status: accepted → meeting',
+      icon: CalendarCheck,
     },
     {
-      step: "04",
-      title: "Track ROI",
-      description: "Measure campaign performance with risk analysis reports, post-event reports and other key insights.",
-      icon: TrendingUp,
-      color: "#A78BFA",
+      title: 'Measure what you got',
+      description: 'After the event, request a post-event report so the next budget conversation starts with real numbers.',
+      detail: 'Post-event and risk reports',
+      icon: LineChart,
     },
-  ];
-
-  const organizerSteps = [
+  ],
+  organizers: [
     {
-      step: "01",
-      title: "Create Your Event",
-      description: "Showcase your event with your sponsorship packages and audience insights.",
-      icon: PlusCircle,
-      color: "#00D4FF",
+      title: 'List your event',
+      description: 'Add your dates, audience, packages and brochure. Our team verifies the listing and you sign a simple MOU before it goes live.',
+      detail: 'Free to list',
+      icon: FileSignature,
     },
     {
-      step: "02",
-      title: "Get Discovered",
-      description: "Reach brands actively looking for sponsorship opportunities.",
-      icon: Sparkles,
-      color: "#F472B6",
+      title: 'Get discovered by brands',
+      description: 'Brands looking for your audience find your listing and express interest. You see every match in one dashboard.',
+      detail: 'Verified badge on your listing',
+      icon: BadgeCheck,
     },
     {
-      step: "03",
-      title: "Manage Conversations & Progress",
-      description: "Handle negotiations, agreements and your events sponsorship progress in one place.",
-      icon: Layers,
-      color: "#34D399",
+      title: 'Choose your sponsors',
+      description: 'Unlock the brands that are interested, accept the ones that fit, and we arrange the meeting.',
+      detail: '₹5,000 per event to unlock matches',
+      icon: Users,
     },
     {
-      step: "04",
-      title: "Secure Funding & Measure Success",
-      description: "Close deals and build long-term sponsor relationships.",
+      title: 'Close the deal',
+      description: 'Agree terms, deliver the sponsorship and track it from your dashboard. VIP listings get full support from our team.',
+      detail: 'Commission only on closed deals',
       icon: CheckCircle2,
-      color: "#A78BFA",
     },
-  ];
+  ],
+};
 
-  const currentSteps = activeTab === 'brands' ? brandSteps : organizerSteps;
+function StepCard({ step, index, activeIndex, onActive }: { step: Step; index: number; activeIndex: number; onActive: (i: number) => void }) {
+  const ref = useRef<HTMLLIElement>(null);
+  // A step counts as current once its middle crosses the centre of the viewport.
+  const inView = useInView(ref, { margin: '-45% 0px -45% 0px' });
+  useEffect(() => {
+    if (inView) onActive(index);
+  }, [inView, index, onActive]);
+
+  const isActive = activeIndex === index;
+  const Icon = step.icon;
+  return (
+    <li ref={ref} className="lg:flex lg:min-h-[62vh] lg:items-center">
+      <motion.div
+        className={`w-full rounded-card border p-6 sm:p-8 transition-all duration-500 ${
+          isActive
+            ? 'border-white/30 bg-navy-soft shadow-pop scale-[1.01]'
+            : 'border-white/10 bg-white/[0.03] opacity-70'
+        }`}
+        initial={{ opacity: 0, y: 24 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, margin: '0px 0px -15% 0px' }}
+      >
+        <div className="flex items-center justify-between">
+          <span className={`font-mono text-xs ${isActive ? 'text-brand-300 font-semibold' : 'text-white/40'}`}>
+            {String(index + 1).padStart(2, '0')}
+          </span>
+          <span className={`flex h-10 w-10 items-center justify-center rounded-lg transition-colors ${
+            isActive ? 'bg-brand-600 text-white' : 'bg-white/10 text-white/60'
+          }`}>
+            <Icon className="h-5 w-5" />
+          </span>
+        </div>
+        <h3 className="mt-8 font-display text-3xl text-white sm:text-4xl">{step.title}</h3>
+        <p className="mt-4 max-w-lg leading-relaxed text-white/80">{step.description}</p>
+        <p className={`mt-8 inline-flex rounded-full border px-3 py-1 font-mono text-xs transition-colors ${
+          isActive ? 'border-brand-300/40 bg-brand-500/20 text-brand-200' : 'border-white/15 text-white/60'
+        }`}>
+          {step.detail}
+        </p>
+      </motion.div>
+    </li>
+  );
+}
+
+const HowItWorks = ({ linkToPage = false }: { linkToPage?: boolean }) => {
+  const [audience, setAudience] = useState<Audience>('brands');
+  const [active, setActive] = useState(0);
+  const listRef = useRef<HTMLOListElement>(null);
+
+  // Progress line fills as the list of steps scrolls past the centre of the screen.
+  const { scrollYProgress } = useScroll({ target: listRef, offset: ['start center', 'end center'] });
+  const progress = useSpring(scrollYProgress, { stiffness: 120, damping: 30, mass: 0.3 });
+
+  const current = steps[audience];
+
+  const switchAudience = (next: Audience) => {
+    setAudience(next);
+    setActive(0);
+  };
 
   return (
-    <section
-      className="relative w-full py-20 px-4 sm:px-8 overflow-hidden transition-colors duration-500 bg-background-secondary"
-      style={{ background: 'var(--gradient-how-it-works)' }}
-      id="how-we-work"
-    >
-      {/* Background pattern */}
-      <div
-        className="absolute inset-0 opacity-[0.04]"
-        style={{
-          backgroundImage: `radial-gradient(color-mix(in srgb, var(--color-primary) 80%, transparent) 1px, transparent 1px)`,
-          backgroundSize: '40px 40px',
-        }}
-      />
+    <section id="how-we-work" className="bg-navy py-20 text-white lg:py-28">
+      <div className="container-page grid gap-12 lg:grid-cols-12 lg:gap-16">
+        {/* Pinned column */}
+        <div className="lg:col-span-5">
+          <div className="lg:sticky lg:top-[calc(var(--nav-height)+4rem)]">
+            <h2 className="text-4xl text-white sm:text-5xl">
+              From first match to <span className="italic">signed deal.</span>
+            </h2>
+            <p className="mt-5 max-w-md text-lg leading-relaxed text-white/70">
+              The same four steps, whichever side of the sponsorship you&apos;re on.
+            </p>
 
-      {/* Glow effects */}
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full opacity-5"
-        style={{ background: 'radial-gradient(circle, var(--color-primary) 0%, transparent 70%)', filter: 'blur(80px)' }} />
-
-      <div className="relative z-10 max-w-6xl mx-auto">
-        {/* Section label */}
-        <motion.div
-          className="text-center mb-12"
-          initial={{ opacity: 0, y: 30 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.6 }}
-        >
-          <div
-            className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-sm font-medium mb-6 bg-info/10 border border-info/30 text-info"
-          >
-            <span className="w-1.5 h-1.5 rounded-full bg-cyan-400 animate-pulse" />
-            How We Work
-          </div>
-
-          <h2 className="text-4xl sm:text-5xl md:text-6xl font-black text-text-primary mb-6 leading-tight">
-            Built for Every Side of an{' '}
-            <span
-              style={{
-                background: 'linear-gradient(90deg, #00D4FF, #6366F1)',
-                WebkitBackgroundClip: 'text',
-                WebkitTextFillColor: 'transparent',
-              }}
-            >
-              Event Sponsorship.
-            </span>
-          </h2>
-
-          {/* Tab Toggle */}
-          <div className="flex justify-center mb-8">
-            <div
-              className="relative flex p-1 rounded-2xl bg-surface border border-border"
-            >
-              {(['brands', 'organizers'] as const).map((tab) => (
+            <div role="tablist" aria-label="How it works for" className="mt-8 inline-flex rounded-xl border border-white/15 bg-white/5 p-1">
+              {(['brands', 'organizers'] as const).map((id) => (
                 <button
-                  key={tab}
-                  onClick={() => setActiveTab(tab)}
-                  className={`relative z-10 px-8 py-3 rounded-xl font-semibold text-sm transition-all duration-300 ${
-                    activeTab === tab
-                      ? 'text-[#0A1628]'
-                      : 'text-text-muted hover:text-text-primary'
+                  key={id}
+                  type="button"
+                  role="tab"
+                  aria-selected={audience === id}
+                  onClick={() => switchAudience(id)}
+                  className={`rounded-lg px-4 py-2 text-sm font-medium transition-colors duration-200 ${
+                    audience === id ? 'bg-white text-ink' : 'text-white/70 hover:text-white'
                   }`}
-                  style={{
-                    background: activeTab === tab
-                      ? 'linear-gradient(135deg, #00D4FF, #3B82F6)'
-                      : 'transparent',
-                    boxShadow: activeTab === tab ? '0 0 20px color-mix(in srgb, var(--color-primary) 40%, transparent)' : 'none',
-                  }}
                 >
-                  {tab === 'brands' ? 'Brands' : 'Event Organizers'}
+                  {id === 'brands' ? 'For brands' : 'For organisers'}
                 </button>
               ))}
             </div>
-          </div>
 
-          <p className="text-text-secondary text-lg max-w-2xl mx-auto min-h-[56px] flex items-center justify-center">
-            {activeTab === 'brands'
-              ? "Filter out events best fit for you, and manage every aspect of the partnership easily."
-              : "Say goodbye to endless cold follow ups, and secure valuable event sponsors through us."}
-          </p>
-        </motion.div>
-
-        {/* Steps Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6" key={activeTab}>
-          {currentSteps.map((step, index) => {
-            const Icon = step.icon;
-            return (
+            {/* Step index with scroll progress (desktop) */}
+            <div className="relative mt-12 hidden pl-6 lg:block" aria-hidden="true">
+              <div className="absolute bottom-1 left-0 top-1 w-px bg-white/15" />
               <motion.div
-                key={`${activeTab}-${index}`}
-                className="relative group"
-                initial={{ opacity: 0, y: 40 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ duration: 0.5, delay: index * 0.1 }}
+                className="absolute bottom-1 left-0 top-1 w-px origin-top bg-white"
+                style={{ scaleY: progress }}
+              />
+              <ol className="space-y-4">
+                {current.map((step, i) => (
+                  <li
+                    key={step.title}
+                    className={`flex items-baseline gap-3 text-sm transition-colors duration-300 ${
+                      i === active ? 'text-white' : 'text-white/40'
+                    }`}
+                  >
+                    <span className="font-mono text-xs">{String(i + 1).padStart(2, '0')}</span>
+                    <span className={i === active ? 'font-medium' : ''}>{step.title}</span>
+                  </li>
+                ))}
+              </ol>
+            </div>
+
+            {linkToPage && (
+              <Link
+                href="/how-it-works"
+                className="mt-10 inline-flex items-center gap-1.5 text-sm font-medium text-white underline-offset-4 hover:underline"
               >
-                {/* Connector line */}
-                {index < currentSteps.length - 1 && (
-                  <div
-                    className="hidden lg:block absolute top-10 left-full w-6 h-px z-0"
-                    style={{ background: `linear-gradient(90deg, color-mix(in srgb, ${step.color} 25%, transparent), transparent)` }}
-                  />
-                )}
-
-                <motion.div
-                  className="relative rounded-3xl p-6 h-full transition-all duration-300 bg-surface/30 border border-border backdrop-blur-md"
-                  whileHover={{
-                    y: -8,
-                    background: `color-mix(in srgb, ${step.color} 8%, transparent)`,
-                    borderColor: `color-mix(in srgb, ${step.color} 30%, transparent)`,
-                  }}
-                >
-                  {/* Step number */}
-                  <div
-                    className="text-5xl font-black mb-4 leading-none"
-                    style={{
-                      background: `linear-gradient(135deg, color-mix(in srgb, ${step.color} 20%, transparent), color-mix(in srgb, ${step.color} 5%, transparent))`,
-                      WebkitBackgroundClip: 'text',
-                      WebkitTextFillColor: 'transparent',
-                      textShadow: 'none',
-                      color: `color-mix(in srgb, ${step.color} 30%, transparent)`,
-                    }}
-                  >
-                    {step.step}
-                  </div>
-
-                  {/* Icon */}
-                  <div
-                    className="w-14 h-14 rounded-2xl flex items-center justify-center mb-5 transition-all duration-300 group-hover:scale-110"
-                    style={{
-                      background: `color-mix(in srgb, ${step.color} 15%, transparent)`,
-                      border: `1px solid color-mix(in srgb, ${step.color} 30%, transparent)`,
-                      boxShadow: `0 0 20px color-mix(in srgb, ${step.color} 20%, transparent)`,
-                    }}
-                  >
-                    <Icon className="w-7 h-7" style={{ color: step.color }} />
-                  </div>
-
-                  {/* Content */}
-                  <h3 className="text-text-primary font-bold text-lg mb-3">{step.title}</h3>
-                  <p className="text-text-secondary text-sm leading-relaxed">{step.description}</p>
-
-                  {/* Bottom accent line */}
-                  <div
-                    className="absolute bottom-0 left-6 right-6 h-0.5 rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-300"
-                    style={{ background: `linear-gradient(90deg, transparent, ${step.color}, transparent)` }}
-                  />
-                </motion.div>
-              </motion.div>
-            );
-          })}
+                See the full process <ArrowRight className="h-4 w-4" />
+              </Link>
+            )}
+          </div>
         </div>
+
+        {/* Scrolling steps */}
+        <ol ref={listRef} key={audience} className="space-y-4 lg:col-span-7 lg:space-y-0" role="tabpanel">
+          {current.map((step, i) => (
+            <StepCard key={step.title} step={step} index={i} activeIndex={active} onActive={setActive} />
+          ))}
+        </ol>
       </div>
     </section>
   );

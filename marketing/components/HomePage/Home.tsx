@@ -1,24 +1,19 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { X, Calendar, MapPin, Sparkles, ArrowRight } from 'lucide-react';
+import { X, Calendar, MapPin, ArrowRight } from 'lucide-react';
 import { supabase } from '../../lib/supabaseClient';
-import NavBar from '../NavBar';
 import HeroSectionNew from './HeroSectionNew';
-import HowWeWorkSection from './HowWeWorkSection';
-import ClientsSection from './ClientsSection';
-import PricingSectionStatic from './PricingStatic';
 import SuccessStoriesSection from './SuccessStoriesSection';
-import Footer from '../Footer';
-import AOS from 'aos';
-import 'aos/dist/aos.css'; // Import AOS styles
 import TrendingEvents from './TrendingEvents';
 import HowItWorks from './HowItWorks';
 import TrustedBySection from './TrustedBySection';
-import WhatIsSponsorStudio from './WhatIsSponsorStudio';
 import InteractiveDashboard from './InteractiveDashboard';
+import TrustSection from './TrustSection';
+import TestimonialsSection from './TestimonialsSection';
+import PricingSection from './PricingSection';
 import FinalCTA from './FinalCTA';
-import ContactWidget from './ContactWidget';
+import { SIGN_IN_URL } from '../../lib/site';
 import { motion, AnimatePresence } from 'framer-motion';
 
 // Shared types
@@ -75,124 +70,47 @@ const Home: React.FC = () => {
   const [clientLogos, setClientLogos] = useState<ClientLogo[]>([]);
   const [successStories, setSuccessStories] = useState<SuccessStory[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
-  const [showAllStories, setShowAllStories] = useState<boolean>(false);
   const [selectedEvent, setSelectedEvent] = useState<any | null>(null);
-  const [mobileMenuOpen, setMobileMenuOpen] = useState<boolean>(false);
-
-  const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://app.sponsorstudio.in';
 
   const setShowAuthForm = (value: boolean) => {
     if (value) {
-      window.location.href = `${APP_URL}/signin`;
+      window.location.href = SIGN_IN_URL;
     }
   };
 
+  // Logos and stories load independently. If either request fails, that section
+  // simply hides itself; the rest of the landing page is unaffected.
   useEffect(() => {
-    AOS.init({
-      once: true, // Ensures animations only run once
-      offset: 50, // Triggers animations 50px before element enters viewport
-    });
+    const load = async () => {
+      const [logos, stories] = await Promise.all([
+        supabase.from('client_logos').select('*'),
+        supabase.from('success_stories').select('*').order('created_at', { ascending: false }),
+      ]);
+      if (logos.error) console.error('Error fetching client logos:', logos.error);
+      else setClientLogos(logos.data || []);
+      if (stories.error) console.error('Error fetching success stories:', stories.error);
+      else setSuccessStories(stories.data || []);
+      setLoading(false);
+    };
+    load();
   }, []);
 
-  // Fetch data (client logos and success stories)
-  useEffect(() => {
-    const fetchData = async () => {
-      setLoading(true);
-      setError(null);
-      try {
-        await Promise.all([fetchClientLogos(), fetchSuccessStories()]);
-      } catch (err) {
-        console.error('Error fetching data:', err);
-        setError('Failed to load data. Please try again later.');
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchData();
-  }, []); // Run only once on mount
-
-  const fetchClientLogos = async () => {
-    const { data, error } = await supabase.from('client_logos').select('*');
-    if (error) {
-      console.error('Error fetching client logos:', error);
-      throw error;
-    }
-    setClientLogos(data || []);
-  };
-
-  const fetchSuccessStories = async () => {
-    const { data, error } = await supabase
-      .from('success_stories')
-      .select('*')
-      .order('created_at', { ascending: false }); // Latest blogs first
-    if (error) {
-      console.error('Error fetching success stories:', error);
-      throw error;
-    }
-    setSuccessStories(data || []);
-  };
-
-  if (error) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-white">
-        <div className="text-center">
-          <h2 className="text-2xl font-bold text-red-600">Error</h2>
-          <p className="mt-2 text-gray-600">{error}</p>
-          <button
-            onClick={() => window.location.reload()}
-            className="mt-4 px-4 py-2 bg-[#2B4B9B] text-white rounded-lg hover:bg-[#1F3A7A]"
-          >
-            Retry
-          </button>
-        </div>
-      </div>
-    );
-  }
-
   return (
-    <div className="min-h-screen bg-background text-text-primary transition-colors duration-500 overflow-x-hidden">
+    <div className="min-h-screen bg-background text-text-primary overflow-x-clip">
 
-      <NavBar
-        hideNavItems={false}
-        hideAuthButton={false}
-        hideMobileMenu={false}
-      />
       
-      {/* 1. Hero Section */}
-      <HeroSectionNew user={null} setShowAuthForm={setShowAuthForm} />
-      
-      {/* 2. Trusted By brands / Metrics */}
+      <HeroSectionNew />
       <TrustedBySection loading={loading} clientLogos={clientLogos} />
-      
-      {/* Interactive Dashboard Preview (Brands vs. Organizers) */}
-      <InteractiveDashboard user={null} setShowAuthForm={setShowAuthForm} />
-      
-      {/* 3. Trending Events Slider */}
+      <HowItWorks linkToPage />
+      <InteractiveDashboard />
       <TrendingEvents showAuthForm={() => setShowAuthForm(true)} onSelectEvent={setSelectedEvent} />
+      <TrustSection />
+      <SuccessStoriesSection loading={loading} successStories={successStories} />
+      <TestimonialsSection />
+      <PricingSection linkToPage />
+      <FinalCTA />
+
       
-      {/* 4 & 5 & 6. The Problem/Solution, The Journey, Why Choose Sponsor Studio */}
-      <WhatIsSponsorStudio />
-      
-      {/* 7. For Brands / For Organizers (Toggle separate journeys) */}
-      <HowItWorks />
-      
-      {/* Client Logos Marquee scrolling row */}
-      <ClientsSection loading={loading} clientLogos={clientLogos} />
-      
-      {/* 8. Success Stories / Testimonials */}
-      <SuccessStoriesSection
-        loading={loading}
-        successStories={successStories}
-      />
-      
-      {/* 10. Final bottom Call to Action */}
-      <FinalCTA setShowAuthForm={setShowAuthForm} />
-      
-      {/* Floating contact/reach-out widget */}
-      <ContactWidget />
-      
-      <Footer />
 
       {/* EVENT DETAILS SLIDE DRAWER PANEL */}
       <AnimatePresence>
@@ -249,15 +167,14 @@ const Home: React.FC = () => {
                 
                 {/* Premium Listing tag */}
                 <div className="absolute bottom-4 left-4 inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-semibold bg-primary text-text-inverse shadow-lg">
-                  <Sparkles className="w-3.5 h-3.5" />
-                  Premium Listing
+Premium Listing
                 </div>
               </div>
 
               {/* Body Content */}
               <div className="flex-1 p-6 sm:p-8 flex flex-col justify-between">
                 <div>
-                  <h3 className="text-2xl sm:text-3xl font-black text-text-primary mb-4 leading-tight">
+                  <h3 className="text-2xl sm:text-3xl font-semibold text-text-primary mb-4 leading-tight">
                     {selectedEvent.title}
                   </h3>
 
@@ -293,12 +210,7 @@ const Home: React.FC = () => {
 
                 <div className="mt-8 border-t border-border/50 pt-6 space-y-3">
                   <a
-                    href={`${APP_URL}/signin`}
-                    className="group w-full inline-flex items-center justify-center gap-2 px-6 py-4 rounded-xl font-bold text-[#0A1628] text-base transition-all duration-300 hover:scale-[1.02]"
-                    style={{
-                      background: 'linear-gradient(135deg, #00D4FF, #3B82F6)',
-                      boxShadow: '0 0 20px rgba(0,212,255,0.3)',
-                    }}
+                    href={SIGN_IN_URL} className="group w-full inline-flex items-center justify-center gap-2 px-6 py-4 rounded-xl font-bold text-white text-base transition-all duration-300 bg-primary hover:bg-primary-hover"
                   >
                     Inquire Sponsorship
                     <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />

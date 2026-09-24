@@ -15,7 +15,8 @@ export default defineConfig({
     },
   },
   server: {
-    port: 3000,
+    // 3000 is the marketing site (Next.js); the app runs on Vite's default port.
+    port: 5173,
     host: true,
   },
 });

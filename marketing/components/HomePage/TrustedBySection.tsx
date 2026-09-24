@@ -19,51 +19,35 @@ const TrustedBySection: React.FC<TrustedBySectionProps> = ({ clientLogos, loadin
   if (!loading && trustedLogos.length === 0) return null;
 
   return (
-    <section
-      className="relative py-12 overflow-hidden transition-colors duration-500"
-      style={{ background: 'var(--gradient-trusted-by)' }}
-    >
-      {/* Divider glow line */}
-      <div
-        className="absolute top-0 left-1/2 -translate-x-1/2 w-1/2 h-px"
-        style={{ background: 'linear-gradient(90deg, transparent, color-mix(in srgb, var(--color-primary) 40%, transparent), transparent)' }}
-      />
-
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <p className="text-center text-xs font-semibold uppercase tracking-widest text-text-muted mb-8">
-          Trusted by leading brands & event organizers
+    <section className="border-b border-border py-10 lg:py-12" aria-label="Trusted by">
+      <div className="container-page flex flex-col gap-6 lg:flex-row lg:items-center lg:gap-12">
+        <p className="shrink-0 text-sm text-text-secondary lg:max-w-[11rem]">
+          Trusted by brands and organisers across India
         </p>
 
         {loading ? (
-          <div className="flex justify-center gap-8">
-            {Array(6).fill(0).map((_, i) => (
-              <div key={i} className="h-8 w-20 bg-surface-hover/30 border border-border/50 rounded animate-pulse" />
+          <div className="flex flex-1 flex-wrap gap-8">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <div key={i} className="h-7 w-20 animate-pulse rounded bg-background-secondary" />
             ))}
           </div>
         ) : (
-          <div className="flex flex-wrap items-center justify-center gap-8 md:gap-12">
+          <ul className="flex flex-1 flex-wrap items-center gap-x-10 gap-y-6 lg:justify-between">
             {trustedLogos.map((logo) => (
-              <div
-                key={logo.id}
-                className="transition-all duration-300 hover:scale-110 opacity-70 hover:opacity-100"
-              >
+              <li key={logo.id}>
+                {/* Logos come from the CMS, so dimensions are unknown up front. */}
+                {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={logo.logo_url}
                   alt={logo.name}
-                  className="h-7 md:h-9 object-contain max-w-[100px] dark:brightness-100"
                   loading="lazy"
+                  className="h-8 max-w-[120px] object-contain opacity-90 transition-opacity duration-300 hover:opacity-100 md:h-9"
                 />
-              </div>
+              </li>
             ))}
-          </div>
+          </ul>
         )}
       </div>
-
-      {/* Bottom divider */}
-      <div
-        className="absolute bottom-0 left-1/2 -translate-x-1/2 w-1/2 h-px"
-        style={{ background: 'linear-gradient(90deg, transparent, color-mix(in srgb, var(--color-primary) 20%, transparent), transparent)' }}
-      />
     </section>
   );
 };

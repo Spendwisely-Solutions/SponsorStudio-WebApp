@@ -1,111 +1,104 @@
-'use client';
-
-import { motion } from "framer-motion";
-import { FaLinkedin, FaInstagram, FaFacebook } from "react-icons/fa";
+import Image from 'next/image';
 import Link from 'next/link';
+import { FaFacebook, FaInstagram, FaLinkedin } from 'react-icons/fa';
+import { ArrowUpRight } from 'lucide-react';
+import { CONTACT_EMAIL, footerNav, socialLinks } from '../lib/site';
+import NewsletterSignup from './NewsletterSignup';
+
+const socialIcons = {
+  Instagram: FaInstagram,
+  LinkedIn: FaLinkedin,
+  Facebook: FaFacebook,
+} as const;
 
 const Footer = () => {
   return (
-    <motion.footer
-      className="relative overflow-hidden border-t border-border transition-colors duration-500"
-      style={{ background: 'var(--gradient-footer)' }}
-      initial={{ opacity: 0 }}
-      whileInView={{ opacity: 1 }}
-      viewport={{ once: true }}
-      transition={{ duration: 0.5, ease: "easeOut" }}
-    >
-      {/* Top glow */}
-      <div
-        className="absolute top-0 left-1/2 -translate-x-1/2 w-2/3 h-px"
-        style={{ background: 'linear-gradient(90deg, transparent, color-mix(in srgb, var(--color-primary) 50%, transparent), transparent)' }}
-      />
+    <footer className="border-t border-border bg-background-secondary">
+      {/* The Backdrop newsletter */}
+      <div className="container-page pb-16 pt-16 lg:pt-20">
+        <NewsletterSignup />
+      </div>
 
-      {/* Footer Links */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
-          {/* Brand */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.4, delay: 0.1 }}
-          >
-            <div className="text-xl font-bold text-text-primary mb-4">
-              Sponsor Studio
-            </div>
-            <p className="text-text-secondary text-sm leading-relaxed mb-6">
-              Empowering brands and events to connect, collaborate, and grow through seamless partnerships.
-            </p>
-            <div className="flex space-x-3">
-              {[
-                { href: 'https://www.instagram.com/sponsorstudio.official', icon: FaInstagram, hover: 'hover:bg-pink-500/20 hover:border-pink-500/40' },
-                { href: 'https://in.linkedin.com/company/sponsor-studio', icon: FaLinkedin, hover: 'hover:bg-blue-500/20 hover:border-blue-500/40' },
-                { href: 'https://www.facebook.com/people/Sponsor-Studio/61559157077711/', icon: FaFacebook, hover: 'hover:bg-blue-700/20 hover:border-blue-700/40' },
-              ].map(({ href, icon: Icon, hover }, i) => (
-                <a
-                  key={i}
-                  href={href}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className={`w-9 h-9 rounded-xl flex items-center justify-center transition-all duration-300 bg-surface border border-border ${hover}`}
-                >
-                  <Icon className="w-4 h-4 text-text-secondary" />
-                </a>
-              ))}
-            </div>
-          </motion.div>
+      {/* Divider line between newsletter and footer navigation */}
+      <div className="container-page">
+        <div className="border-t border-border" />
+      </div>
 
-          {/* Company */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.4, delay: 0.2 }}
+      <div className="container-page grid gap-12 py-16 md:grid-cols-12">
+        <div className="md:col-span-12 lg:col-span-3">
+          <Link href="/" aria-label="Sponsor Studio home" className="inline-flex">
+            <Image src="/logo.png" alt="Sponsor Studio" width={330} height={218} className="h-10 w-auto" />
+          </Link>
+          <p className="mt-5 max-w-xs text-sm leading-relaxed text-text-secondary">
+            The sponsorship marketplace connecting brands with verified events, creators and outdoor media.
+          </p>
+          <a
+            href={`mailto:${CONTACT_EMAIL}`}
+            className="mt-5 inline-block text-sm font-medium text-text-primary underline-offset-4 hover:underline"
           >
-            <h4 className="text-text-primary font-semibold mb-5 text-sm uppercase tracking-widest">Company</h4>
-            <div className="space-y-3 text-sm">
-              {[
-                { label: 'About Us', href: '/about-us' },
-                { label: 'Contact Us', href: '/contact-us' },
-                { label: 'Blogs', href: '/blogs' },
-                { label: 'FAQ', href: '/faq' },
-              ].map((link, i) => (
-                <Link key={i} href={link.href} className="block text-text-secondary hover:text-primary transition-colors duration-200">
-                  {link.label}
-                </Link>
-              ))}
-            </div>
-          </motion.div>
-
-          {/* What We Do */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.4, delay: 0.3 }}
-          >
-            <h4 className="text-text-primary font-semibold mb-5 text-sm uppercase tracking-widest">What We Do</h4>
-            <div className="space-y-3 text-sm">
-              {[
-                { label: 'Platform Overview', href: '/platform-overview' },
-                { label: 'Agency Services', href: '/agency-services' },
-              ].map((link, i) => (
-                <Link key={i} href={link.href} className="block text-text-secondary hover:text-primary transition-colors duration-200">
-                  {link.label}
-                </Link>
-              ))}
-            </div>
-          </motion.div>
+            {CONTACT_EMAIL}
+          </a>
         </div>
 
-        {/* Bottom bar */}
-        <div
-          className="mt-12 pt-8 flex items-center justify-center border-t border-border"
-        >
-          <p className="text-text-muted text-sm">© 2026 Sponsor Studio. All rights reserved.</p>
+        <div className="grid grid-cols-2 gap-8 sm:grid-cols-3 md:col-span-12 lg:col-span-9 lg:grid-cols-5">
+          {footerNav.map((group) => (
+            <div key={group.title}>
+              <h2 className="font-sans text-sm font-semibold tracking-normal text-text-primary">{group.title}</h2>
+              <ul className="mt-4 space-y-3">
+                {group.links.map((link) => (
+                  <li key={link.href}>
+                    {link.external ? (
+                      <a
+                        href={link.href}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1 text-sm text-text-secondary transition-colors hover:text-text-primary"
+                      >
+                        {link.label} <ArrowUpRight className="h-3.5 w-3.5" />
+                      </a>
+                    ) : (
+                      <Link href={link.href} className="text-sm text-text-secondary transition-colors hover:text-text-primary">
+                        {link.label}
+                      </Link>
+                    )}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ))}
         </div>
       </div>
-    </motion.footer>
+
+      <div className="border-t border-border">
+        <div className="container-page flex flex-col-reverse items-start justify-between gap-4 py-6 sm:flex-row sm:items-center">
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:gap-6">
+            <p className="text-sm text-text-muted">© {new Date().getFullYear()} Sponsor Studio. All rights reserved.</p>
+            <div className="flex gap-4 text-sm text-text-muted">
+              <Link href="/legal/privacy-policy" className="hover:text-text-primary">Privacy</Link>
+              <Link href="/legal/terms-of-service" className="hover:text-text-primary">Terms</Link>
+            </div>
+          </div>
+          <ul className="flex items-center gap-1">
+            {socialLinks.map(({ label, href }) => {
+              const Icon = socialIcons[label];
+              return (
+                <li key={label}>
+                  <a
+                    href={href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    aria-label={label}
+                    className="inline-flex h-9 w-9 items-center justify-center rounded-lg text-text-muted transition-colors hover:bg-surface-hover hover:text-text-primary"
+                  >
+                    <Icon className="h-4 w-4" />
+                  </a>
+                </li>
+              );
+            })}
+          </ul>
+        </div>
+      </div>
+    </footer>
   );
 };
 

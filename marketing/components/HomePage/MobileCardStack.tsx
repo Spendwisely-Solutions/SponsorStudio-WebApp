@@ -110,7 +110,6 @@ const MobileCardStack: React.FC<MobileCardStackProps> = ({
                       transition={{ delay: 0.2, duration: 0.4 }}
                     >
                       <div className="w-6 h-6 bg-primary rounded-full flex items-center justify-center shadow-lg">
-                        <div className="w-2 h-2 bg-text-inverse rounded-full animate-pulse" />
                       </div>
                     </motion.div>
                   )}
@@ -171,7 +170,7 @@ const MobileCardStack: React.FC<MobileCardStackProps> = ({
                               className="inline-flex items-center justify-center w-full bg-primary text-text-inverse font-semibold py-3 px-6 rounded-xl hover:bg-primary-hover transition-all duration-200 group text-sm"
                             >
                               Read Story
-                              <ArrowUpRight className="ml-2 w-4 h-4 transition-transform duration-200 group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+                              <ArrowUpRight className="ml-2 w-4 h-4 transition-transform duration-200 group-hover:translate-x-0.5" />
                             </Link>
                           </motion.div>
                         </motion.div>
